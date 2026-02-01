@@ -1,0 +1,7 @@
+{
+  "name": "GamaGit - Automação de Roteiros",
+  "description": "Sistema profissional de síntese de voz neural e automação de copies para o Grupo Gama, focado em alta naturalidade e performance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

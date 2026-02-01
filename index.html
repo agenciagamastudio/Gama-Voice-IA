@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gama Engine | Voice Synthesis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root {
+            --ge-bg: #161616;
+            --ge-surface: #272727;
+            --ge-surface-2: #2E2E2E;
+            --ge-text: #FFFFFF;
+            --ge-text-2: #C9CDD2;
+            --ge-border: #2E2E2E;
+            --ge-primary: #88CE11;
+            --ge-primary-strong: #66AF00;
+            --ge-danger: #EF4444;
+            
+            --ge-radius-sm: 8px;
+            --ge-radius-md: 12px;
+            --ge-radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--ge-bg);
+            color: var(--ge-text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .ge-card {
+            background: var(--ge-surface);
+            border: 1px solid var(--ge-border);
+            border-radius: var(--ge-radius-lg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        textarea::placeholder {
+            color: var(--ge-text-2);
+            opacity: 0.5;
+        }
+
+        /* Focus ring pattern */
+        .focus-ring:focus-visible {
+            outline: 2px solid var(--ge-primary-strong);
+            outline-offset: 2px;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.469.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
