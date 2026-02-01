@@ -1,45 +1,63 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
-import { VoiceName } from "../types";
-
-const API_KEY = process.env.API_KEY || "";
-
 export class TTSService {
-  private ai: GoogleGenAI;
+  private synth: SpeechSynthesis;
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: API_KEY });
+    this.synth = window.speechSynthesis;
   }
 
-  async *synthesizeStream(text: string, voice: VoiceName) {
-    try {
-      const responseStream = await this.ai.models.generateContentStream({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ 
-          parts: [{ 
-            text: `Aja como uma voz profissional de rádio e publicidade (estilo Ember do ChatGPT). Leia o seguinte texto com entonação natural e pausas orgânicas: ${text}` 
-          }] 
-        }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: voice },
-            },
-          },
-        },
-      });
+  getVoices(): SpeechSynthesisVoice[] {
+    // Retorna as vozes disponíveis, priorizando as de alta qualidade se existirem
+    return this.synth.getVoices().sort((a, b) => {
+      const aNatural = a.name.toLowerCase().includes('natural');
+      const bNatural = b.name.toLowerCase().includes('natural');
+      if (aNatural && !bNatural) return -1;
+      if (!aNatural && bNatural) return 1;
+      return 0;
+    });
+  }
 
-      for await (const chunk of responseStream) {
-        const base64Audio = chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (base64Audio) {
-          yield base64Audio;
-        }
-      }
-    } catch (error) {
-      console.error("Erro no stream TTS:", error);
-      throw error;
+  speak(text: string, voice: SpeechSynthesisVoice, options: {
+    rate?: number;
+    pitch?: number;
+    onBoundary?: (event: SpeechSynthesisEvent) => void;
+    onEnd?: () => void;
+    onError?: (err: any) => void;
+    onStart?: () => void;
+  }) {
+    this.cancel();
+
+    this.currentUtterance = new SpeechSynthesisUtterance(text);
+    this.currentUtterance.voice = voice;
+    this.currentUtterance.rate = options.rate || 1.0;
+    this.currentUtterance.pitch = options.pitch || 1.0;
+    this.currentUtterance.volume = 1.0;
+
+    if (options.onBoundary) this.currentUtterance.onboundary = options.onBoundary;
+    if (options.onEnd) this.currentUtterance.onend = options.onEnd;
+    if (options.onError) this.currentUtterance.onerror = options.onError;
+    if (options.onStart) this.currentUtterance.onstart = options.onStart;
+
+    this.synth.speak(this.currentUtterance);
+  }
+
+  pause() {
+    this.synth.pause();
+  }
+
+  resume() {
+    this.synth.resume();
+  }
+
+  cancel() {
+    this.synth.cancel();
+    if (this.currentUtterance) {
+      this.currentUtterance.onend = null;
+      this.currentUtterance.onerror = null;
+      this.currentUtterance.onboundary = null;
     }
+    this.currentUtterance = null;
   }
 }
 
