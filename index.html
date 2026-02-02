@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama Engine | Voice Synthesis</title>
+    <title>Gama Voice IA | Neural Synthesis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
         
         :root {
-            --ge-bg: #161616;
-            --ge-surface: #272727;
-            --ge-surface-2: #2E2E2E;
+            --ge-bg: #0A0A0A;
+            --ge-surface: #141414;
+            --ge-surface-2: #1E1E1E;
             --ge-text: #FFFFFF;
-            --ge-text-2: #C9CDD2;
-            --ge-border: #2E2E2E;
+            --ge-text-2: #A0A0A0;
+            --ge-border: #262626;
             --ge-primary: #88CE11;
             --ge-primary-strong: #66AF00;
             --ge-danger: #EF4444;
@@ -37,7 +37,6 @@
             background: var(--ge-surface);
             border: 1px solid var(--ge-border);
             border-radius: var(--ge-radius-lg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.4);
         }
 
         .font-mono {
@@ -46,14 +45,17 @@
 
         textarea::placeholder {
             color: var(--ge-text-2);
-            opacity: 0.5;
+            opacity: 0.3;
         }
 
-        /* Focus ring pattern */
-        .focus-ring:focus-visible {
-            outline: 2px solid var(--ge-primary-strong);
-            outline-offset: 2px;
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #88CE11; }
     </style>
 <script type="importmap">
 {
