@@ -222,6 +222,15 @@ def create_audiobook():
 
         print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
 
+        # Aguardar Kokoro estar carregado (máx 60 segundos)
+        wait_count = 0
+        while not kokoro_model and wait_count < 60:
+            time.sleep(1)
+            wait_count += 1
+
+        if not kokoro_model:
+            return jsonify({'error': 'Kokoro não conseguiu carregar. Tente novamente'}), 503
+
         # Iniciar processamento em thread
         thread = threading.Thread(
             target=process_audiobook_queue,
