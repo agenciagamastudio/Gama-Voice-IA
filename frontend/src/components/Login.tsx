@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { API_BASE_URL } from '../utils/config'
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: { id: number; email: string; name: string }) => void
@@ -23,7 +24,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
       const body = isLogin ? { email, password } : { email, password, name }
 
-      const response = await fetch(`http://127.0.0.1:5001${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
