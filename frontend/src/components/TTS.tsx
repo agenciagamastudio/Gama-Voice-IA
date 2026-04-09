@@ -18,7 +18,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
 
   const handleSynthesize = async () => {
     if (!text.trim()) {
-      setError('Text cannot be empty')
+      setError('Texto não pode estar vazio')
       return
     }
 
@@ -39,14 +39,14 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Synthesis failed')
+        throw new Error(errorData.error || 'Falha na síntese')
       }
 
       const audioBlob = await response.blob()
       const url = URL.createObjectURL(audioBlob)
       setAudioUrl(url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
     } finally {
       setIsLoading(false)
     }
@@ -58,7 +58,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      setError('Copy failed')
+      setError('Falha ao copiar')
     }
   }
 
@@ -88,14 +88,14 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
         })
       })
 
-      if (!response.ok) throw new Error('Preview failed')
+      if (!response.ok) throw new Error('Falha na prévia')
 
       const audioBlob = await response.blob()
       const url = URL.createObjectURL(audioBlob)
       const audio = new Audio(url)
       audio.play()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Preview failed')
+      setError(err instanceof Error ? err.message : 'Falha na prévia')
     } finally {
       setIsLoading(false)
     }
@@ -124,7 +124,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
               className="flex items-center gap-1 text-[#88CE11] hover:text-white transition"
             >
               <Copy className="w-3 h-3" />
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'Copiado!' : 'Copiar'}
             </button>
           )}
         </div>
@@ -220,7 +220,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       {audioUrl && (
         <div className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-4">
           <div className="space-y-2">
-            <p className="text-sm text-gray-400">✅ Synthesis Complete</p>
+            <p className="text-sm text-gray-400">✅ Síntese Completa</p>
             <audio
               controls
               src={audioUrl}
@@ -233,7 +233,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
             className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Download Audio
+            Baixar Áudio
           </button>
         </div>
       )}

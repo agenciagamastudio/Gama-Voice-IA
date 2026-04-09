@@ -67,7 +67,7 @@ export default function App() {
           <button
             onClick={() => setShowSettings(true)}
             className="p-2 hover:bg-white/10 rounded-lg transition"
-            title="Settings"
+            title="Configurações"
           >
             <Settings className="w-6 h-6 text-white" />
           </button>
@@ -81,7 +81,7 @@ export default function App() {
           <div className="mb-6 p-4 bg-white/5 border border-[#88CE11]/30 rounded-xl">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-400">
-                {health.gpu_available ? '🟢' : '🟡'} {health.gpu_available ? 'GPU Available' : 'CPU Mode'} • TTS: Kokoro + Edge-TTS
+                {health.gpu_available ? '🟢' : '🟡'} {health.gpu_available ? 'GPU Disponível' : 'Modo CPU'} • TTS: Kokoro + Edge-TTS
               </span>
               <span className="text-gray-500 text-xs">
                 Circuit Breaker: {health.circuit_breaker?.state || 'N/A'}
@@ -100,7 +100,7 @@ export default function App() {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Volume2 className="w-5 h-5" /> Text to Speech
+            <Volume2 className="w-5 h-5" /> Texto para Fala
           </button>
           <button
             onClick={() => setActiveTab('stt')}
@@ -110,7 +110,7 @@ export default function App() {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Mic className="w-5 h-5" /> Speech to Text
+            <Mic className="w-5 h-5" /> Fala para Texto
           </button>
         </div>
 

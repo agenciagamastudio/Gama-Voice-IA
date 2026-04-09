@@ -8,3 +8,31 @@ Port 5001 is in use, trying another one...
   [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m534[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5002[22m/[39m
+[2m01:29:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/STT.tsx[22m
+[2m01:30:00[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/STT.tsx[22m
+[2m01:30:03[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/STT.tsx[22m
+[2m01:30:08[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/STT.tsx[22m
+[2m01:30:11[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/STT.tsx[22m
+[2m01:32:34[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:32:37[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:32:40[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:32:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:32:47[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:33:27[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:33:30[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:33:38[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/utils/history.ts[22m
+[2m01:33:44[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/utils/history.ts[22m
+[2m01:33:47[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:33:51[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:33:56[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:34:01[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:34:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:34:13[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryPanel.tsx[22m
+[2m01:36:27[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:36:31[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:36:36[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:36:38[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:36:42[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:36:48[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistorySearch.tsx[22m
+[2m01:44:23[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/HistoryStats.tsx[22m
+[2m01:44:31[22m [36m[1m[vite][22m[39m changed tsconfig file detected: C:\Users\Usuario\Desktop\O_GRANDE_PROJETO\GAMA_VOZ\frontend\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.

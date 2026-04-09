@@ -5,6 +5,7 @@ import { HistoryManager } from '../utils/history'
 import HistoryPanel from './HistoryPanel'
 
 export default function STTComponent() {
+  console.log('🎙️ STTComponent mounted - History feature available')
   const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -34,7 +35,7 @@ export default function STTComponent() {
       setRecordingStartTime(Date.now())
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Microphone access denied')
+      setError(err instanceof Error ? err.message : 'Acesso ao microfone negado')
     }
   }
 
@@ -65,7 +66,7 @@ export default function STTComponent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Transcription failed')
+        throw new Error(errorData.error || 'Falha na transcrição')
       }
 
       const data = await response.json()
@@ -75,7 +76,7 @@ export default function STTComponent() {
       const duration = recordingStartTime ? Date.now() - recordingStartTime : 0
       HistoryManager.addTranscription(data.text, duration, 'pt')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
     } finally {
       setIsLoading(false)
       setRecordingStartTime(null)
@@ -86,7 +87,7 @@ export default function STTComponent() {
     try {
       await navigator.clipboard.writeText(transcript)
     } catch (err) {
-      setError('Copy failed')
+      setError('Falha ao copiar')
     }
   }
 
@@ -138,17 +139,17 @@ export default function STTComponent() {
           {isLoading ? (
             <>
               <Loader className="w-5 h-5 animate-spin" />
-              Transcribing...
+              Transcrevendo...
             </>
           ) : isRecording ? (
             <>
               <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-              Stop Recording
+              Parar Gravação
             </>
           ) : (
             <>
               <Mic className="w-5 h-5" />
-              Start Recording
+              Começar a Gravar
             </>
           )}
         </button>
@@ -164,7 +165,7 @@ export default function STTComponent() {
       {transcript && (
         <div className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-4">
           <div className="space-y-2">
-            <p className="text-sm text-gray-400">✅ Transcription Complete</p>
+            <p className="text-sm text-gray-400">✅ Transcrição Completa</p>
             <p className="text-white leading-relaxed whitespace-pre-wrap">{transcript}</p>
           </div>
 
@@ -174,7 +175,7 @@ export default function STTComponent() {
               className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
             >
               <Copy className="w-4 h-4" />
-              Copy
+              Copiar
             </button>
 
             <button
@@ -182,7 +183,7 @@ export default function STTComponent() {
               className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Download
+              Baixar
             </button>
 
             <button
@@ -190,7 +191,7 @@ export default function STTComponent() {
               className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Clear
+              Limpar
             </button>
           </div>
         </div>
