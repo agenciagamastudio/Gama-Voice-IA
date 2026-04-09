@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Tag } from 'lucide-react'
 import type { TranscriptionRecord } from '../utils/history'
 
 interface HistorySearchProps {
@@ -13,6 +13,16 @@ export default function HistorySearch({ history, onResultsChange }: HistorySearc
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [dateRange, setDateRange] = useState<{ start?: number; end?: number }>({})
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
+
+  // Compute unique tags
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>()
+    history.forEach((r) => {
+      r.tags?.forEach((tag) => tags.add(tag))
+    })
+    return Array.from(tags).sort()
+  }, [history])
 
   const filtered = useMemo(() => {
     let results = [...history]
@@ -21,6 +31,13 @@ export default function HistorySearch({ history, onResultsChange }: HistorySearc
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       results = results.filter((r) => r.text.toLowerCase().includes(query))
+    }
+
+    // Filtro por tags
+    if (selectedTags.size > 0) {
+      results = results.filter((r) =>
+        r.tags && r.tags.some((tag) => selectedTags.has(tag))
+      )
     }
 
     // Filtro por data (últimos N dias)
@@ -55,12 +72,23 @@ export default function HistorySearch({ history, onResultsChange }: HistorySearc
 
   React.useEffect(() => {
     onResultsChange(filtered)
-  }, [filtered, onResultsChange])
+  }, [filtered, onResultsChange, selectedTags])
 
   const clearFilters = () => {
     setSearchQuery('')
     setSortBy('newest')
     setDateRange({})
+    setSelectedTags(new Set())
+  }
+
+  const toggleTag = (tag: string) => {
+    const newTags = new Set(selectedTags)
+    if (newTags.has(tag)) {
+      newTags.delete(tag)
+    } else {
+      newTags.add(tag)
+    }
+    setSelectedTags(newTags)
   }
 
   const setLastDays = (days: number) => {
@@ -126,12 +154,37 @@ export default function HistorySearch({ history, onResultsChange }: HistorySearc
         </select>
       </div>
 
+      {/* Tags Filter */}
+      {availableTags.length > 0 && (
+        <div className="bg-white/5 p-3 rounded-lg space-y-2 border border-white/10">
+          <p className="text-xs font-semibold text-gray-400 flex items-center gap-2">
+            <Tag className="w-3 h-3" />
+            Tags ({selectedTags.size} selecionadas)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {availableTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={`text-xs px-2 py-1 rounded transition ${
+                  selectedTags.has(tag)
+                    ? 'bg-[#88CE11]/30 text-[#88CE11] border border-[#88CE11]/50'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Results Info and Clear Button */}
       <div className="flex items-center justify-between pt-2 border-t border-white/10">
         <p className="text-xs text-gray-400">
           {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
         </p>
-        {(searchQuery || sortBy !== 'newest' || Object.keys(dateRange).length > 0) && (
+        {(searchQuery || sortBy !== 'newest' || Object.keys(dateRange).length > 0 || selectedTags.size > 0) && (
           <button
             onClick={clearFilters}
             className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded transition"

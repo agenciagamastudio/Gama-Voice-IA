@@ -9,6 +9,9 @@ export interface TranscriptionRecord {
   timestamp: number
   duration: number
   language: string
+  isFavorite?: boolean
+  tags?: string[]
+  note?: string
 }
 
 const STORAGE_KEY = 'gama_stt_history'
@@ -116,5 +119,64 @@ export const HistoryManager = {
       oldestEntry: history[history.length - 1]?.timestamp || null,
       newestEntry: history[0]?.timestamp || null
     }
+  },
+
+  /**
+   * Marca/desmarcan uma transcrição como favorita
+   */
+  toggleFavorite(id: string): void {
+    const history = this.getHistory()
+    const record = history.find((r) => r.id === id)
+    if (record) {
+      record.isFavorite = !record.isFavorite
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+    }
+  },
+
+  /**
+   * Adiciona uma tag a uma transcrição
+   */
+  addTag(id: string, tag: string): void {
+    const history = this.getHistory()
+    const record = history.find((r) => r.id === id)
+    if (record) {
+      if (!record.tags) record.tags = []
+      if (!record.tags.includes(tag)) {
+        record.tags.push(tag)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+      }
+    }
+  },
+
+  /**
+   * Remove uma tag
+   */
+  removeTag(id: string, tag: string): void {
+    const history = this.getHistory()
+    const record = history.find((r) => r.id === id)
+    if (record && record.tags) {
+      record.tags = record.tags.filter((t) => t !== tag)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+    }
+  },
+
+  /**
+   * Adiciona uma nota
+   */
+  setNote(id: string, note: string): void {
+    const history = this.getHistory()
+    const record = history.find((r) => r.id === id)
+    if (record) {
+      record.note = note || undefined
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+    }
+  },
+
+  /**
+   * Obtém só os favoritos
+   */
+  getFavorites(): TranscriptionRecord[] {
+    const history = this.getHistory()
+    return history.filter((r) => r.isFavorite)
   }
 }

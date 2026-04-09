@@ -4,7 +4,8 @@ import {
   Download,
   Copy,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Star
 } from 'lucide-react'
 import type { TranscriptionRecord } from '../utils/history'
 import { HistoryManager } from '../utils/history'
@@ -21,6 +22,7 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
   const [filteredHistory, setFilteredHistory] = useState<TranscriptionRecord[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [stats, setStats] = useState(HistoryManager.getStats())
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +37,11 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
     HistoryManager.remove(id)
     setHistory(HistoryManager.getHistory())
     setStats(HistoryManager.getStats())
+  }
+
+  const handleToggleFavorite = (id: string) => {
+    HistoryManager.toggleFavorite(id)
+    setHistory(HistoryManager.getHistory())
   }
 
   const handleClear = () => {
@@ -70,16 +77,31 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
     <div className="w-full space-y-4 p-6 bg-white/5 border border-white/10 rounded-xl">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-xl font-black text-white">📜 Histórico STT</h2>
-          {history.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="text-sm px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition"
-            >
-              Limpar Tudo
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {history.length > 0 && (
+              <button
+                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                className={`text-sm px-3 py-1 rounded transition flex items-center gap-1 ${
+                  showOnlyFavorites
+                    ? 'bg-[#88CE11]/30 text-[#88CE11]'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <Star className="w-4 h-4" />
+                {showOnlyFavorites ? `Favoritos (${HistoryManager.getFavorites().length})` : 'Favoritos'}
+              </button>
+            )}
+            {history.length > 0 && (
+              <button
+                onClick={handleClear}
+                className="text-sm px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition"
+              >
+                Limpar Tudo
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats */}
@@ -123,7 +145,10 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
 
       {/* Search and Filter */}
       {history.length > 0 && (
-        <HistorySearch history={history} onResultsChange={setFilteredHistory} />
+        <HistorySearch
+          history={showOnlyFavorites ? HistoryManager.getFavorites() : history}
+          onResultsChange={setFilteredHistory}
+        />
       )}
 
       {/* Detailed Stats */}
@@ -165,27 +190,40 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
 
               {/* Expanded Actions */}
               {expandedId === record.id && (
-                <div className="pt-2 border-t border-white/10 flex gap-2">
-                  <button
-                    onClick={() => onSelectTranscription(record.text)}
-                    className="flex-1 text-xs bg-[#88CE11]/20 hover:bg-[#88CE11]/30 text-[#88CE11] py-1.5 rounded transition font-medium"
-                  >
-                    Usar
-                  </button>
-                  <button
-                    onClick={() => handleCopyText(record.text)}
-                    className="flex-1 text-xs bg-white/10 hover:bg-white/20 text-white py-1.5 rounded transition flex items-center justify-center gap-1"
-                  >
-                    <Copy className="w-3 h-3" />
-                    Copiar
-                  </button>
-                  <button
-                    onClick={() => handleRemove(record.id)}
-                    className="flex-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 py-1.5 rounded transition flex items-center justify-center gap-1"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Remover
-                  </button>
+                <div className="pt-2 border-t border-white/10 space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onSelectTranscription(record.text)}
+                      className="flex-1 text-xs bg-[#88CE11]/20 hover:bg-[#88CE11]/30 text-[#88CE11] py-1.5 rounded transition font-medium"
+                    >
+                      Usar
+                    </button>
+                    <button
+                      onClick={() => handleCopyText(record.text)}
+                      className="flex-1 text-xs bg-white/10 hover:bg-white/20 text-white py-1.5 rounded transition flex items-center justify-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copiar
+                    </button>
+                    <button
+                      onClick={() => handleToggleFavorite(record.id)}
+                      className={`flex-1 text-xs py-1.5 rounded transition flex items-center justify-center gap-1 ${
+                        record.isFavorite
+                          ? 'bg-yellow-500/30 text-yellow-400 hover:bg-yellow-500/40'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Star className="w-3 h-3" />
+                      {record.isFavorite ? 'Salvo' : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={() => handleRemove(record.id)}
+                      className="flex-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 py-1.5 rounded transition flex items-center justify-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Remover
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
