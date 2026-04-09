@@ -48,6 +48,9 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
+# Increase timeout for large text synthesis (client-side timeout in frontend should be increased)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 600
+
 
 # Voice registry - Kokoro Portuguese voices
 VOICES_PT_BR = {
@@ -99,8 +102,8 @@ def synthesize():
         print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}")
 
         # Validations
-        if not text or len(text) > 5000:
-            return jsonify({'error': 'Invalid text'}), 400
+        if not text or len(text) > 50000:
+            return jsonify({'error': 'Invalid text (max 50000 characters)'}), 400
         if voice not in VOICES_PT_BR:
             return jsonify({'error': 'Invalid voice'}), 400
         if not (0.5 <= speed <= 2.0):
@@ -111,8 +114,12 @@ def synthesize():
             try:
                 print(f"  → Generating with Kokoro...")
 
+                # Preserve line breaks and normalize text for Kokoro
+                # Replace multiple spaces with single space but keep line breaks
+                text_normalized = '\n'.join([line.strip() for line in text.split('\n') if line.strip()])
+
                 # Kokoro returns a generator that yields Result objects
-                result_gen = kokoro_model(text, voice=voice, speed=speed)
+                result_gen = kokoro_model(text_normalized, voice=voice, speed=speed)
 
                 # Get the first (and usually only) result
                 result = next(result_gen)

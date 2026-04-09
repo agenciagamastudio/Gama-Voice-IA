@@ -26,6 +26,10 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     setError(null)
 
     try {
+      // Use AbortController for long text synthesis (180 seconds timeout)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 180000)
+
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,8 +38,11 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
           voice: settings.voice,
           speed: settings.speed,
           engine: 'kokoro'
-        })
+        }),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -46,7 +53,15 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       const url = URL.createObjectURL(audioBlob)
       setAudioUrl(url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Tempo esgotado - texto muito longo. Tente dividir em partes.')
+        } else {
+          setError(err.message)
+        }
+      } else {
+        setError('Erro desconhecido')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -77,6 +92,9 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     setError(null)
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,8 +103,11 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
           voice: settings.voice,
           speed: settings.speed,
           engine: 'edge-tts'
-        })
+        }),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) throw new Error('Falha na prévia')
 
@@ -95,7 +116,15 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       const audio = new Audio(url)
       audio.play()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha na prévia')
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Prévia esgotou o tempo')
+        } else {
+          setError(err.message)
+        }
+      } else {
+        setError('Falha na prévia')
+      }
     } finally {
       setIsLoading(false)
     }
