@@ -13,6 +13,15 @@ from groq import Groq
 import io
 import numpy as np
 import traceback
+import threading
+
+# Audiobook processor
+from audiobook_processor import (
+    create_audiobook_task,
+    get_audiobook_status,
+    process_audiobook_queue,
+    AUDIOBOOK_QUEUE
+)
 
 # Try to load .env using python-dotenv, fallback to manual loading
 try:
@@ -184,6 +193,105 @@ def transcribe():
     except Exception as e:
         print(f"❌ Transcribe error: {e}")
         return jsonify({'error': str(e)}), 500
+
+# ============== AUDIOBOOK ENDPOINTS ==============
+
+@app.route('/api/audiobook/create', methods=['POST'])
+def create_audiobook():
+    """Cria nova tarefa de audiobook"""
+    try:
+        text = request.form.get('text', '').strip()
+        voice = request.form.get('voice', 'pm_alex')
+        speed = float(request.form.get('speed', 1.0))
+        chunk_mode = request.form.get('chunkMode', 'auto')
+
+        print(f"📚 Audiobook Request: {len(text)} chars, voice={voice}, mode={chunk_mode}")
+
+        if not text or len(text) > 500000:
+            return jsonify({'error': 'Texto inválido (máx 500k caracteres)'}), 400
+
+        if voice not in VOICES_PT_BR:
+            return jsonify({'error': 'Voz inválida'}), 400
+
+        if not (0.5 <= speed <= 2.0):
+            return jsonify({'error': 'Velocidade inválida'}), 400
+
+        # Criar tarefa
+        task_id = create_audiobook_task(text, voice, speed, chunk_mode)
+        task = AUDIOBOOK_QUEUE[task_id]
+
+        print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
+
+        # Iniciar processamento em thread
+        thread = threading.Thread(
+            target=process_audiobook_queue,
+            args=(task_id, kokoro_model),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({
+            'taskId': task_id,
+            'chunks': [chunk.to_dict() for chunk in task['chunks']],
+            'estimatedTime': task['estimated_time']
+        }), 201
+
+    except Exception as e:
+        print(f"❌ Audiobook create error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/audiobook/status/<task_id>', methods=['GET'])
+def get_audiobook_status_endpoint(task_id):
+    """Get status de processamento"""
+    status = get_audiobook_status(task_id)
+
+    if 'error' in status and status.get('error') == 'Task not found':
+        return jsonify(status), 404
+
+    return jsonify(status), 200
+
+
+@app.route('/api/audiobook/download/<task_id>', methods=['GET'])
+def download_audiobook(task_id):
+    """Download do audiobook final"""
+    task = AUDIOBOOK_QUEUE.get(task_id)
+
+    if not task:
+        return jsonify({'error': 'Tarefa não encontrada'}), 404
+
+    if task['status'] != 'completed':
+        return jsonify({'error': 'Audiobook não está pronto'}), 400
+
+    if not hasattr(task, 'final_file') or not os.path.exists(task.get('final_file', '')):
+        return jsonify({'error': 'Arquivo não encontrado'}), 404
+
+    try:
+        return send_file(
+            task['final_file'],
+            mimetype='audio/mpeg',
+            as_attachment=True,
+            download_name=f'audiobook_{task_id}.mp3'
+        )
+    except Exception as e:
+        print(f"❌ Download error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/audiobook/cancel/<task_id>', methods=['POST'])
+def cancel_audiobook(task_id):
+    """Cancela processamento de audiobook"""
+    task = AUDIOBOOK_QUEUE.get(task_id)
+
+    if not task:
+        return jsonify({'error': 'Tarefa não encontrada'}), 404
+
+    if task['status'] in ['completed', 'error', 'cancelled']:
+        return jsonify({'error': 'Tarefa não pode ser cancelada'}), 400
+
+    task['status'] = 'cancelled'
+    return jsonify({'status': 'cancelled'}), 200
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5001, debug=False)

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { Volume2, Mic, Settings } from 'lucide-react'
+import { Volume2, Mic, Settings, BookOpen } from 'lucide-react'
 import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
+import AudiobookGenerator from './components/AudiobookGenerator'
 import SettingsModal from './components/SettingsModal'
 import { useAPI } from './hooks/useAPI'
 import type { Voice, TTSSettings } from './types'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'tts' | 'stt'>('tts')
+  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook'>('tts')
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
   const [settings, setSettings] = useState<TTSSettings>({
@@ -91,10 +92,10 @@ export default function App() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-white/10">
+        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
           <button
             onClick={() => setActiveTab('tts')}
-            className={`px-6 py-3 font-medium transition flex items-center gap-2 ${
+            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'tts'
                 ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
                 : 'text-gray-400 hover:text-white'
@@ -104,13 +105,23 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('stt')}
-            className={`px-6 py-3 font-medium transition flex items-center gap-2 ${
+            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'stt'
                 ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <Mic className="w-5 h-5" /> Fala para Texto
+          </button>
+          <button
+            onClick={() => setActiveTab('audiobook')}
+            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'audiobook'
+                ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" /> Audiobook
           </button>
         </div>
 
@@ -121,6 +132,10 @@ export default function App() {
 
         {activeTab === 'stt' && (
           <STTComponent />
+        )}
+
+        {activeTab === 'audiobook' && (
+          <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />
         )}
       </main>
 
