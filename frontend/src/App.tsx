@@ -11,7 +11,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
   const [settings, setSettings] = useState<TTSSettings>({
-    voice: 'antonio',
+    voice: 'pm_alex',
     speed: 1.0,
     saveHistory: false,
     analyticsEnabled: false

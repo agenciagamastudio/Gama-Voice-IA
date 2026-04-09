@@ -102,22 +102,22 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   }
 
   const handleReset = () => {
-    onSettingsChange({ voice: 'antonio', speed: 1.0 })
+    onSettingsChange({ voice: 'pm_alex', speed: 1.0 })
   }
 
   return (
     <div className="space-y-6">
       {/* Text Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Text to Synthesize</label>
+        <label className="text-sm font-medium text-white">Texto para Sintetizar</label>
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Enter text to convert to speech..."
+          onChange={(e) => setText(e.target.value.slice(0, 50000))}
+          placeholder="Digite o texto para converter em fala..."
           className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#88CE11]/50 focus:ring-2 focus:ring-[#88CE11]/20"
         />
         <div className="flex justify-between text-xs text-gray-500">
-          <span>{text.length} / 5000</span>
+          <span>{text.length} / 50000</span>
           {text.length > 0 && (
             <button
               onClick={handleCopy}
@@ -134,22 +134,30 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Voice</label>
+            <label className="text-sm font-medium text-white">Voz</label>
             <select
               value={settings.voice}
               onChange={(e) => onSettingsChange({ voice: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#88CE11]/50"
             >
-              {['antonio', 'francisca', 'brenda', 'paulo', 'maria'].map((voice) => (
-                <option key={voice} value={voice}>
-                  {voice.charAt(0).toUpperCase() + voice.slice(1)}
-                </option>
-              ))}
+              {voices.length > 0 ? (
+                voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name || voice.id}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="pm_alex">Alex (Masculino)</option>
+                  <option value="pm_santa">Santa (Masculino)</option>
+                  <option value="pf_dora">Dora (Feminino)</option>
+                </>
+              )}
             </select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Speed ({settings.speed.toFixed(1)}x)</label>
+            <label className="text-sm font-medium text-white">Velocidade ({settings.speed.toFixed(1)}x)</label>
             <input
               type="range"
               min="0.5"
@@ -171,13 +179,13 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
             disabled={isLoading || !text.trim()}
             className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Preview Voice
+            Prévia
           </button>
           <button
             onClick={handleReset}
             className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition"
           >
-            Reset to Defaults
+            Restaurar Padrões
           </button>
         </div>
       </div>
@@ -198,12 +206,12 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
         {isLoading ? (
           <>
             <Loader className="w-5 h-5 animate-spin" />
-            Synthesizing...
+            Sintetizando...
           </>
         ) : (
           <>
             <Volume2 className="w-5 h-5" />
-            Synthesize
+            Sintetizar
           </>
         )}
       </button>
