@@ -23,6 +23,10 @@ from audiobook_processor import (
     AUDIOBOOK_QUEUE
 )
 
+# Authentication
+from auth import AuthDB, require_auth
+import time
+
 # Try to load .env using python-dotenv, fallback to manual loading
 try:
     from dotenv import load_dotenv
@@ -68,6 +72,9 @@ VOICES_PT_BR = {
     "pf_dora": {"id": "pf_dora", "gender": "female", "description": "Female voice (Portuguese)"}
 }
 
+# Initialize Auth DB
+AuthDB.init_db()
+
 # Initialize Kokoro
 kokoro_model = None
 try:
@@ -82,6 +89,87 @@ except Exception as e:
 def health():
     tts_status = "kokoro" if kokoro_model else "fallback"
     return jsonify({'status': 'ok', 'service': 'GAMA Voz', 'tts': tts_status}), 200
+
+# ============== AUTHENTICATION ENDPOINTS ==============
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Registra novo usuário"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        name = data.get('name', '')
+
+        if not email or not password or len(password) < 6:
+            return jsonify({'error': 'Email e senha (mín 6 caracteres) são obrigatórios'}), 400
+
+        result = AuthDB.register_user(email, password, name)
+
+        if not result['success']:
+            return jsonify({'error': result['error']}), 400
+
+        return jsonify({
+            'message': 'Usuário registrado com sucesso',
+            'user_id': result['user_id'],
+            'email': email
+        }), 201
+
+    except Exception as e:
+        print(f"❌ Register error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Faz login e retorna token JWT"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+
+        if not email or not password:
+            return jsonify({'error': 'Email e senha são obrigatórios'}), 400
+
+        user = AuthDB.get_user(email)
+
+        if not user or not AuthDB.verify_password(password, user['password_hash']):
+            return jsonify({'error': 'Email ou senha incorretos'}), 401
+
+        token = AuthDB.create_token(user['id'], user['email'])
+
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user['id'],
+                'email': user['email'],
+                'name': user['name']
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Login error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/me', methods=['GET'])
+@require_auth
+def get_user_info():
+    """Retorna informações do usuário autenticado"""
+    try:
+        user = AuthDB.get_user(request.user_email)
+
+        return jsonify({
+            'user': {
+                'id': user['id'],
+                'email': user['email'],
+                'name': user['name']
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/config', methods=['GET'])
 def config():
@@ -197,6 +285,7 @@ def transcribe():
 # ============== AUDIOBOOK ENDPOINTS ==============
 
 @app.route('/api/audiobook/create', methods=['POST'])
+@require_auth
 def create_audiobook():
     """Cria nova tarefa de audiobook"""
     try:
@@ -252,6 +341,7 @@ def create_audiobook():
 
 
 @app.route('/api/audiobook/status/<task_id>', methods=['GET'])
+@require_auth
 def get_audiobook_status_endpoint(task_id):
     """Get status de processamento"""
     status = get_audiobook_status(task_id)
@@ -263,6 +353,7 @@ def get_audiobook_status_endpoint(task_id):
 
 
 @app.route('/api/audiobook/download/<task_id>', methods=['GET'])
+@require_auth
 def download_audiobook(task_id):
     """Download do audiobook final"""
     task = AUDIOBOOK_QUEUE.get(task_id)
@@ -289,6 +380,7 @@ def download_audiobook(task_id):
 
 
 @app.route('/api/audiobook/cancel/<task_id>', methods=['POST'])
+@require_auth
 def cancel_audiobook(task_id):
     """Cancela processamento de audiobook"""
     task = AUDIOBOOK_QUEUE.get(task_id)

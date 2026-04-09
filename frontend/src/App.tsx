@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Volume2, Mic, Settings, BookOpen } from 'lucide-react'
+import { Volume2, Mic, Settings, BookOpen, LogOut } from 'lucide-react'
+import { Login } from './components/Login'
 import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
 import AudiobookGenerator from './components/AudiobookGenerator'
@@ -8,6 +9,8 @@ import { useAPI } from './hooks/useAPI'
 import type { Voice, TTSSettings } from './types'
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook'>('tts')
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
@@ -22,6 +25,19 @@ export default function App() {
   const { fetchVoices, checkHealth } = useAPI()
 
   useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem('gama_voz_token')
+    const userData = localStorage.getItem('gama_voz_user')
+
+    if (token && userData) {
+      setIsAuthenticated(true)
+      setUser(JSON.parse(userData))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
     const init = async () => {
       try {
         // Load voices
@@ -43,12 +59,29 @@ export default function App() {
     }
 
     init()
-  }, [])
+  }, [isAuthenticated])
+
+  const handleLoginSuccess = (token: string, userData: any) => {
+    setIsAuthenticated(true)
+    setUser(userData)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('gama_voz_token')
+    localStorage.removeItem('gama_voz_user')
+    setIsAuthenticated(false)
+    setUser(null)
+  }
 
   const handleSettingChange = (newSettings: Partial<TTSSettings>) => {
     const updated = { ...settings, ...newSettings }
     setSettings(updated)
     localStorage.setItem('gama_tts_settings', JSON.stringify(updated))
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />
   }
 
   return (
@@ -65,13 +98,25 @@ export default function App() {
               <span className="text-xs text-gray-500 ml-2">v{health.version}</span>
             )}
           </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2 hover:bg-white/10 rounded-lg transition"
-            title="Configurações"
-          >
-            <Settings className="w-6 h-6 text-white" />
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-400">
+              👤 {user?.name || user?.email}
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 hover:bg-white/10 rounded-lg transition"
+              title="Configurações"
+            >
+              <Settings className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-red-500/20 rounded-lg transition text-red-400 hover:text-red-300"
+              title="Sair"
+            >
+              <LogOut className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </header>
 
