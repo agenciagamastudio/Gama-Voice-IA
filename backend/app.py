@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-GAMA Voz — Backend com Kokoro TTS
-TTS: Kokoro (humanizada)
+GAMA Voz — Backend com Kokoro TTS (Humanizado)
+TTS: Kokoro (natural, humanizada)
 STT: Groq Whisper Turbo
 """
 
 import os
+import sys
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from groq import Groq
 import io
+import numpy as np
+import traceback
+
 
 # Load API key from environment only
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -17,26 +21,28 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
-# Voice registry (5 PT-BR voices with Kokoro)
+
+# Voice registry - Kokoro Portuguese voices
 VOICES_PT_BR = {
-    "antonio": {"id": "pt-BR-antonio", "gender": "male", "description": "Male voice"},
-    "francisca": {"id": "pt-BR-francisca", "gender": "female", "description": "Female voice"},
-    "brenda": {"id": "pt-BR-brenda", "gender": "female", "description": "Female voice"},
-    "paulo": {"id": "pt-BR-paulo", "gender": "male", "description": "Male voice"},
-    "maria": {"id": "pt-BR-maria", "gender": "female", "description": "Female voice"}
+    "pm_alex": {"id": "pm_alex", "gender": "male", "description": "Male voice (Portuguese)"},
+    "pm_santa": {"id": "pm_santa", "gender": "male", "description": "Male voice (Portuguese)"},
+    "pf_dora": {"id": "pf_dora", "gender": "female", "description": "Female voice (Portuguese)"}
 }
 
-# Kokoro model
+# Initialize Kokoro
+kokoro_model = None
 try:
-    from kokoro import KokoroTTS
-    kokoro = KokoroTTS()
+    from kokoro import KPipeline
+    kokoro_model = KPipeline(lang_code='p')  # 'p' para português
+    print("✅ Kokoro TTS loaded successfully")
 except Exception as e:
-    print(f"Kokoro init warning: {e}")
-    kokoro = None
+    print(f"❌ Kokoro init failed: {e}")
+    traceback.print_exc()
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'ok', 'service': 'GAMA Voz'}), 200
+    tts_status = "kokoro" if kokoro_model else "fallback"
+    return jsonify({'status': 'ok', 'service': 'GAMA Voz', 'tts': tts_status}), 200
 
 @app.route('/api/config', methods=['GET'])
 def config():
@@ -52,7 +58,7 @@ def get_voices():
     return jsonify({
         'voices': list(VOICES_PT_BR.keys()),
         'details': VOICES_PT_BR,
-        'default': 'antonio'
+        'default': 'pm_alex'
     }), 200
 
 @app.route('/api/tts/synthesize', methods=['POST'])
@@ -60,8 +66,10 @@ def synthesize():
     try:
         data = request.json or {}
         text = data.get('text', '').strip()
-        voice = data.get('voice', 'antonio')
+        voice = data.get('voice', 'pm_alex')
         speed = float(data.get('speed', 1.0))
+
+        print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}")
 
         # Validations
         if not text or len(text) > 5000:
@@ -72,26 +80,50 @@ def synthesize():
             return jsonify({'error': 'Invalid speed'}), 400
 
         # TTS com Kokoro
-        if kokoro:
+        if kokoro_model:
             try:
-                # Kokoro synthesize returns (audio_data, sample_rate)
-                audio_data, sr = kokoro.synthesize(text, voice=voice, speed=speed, lang='pt')
+                print(f"  → Generating with Kokoro...")
 
-                # Convert to WAV bytes
+                # Kokoro returns a generator that yields Result objects
+                result_gen = kokoro_model(text, voice=voice, speed=speed)
+
+                # Get the first (and usually only) result
+                result = next(result_gen)
+
+                # Extract audio samples (tensor) from result
+                samples = result.audio
+
+                # Kokoro sample rate is 24000 Hz
+                sample_rate = 24000
+
+                # Convert to WAV format
                 import soundfile as sf
-                import numpy as np
+                audio_buffer = io.BytesIO()
 
-                wav_buffer = io.BytesIO()
-                sf.write(wav_buffer, audio_data, sr, format='WAV')
-                wav_buffer.seek(0)
+                # Convert torch tensor to numpy array if necessary
+                if hasattr(samples, 'numpy'):
+                    samples = samples.numpy()  # torch.Tensor → numpy
+                elif not isinstance(samples, np.ndarray):
+                    samples = np.array(samples, dtype=np.float32)
 
-                return send_file(wav_buffer, mimetype='audio/wav'), 200
+                # Write WAV
+                sf.write(audio_buffer, samples, sample_rate, format='WAV')
+                audio_buffer.seek(0)
+
+                print(f"  ✅ Audio ready: {audio_buffer.getbuffer().nbytes} bytes")
+                return send_file(audio_buffer, mimetype='audio/wav'), 200
+
             except Exception as e:
-                return jsonify({'error': f'Synthesis failed: {str(e)}'}), 500
+                print(f"  ❌ Kokoro synthesis error: {e}")
+                traceback.print_exc()
+                return jsonify({'error': f'Kokoro failed: {str(e)}'}), 500
         else:
-            return jsonify({'error': 'TTS not available'}), 503
+            print(f"  ❌ Kokoro not loaded")
+            return jsonify({'error': 'Kokoro TTS not available'}), 503
 
     except Exception as e:
+        print(f"❌ Synthesize error: {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stt/transcribe', methods=['POST'])
@@ -103,6 +135,9 @@ def transcribe():
         audio = request.files['audio']
         lang = request.form.get('language', 'pt')
 
+        if not GROQ_API_KEY:
+            return jsonify({'error': 'STT not configured'}), 503
+
         groq = Groq(api_key=GROQ_API_KEY)
         result = groq.audio.transcriptions.create(
             file=(audio.filename, audio.stream, audio.content_type),
@@ -113,6 +148,7 @@ def transcribe():
         return jsonify({'text': result.text, 'language': lang}), 200
 
     except Exception as e:
+        print(f"❌ Transcribe error: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
