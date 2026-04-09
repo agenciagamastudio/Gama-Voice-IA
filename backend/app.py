@@ -14,8 +14,35 @@ import io
 import numpy as np
 import traceback
 
+# Try to load .env using python-dotenv, fallback to manual loading
+try:
+    from dotenv import load_dotenv
+    # Load from parent directory (.env is in GAMA_VOZ/, backend is in GAMA_VOZ/backend/)
+    env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+except ImportError:
+    # Fallback: manual loading if python-dotenv not available
+    env_paths = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'),
+        '.env'
+    ]
+    for env_file in env_paths:
+        if os.path.exists(env_file):
+            try:
+                with open(env_file) as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, value = line.split('=', 1)
+                            os.environ[key] = value
+                print(f"✅ Loaded .env from {env_file}")
+                break
+            except Exception as e:
+                print(f"❌ Error loading {env_file}: {e}")
 
-# Load API key from environment only
+# Load API key from environment
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
 app = Flask(__name__)
