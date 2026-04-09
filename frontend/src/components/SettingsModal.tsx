@@ -20,7 +20,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
       <div className="bg-[#272727] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-black text-white">Settings</h2>
+          <h2 className="text-2xl font-black text-white">Configurações</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition"
@@ -39,7 +39,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Volume2 className="w-5 h-5" /> Voice
+            <Volume2 className="w-5 h-5" /> Voz
           </button>
           <button
             onClick={() => setActiveTab('input')}
@@ -49,7 +49,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <AlertCircle className="w-5 h-5" /> Input
+            <AlertCircle className="w-5 h-5" /> Entrada
           </button>
           <button
             onClick={() => setActiveTab('privacy')}
@@ -59,7 +59,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Shield className="w-5 h-5" /> Privacy
+            <Shield className="w-5 h-5" /> Privacidade
           </button>
           <button
             onClick={() => setActiveTab('advanced')}
@@ -69,7 +69,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Settings className="w-5 h-5" /> Advanced
+            <Settings className="w-5 h-5" /> Avançado
           </button>
         </div>
 
@@ -78,22 +78,26 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
           {activeTab === 'voice' && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-white block mb-2">Preferred Voice</label>
+                <label className="text-sm font-medium text-white block mb-2">Voz Preferida</label>
                 <select
                   value={settings.voice}
                   onChange={(e) => onSettingsChange({ voice: e.target.value })}
                   className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#88CE11]/50"
                 >
-                  {['antonio', 'francisca', 'brenda', 'paulo', 'maria'].map((voice) => (
-                    <option key={voice} value={voice}>
-                      {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                  {[
+                    { id: 'pm_alex', name: 'Alex (Masculino)' },
+                    { id: 'pm_santa', name: 'Santa (Masculino)' },
+                    { id: 'pf_dora', name: 'Dora (Feminino)' }
+                  ].map((voice) => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-white block mb-2">Speed ({settings.speed.toFixed(1)}x)</label>
+                <label className="text-sm font-medium text-white block mb-2">Velocidade ({settings.speed.toFixed(1)}x)</label>
                 <input
                   type="range"
                   min="0.5"
@@ -116,7 +120,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                   onChange={(e) => onSettingsChange({ saveHistory: e.target.checked })}
                   className="w-5 h-5 rounded"
                 />
-                <span className="text-white">Save Audio History</span>
+                <span className="text-white">Salvar Histórico de Áudio</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -126,22 +130,22 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
                   onChange={(e) => onSettingsChange({ analyticsEnabled: e.target.checked })}
                   className="w-5 h-5 rounded"
                 />
-                <span className="text-white">Send Usage Analytics</span>
+                <span className="text-white">Enviar Análise de Uso</span>
               </label>
 
               <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-300 text-sm">
-                🔒 Your audio is processed locally. Nothing is uploaded to our servers.
+                🔒 Seu áudio é processado localmente. Nada é enviado para nossos servidores.
               </div>
             </div>
           )}
 
           {activeTab === 'input' && (
             <div className="space-y-4 text-gray-300">
-              <p>Upload or record audio in the main interface.</p>
+              <p>Faça upload ou grave áudio na interface principal.</p>
               <ul className="list-disc list-inside space-y-2 text-sm">
-                <li>Supported formats: WAV, MP3, M4A</li>
-                <li>Maximum file size: 100MB</li>
-                <li>Languages: Portuguese (Brazilian)</li>
+                <li>Formatos suportados: WAV, MP3, M4A</li>
+                <li>Tamanho máximo do arquivo: 100MB</li>
+                <li>Idiomas: Português (Brasileiro)</li>
               </ul>
             </div>
           )}
@@ -149,11 +153,11 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
           {activeTab === 'advanced' && (
             <div className="space-y-4 text-gray-300 text-sm">
               <div>
-                <p className="font-medium text-white mb-1">TTS Engine</p>
-                <p>Kokoro 82M (Primary) + Edge-TTS (Fallback)</p>
+                <p className="font-medium text-white mb-1">Motor TTS</p>
+                <p>Kokoro 82M (Principal) + Edge-TTS (Alternativa)</p>
               </div>
               <div>
-                <p className="font-medium text-white mb-1">STT Engine</p>
+                <p className="font-medium text-white mb-1">Motor STT</p>
                 <p>Groq Whisper v3 Turbo</p>
               </div>
             </div>
@@ -166,7 +170,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSettingsCha
             onClick={onClose}
             className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition"
           >
-            Close
+            Fechar
           </button>
         </div>
       </div>
