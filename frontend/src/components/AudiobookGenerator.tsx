@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Upload, Play, Pause, Download, X, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
+import { useAuthAPI } from '../hooks/useAuthAPI'
 import type { TTSSettings } from '../types'
 
 interface Chunk {
@@ -26,6 +27,7 @@ interface AudiobookStatus {
 }
 
 export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSettings, 'voice' | 'speed'> }) {
+  const { fetchWithAuth, getToken } = useAuthAPI()
   const [text, setText] = useState('')
   const [chunkMode, setChunkMode] = useState<'auto' | 'paragraph'>('auto')
   const [isCreating, setIsCreating] = useState(false)
@@ -42,7 +44,10 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/audiobook/status/${currentTask.taskId}`)
+        const token = getToken()
+        const response = await fetch(`${API_BASE_URL}/api/audiobook/status/${currentTask.taskId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
         const statusData: AudiobookStatus = await response.json()
         setStatus(statusData)
 
@@ -82,8 +87,10 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
       formData.append('speed', settings.speed.toString())
       formData.append('chunkMode', chunkMode)
 
+      const token = getToken()
       const response = await fetch(`${API_BASE_URL}/api/audiobook/create`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       })
 
@@ -112,8 +119,10 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
     if (!currentTask) return
 
     try {
+      const token = getToken()
       const response = await fetch(`${API_BASE_URL}/api/audiobook/cancel/${currentTask.taskId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
       })
 
       if (response.ok) {
@@ -130,7 +139,10 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
     if (!status?.downloadUrl) return
 
     try {
-      const response = await fetch(status.downloadUrl)
+      const token = getToken()
+      const response = await fetch(status.downloadUrl, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
