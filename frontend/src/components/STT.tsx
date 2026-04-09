@@ -1,12 +1,16 @@
 import React, { useState, useRef } from 'react'
-import { Mic, Copy, Download, Trash2, Loader } from 'lucide-react'
+import { Mic, Copy, Download, Trash2, Loader, Clock } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
+import { HistoryManager } from '../utils/history'
+import HistoryPanel from './HistoryPanel'
 
 export default function STTComponent() {
   const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
@@ -27,6 +31,7 @@ export default function STTComponent() {
 
       mediaRecorder.start()
       setIsRecording(true)
+      setRecordingStartTime(Date.now())
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Microphone access denied')
@@ -65,10 +70,15 @@ export default function STTComponent() {
 
       const data = await response.json()
       setTranscript(data.text)
+
+      // Salvar no histórico
+      const duration = recordingStartTime ? Date.now() - recordingStartTime : 0
+      HistoryManager.addTranscription(data.text, duration, 'pt')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
+      setRecordingStartTime(null)
     }
   }
 
@@ -94,10 +104,28 @@ export default function STTComponent() {
     audioChunksRef.current = []
   }
 
+  const handleSelectFromHistory = (text: string) => {
+    setTranscript(text)
+    setHistoryOpen(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* Recording Controls */}
       <div className="space-y-4">
+        {/* História Button */}
+        <button
+          onClick={() => setHistoryOpen(!historyOpen)}
+          className="w-full py-2 rounded-xl font-medium transition flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white"
+        >
+          <Clock className="w-5 h-5" />
+          {historyOpen ? 'Fechar Histórico' : 'Ver Histórico'}
+        </button>
+
+        {/* History Panel */}
+        {historyOpen && (
+          <HistoryPanel isOpen={historyOpen} onSelectTranscription={handleSelectFromHistory} />
+        )}
         <button
           onClick={isRecording ? handleStopRecording : handleStartRecording}
           disabled={isLoading}
