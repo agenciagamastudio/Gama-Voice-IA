@@ -65,13 +65,13 @@ export default function HistoryStats({ history }: HistoryStatsProps) {
   }
 
   const topHours = Object.entries(stats.byHour)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 3)
     .map(([hour, count]) => `${hour}h (${count})`)
     .join(' • ')
 
   const topDays = Object.entries(stats.byDay)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 3)
     .map(([day, count]) => `${day} (${count})`)
     .join(' • ')
