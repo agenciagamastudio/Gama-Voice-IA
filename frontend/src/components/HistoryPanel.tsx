@@ -9,6 +9,7 @@ import {
 import type { TranscriptionRecord } from '../utils/history'
 import { HistoryManager } from '../utils/history'
 import HistorySearch from './HistorySearch'
+import HistoryStats from './HistoryStats'
 
 interface HistoryPanelProps {
   isOpen: boolean
@@ -124,6 +125,9 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
       {history.length > 0 && (
         <HistorySearch history={history} onResultsChange={setFilteredHistory} />
       )}
+
+      {/* Detailed Stats */}
+      {history.length > 0 && <HistoryStats history={history} />}
 
       {/* History List */}
       <div className="space-y-2 max-h-96 overflow-y-auto">
