@@ -211,31 +211,35 @@ def synthesize():
             try:
                 print(f"  → Generating with Kokoro...")
 
-                # Preserve line breaks and normalize text for Kokoro
-                # Replace multiple spaces with single space but keep line breaks
-                text_normalized = '\n'.join([line.strip() for line in text.split('\n') if line.strip()])
+                # Preprocess: replace \n with ". " so Kokoro gets one continuous
+                # string — avoids N sequential model calls for N-line texts
+                import soundfile as sf, re
+                lines = [l.strip() for l in text.split('\n') if l.strip()]
+                joined = []
+                for line in lines:
+                    if joined and not re.search(r'[.!?:;,\-]$', joined[-1]):
+                        joined.append('. ')
+                    elif joined:
+                        joined.append(' ')
+                    joined.append(line)
+                text_normalized = ''.join(joined)
 
-                # Kokoro returns a generator that yields Result objects
-                result_gen = kokoro_model(text_normalized, voice=voice, speed=speed)
+                all_samples = []
+                for result in kokoro_model(text_normalized, voice=voice, speed=speed):
+                    seg = result.audio
+                    if hasattr(seg, 'numpy'):
+                        seg = seg.numpy()
+                    elif not isinstance(seg, np.ndarray):
+                        seg = np.array(seg, dtype=np.float32)
+                    all_samples.append(seg)
 
-                # Get the first (and usually only) result
-                result = next(result_gen)
-
-                # Extract audio samples (tensor) from result
-                samples = result.audio
+                samples = np.concatenate(all_samples) if all_samples else np.zeros(1, dtype=np.float32)
 
                 # Kokoro sample rate is 24000 Hz
                 sample_rate = 24000
 
                 # Convert to WAV format
-                import soundfile as sf
                 audio_buffer = io.BytesIO()
-
-                # Convert torch tensor to numpy array if necessary
-                if hasattr(samples, 'numpy'):
-                    samples = samples.numpy()  # torch.Tensor → numpy
-                elif not isinstance(samples, np.ndarray):
-                    samples = np.array(samples, dtype=np.float32)
 
                 # Write WAV
                 sf.write(audio_buffer, samples, sample_rate, format='WAV')

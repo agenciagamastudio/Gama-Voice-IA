@@ -43,7 +43,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     setError(null)
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 180000)
+      const timeoutId = setTimeout(() => controller.abort(), 600000)
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
