@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Volume2, Copy, Download, Loader } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
 import type { Voice, TTSSettings } from '../types'
+import Toast from './Toast'
 
 interface Props {
   voices: Voice[]
@@ -27,7 +28,14 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const [isLoading, setIsLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastVisible(true)
+    setTimeout(() => setToastVisible(false), 2200)
+  }
 
   const handleSynthesize = async () => {
     if (!text.trim()) { setError('Texto não pode estar vazio'); return }
@@ -63,8 +71,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      showToast('Texto copiado!')
     } catch { setError('Falha ao copiar') }
   }
 
@@ -74,6 +81,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     a.href = audioUrl
     a.download = `synthesis_${Date.now()}.mp3`
     a.click()
+    showToast('Áudio baixado!')
   }
 
   const handlePreview = async () => {
@@ -148,23 +156,40 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
             e.target.style.boxShadow = 'none'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-          <span>{text.length} / 50000</span>
-          {text.length > 0 && (
-            <button
-              onClick={handleCopy}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--color-primary)', fontFamily: 'var(--font-main)',
-                fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#a3d500')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-primary)')}
-            >
-              <Copy style={{ width: '12px', height: '12px' }} />
-              {copied ? 'Copiado!' : 'Copiar'}
-            </button>
-          )}
+        <div style={{ marginTop: '6px' }}>
+          {/* Progress bar */}
+          <div style={{ height: '2px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '999px',
+              background: text.length > 45000 ? 'var(--color-error)' : 'var(--color-primary)',
+              width: `${Math.min((text.length / 50000) * 100, 100)}%`,
+              transition: 'width 80ms ease, background 300ms ease',
+            }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
+            <span style={{
+              fontSize: '11px',
+              color: text.length > 45000 ? 'var(--color-error)' : 'var(--color-text-muted)',
+              transition: 'color 300ms',
+            }}>
+              {text.length.toLocaleString('pt-BR')} / 50.000
+            </span>
+            {text.length > 0 && (
+              <button
+                onClick={handleCopy}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--color-primary)', fontFamily: 'var(--font-main)',
+                  fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#a3d500')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-primary)')}
+              >
+                <Copy style={{ width: '11px', height: '11px' }} />
+                Copiar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -322,6 +347,8 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
           </button>
         </div>
       )}
+
+      <Toast message={toastMsg} visible={toastVisible} />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

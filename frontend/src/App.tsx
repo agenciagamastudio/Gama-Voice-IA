@@ -219,7 +219,7 @@ export default function App() {
           </div>
 
           {/* Tab Content */}
-          <div className="fade-up">
+          <div key={activeTab} style={{ animation: 'tabEnter 220ms ease both' }}>
             {activeTab === 'tts' && (
               <div className="glass-card" style={{ padding: '32px' }}>
                 <TTSComponent voices={voices} settings={settings} onSettingsChange={handleSettingChange} />
@@ -236,6 +236,12 @@ export default function App() {
               </div>
             )}
           </div>
+          <style>{`
+            @keyframes tabEnter {
+              from { opacity: 0; transform: translateY(10px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </main>
       </div>
 

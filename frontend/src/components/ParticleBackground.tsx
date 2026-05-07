@@ -17,6 +17,8 @@ export default function ParticleBackground() {
   const animRef = useRef<number>(0)
   const particlesRef = useRef<Particle[]>([])
   const mouseRef = useRef({ x: -9999, y: -9999 })
+  const volumeRef = useRef(0)
+  const volumeSmoothedRef = useRef(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -29,7 +31,7 @@ export default function ParticleBackground() {
     const MOUSE_DIST = 180     // mouse ↔ particle connection
     const REPEL_DIST = 100     // push radius
     const REPEL_FORCE = 0.06
-    const SPEED = 0.38
+    const SPEED = 0.28
 
     const resize = () => {
       canvas.width = window.innerWidth
@@ -54,9 +56,17 @@ export default function ParticleBackground() {
     const onMouseLeave = () => {
       mouseRef.current = { x: -9999, y: -9999 }
     }
+    const onVolume = (e: Event) => {
+      volumeRef.current = (e as CustomEvent).detail.volume
+    }
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Smooth volume signal to avoid jitter
+      volumeSmoothedRef.current = volumeSmoothedRef.current * 0.75 + volumeRef.current * 0.25
+      // Floor 0.08 = idle "level 1"; voice scales up to ~0.4 = "level 4"
+      const ri = Math.max(0.08, volumeSmoothedRef.current * 3.5)
 
       const ps = particlesRef.current
       const mx = mouseRef.current.x
@@ -75,15 +85,27 @@ export default function ParticleBackground() {
           p.vy += (mdy / mdist) * force
         }
 
-        // Dampen velocity so it doesn't fly off
-        p.vx *= 0.995
-        p.vy *= 0.995
+        // Voice energy injection
+        if (ri > 0) {
+          p.vx += (Math.random() - 0.5) * 2.2 * ri
+          p.vy += (Math.random() - 0.5) * 2.2 * ri
+          const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
+          const maxSpd = ri * 12
+          if (spd > maxSpd) {
+            p.vx = (p.vx / spd) * maxSpd
+            p.vy = (p.vy / spd) * maxSpd
+          }
+        }
+
+        // Dampen — mais forte no idle para manter quase paradas
+        p.vx *= ri > 0.1 ? 0.97 : 0.92
+        p.vy *= ri > 0.1 ? 0.97 : 0.92
 
         // Enforce min speed
         const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
         if (speed < 0.05) {
-          p.vx += (Math.random() - 0.5) * 0.05
-          p.vy += (Math.random() - 0.5) * 0.05
+          p.vx += (Math.random() - 0.5) * 0.08
+          p.vy += (Math.random() - 0.5) * 0.08
         }
 
         // Move
@@ -164,12 +186,14 @@ export default function ParticleBackground() {
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseleave', onMouseLeave)
     window.addEventListener('resize', () => { resize(); init() })
+    window.addEventListener('gama:volume', onVolume)
 
     return () => {
       cancelAnimationFrame(animRef.current)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseleave', onMouseLeave)
       window.removeEventListener('resize', resize)
+      window.removeEventListener('gama:volume', onVolume)
     }
   }, [])
 

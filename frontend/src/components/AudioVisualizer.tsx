@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 
+const R = 136, G = 206, B = 17
+
 interface AudioVisualizerProps {
   isRecording: boolean
   audioStream?: MediaStream
@@ -7,254 +9,187 @@ interface AudioVisualizerProps {
 }
 
 export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
-  isRecording,
-  audioStream,
-  onToggleRecording
+  isRecording, audioStream, onToggleRecording,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animRef = useRef<number>(0)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const dataArrayRef = useRef<Uint8Array | null>(null)
-  const oscillatorDataRef = useRef<number[]>([])
-  const animationFrameRef = useRef<number | null>(null)
-  const audioContextRef = useRef<(AudioContext | webkitAudioContext) | null>(null)
+  const smoothedRef = useRef<number[]>([])
+  const audioCtxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
 
   useEffect(() => {
-    if (!isRecording || !audioStream || !canvasRef.current) {
-      // Parar gravação - limpar tudo
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
+
+    cancelAnimationFrame(animRef.current)
+
+    // Disconnect previous audio
+    try { sourceRef.current?.disconnect() } catch {}
+    sourceRef.current = null
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try { audioCtxRef.current.close() } catch {}
+    }
+    audioCtxRef.current = null
+    analyserRef.current = null
+
+    const cx = canvas.width / 2
+    const cy = canvas.height / 2
+
+    if (!isRecording || !audioStream) {
+      // ── IDLE: breathing animation ──────────────────────────────────────
+      const drawIdle = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        const t = Date.now() / 1000
+        const breath = Math.sin(t * 1.1) * 0.5 + 0.5 // 0→1 ~0.55Hz
+
+        // Outer pulsing ring
+        ctx.beginPath()
+        ctx.arc(cx, cy, 92 + breath * 8, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(255,255,255,${0.04 + breath * 0.06})`
+        ctx.lineWidth = 1
+        ctx.stroke()
+
+        // Main ring
+        ctx.beginPath()
+        ctx.arc(cx, cy, 76, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(255,255,255,${0.11 + breath * 0.05})`
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+
+        // Center fill
+        ctx.beginPath()
+        ctx.arc(cx, cy, 62, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${0.03 + breath * 0.03})`
+        ctx.fill()
+
+        // Mic icon
+        ctx.font = '38px Arial'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.globalAlpha = 0.32 + breath * 0.18
+        ctx.fillStyle = '#fff'
+        ctx.fillText('🎙️', cx, cy + 1)
+        ctx.globalAlpha = 1
+
+        animRef.current = requestAnimationFrame(drawIdle)
       }
-
-      // Desconectar source
-      if (sourceRef.current) {
-        try {
-          sourceRef.current.disconnect()
-        } catch (err) {}
-        sourceRef.current = null
-      }
-
-      // Fechar AudioContext
-      if (audioContextRef.current) {
-        try {
-          if (audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close()
-          }
-        } catch (err) {}
-        audioContextRef.current = null
-      }
-
-      analyserRef.current = null
-      dataArrayRef.current = null
-
-      return
+      animRef.current = requestAnimationFrame(drawIdle)
+      return () => cancelAnimationFrame(animRef.current)
     }
 
-    // Começar gravação - criar novo AudioContext
+    // ── RECORDING: discrete radial bars ───────────────────────────────────
     try {
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext
+      audioCtxRef.current = new AudioCtx()
+      const ac = audioCtxRef.current as AudioContext
+      if (ac.state === 'suspended') ac.resume().catch(() => {})
 
-      // SEMPRE criar novo AudioContext (não reutilizar)
-      audioContextRef.current = new AudioContextClass()
-      const audioContext = audioContextRef.current as any
-
-      if (audioContext.state === 'suspended') {
-        audioContext.resume().catch(() => {})
-      }
-
-      // Criar source
-      try {
-        sourceRef.current = audioContext.createMediaStreamSource(audioStream)
-      } catch (err) {
-        console.error('Erro ao criar source:', err)
-        return
-      }
-
-      const analyser = audioContext.createAnalyser()
-      analyser.fftSize = 512
-      analyser.smoothingTimeConstant = 0.85
-
+      sourceRef.current = ac.createMediaStreamSource(audioStream)
+      const analyser = ac.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.82
       sourceRef.current.connect(analyser)
-
       analyserRef.current = analyser
-      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
-      oscillatorDataRef.current = new Array(analyser.frequencyBinCount).fill(0)
 
-      const canvas = canvasRef.current
-      if (!canvas) return
+      const bufLen = analyser.frequencyBinCount
+      const rawData = new Uint8Array(bufLen)
+      smoothedRef.current = new Array(bufLen).fill(0)
 
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
+      const NUM_BARS = 128
+      const INNER_R = 78
+      const MAX_BAR = 66
 
-      const draw = () => {
-        if (!ctx || !canvas) {
-          animationFrameRef.current = requestAnimationFrame(draw)
-          return
+      const drawRecording = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        analyserRef.current!.getByteFrequencyData(rawData)
+        const sm = smoothedRef.current
+        for (let i = 0; i < bufLen; i++) {
+          sm[i] = sm[i] * 0.72 + (rawData[i] / 255) * 0.28
         }
 
-        try {
-          // Limpar canvas
-          ctx.fillStyle = '#0a0a0a'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        let avg = 0
+        for (let i = 0; i < sm.length; i++) avg += sm[i]
+        avg /= sm.length
 
-          const centerX = canvas.width / 2
-          const centerY = canvas.height / 2
+        // Discrete radial bars
+        for (let i = 0; i < NUM_BARS; i++) {
+          const di = Math.floor((i / NUM_BARS) * bufLen * 0.78)
+          const v = sm[di] || 0
+          const barLen = Math.max(2, v * MAX_BAR)
+          const angle = (i / NUM_BARS) * Math.PI * 2 - Math.PI / 2
 
-          if (isRecording && analyserRef.current && dataArrayRef.current) {
-            analyserRef.current.getByteFrequencyData(dataArrayRef.current)
-
-            // Suavizar dados
-            const oscillatorData = oscillatorDataRef.current
-            for (let i = 0; i < dataArrayRef.current.length; i++) {
-              oscillatorData[i] = oscillatorData[i] * 0.6 + (dataArrayRef.current[i] / 255) * 0.4
-            }
-
-            // Desenhar múltiplas camadas 3D
-            const layers = 5
-            const numBars = 128
-            const baseRadius = 60
-            const maxRadius = 150
-
-            for (let layer = 0; layer < layers; layer++) {
-              const layerAlpha = 0.3 - layer * 0.05
-              const layerRadiusOffset = (layer / layers) * 40
-
-              // Desenhar camada de linhas
-              for (let i = 0; i < numBars; i++) {
-                const dataIndex = Math.floor((i / numBars) * oscillatorData.length)
-                const value = oscillatorData[dataIndex] || 0
-
-                const angle = (i / numBars) * Math.PI * 2
-                const radius = baseRadius + layerRadiusOffset + value * maxRadius
-
-                const x = centerX + Math.cos(angle) * radius
-                const y = centerY + Math.sin(angle) * radius
-
-                if (i === 0) {
-                  ctx.beginPath()
-                  ctx.moveTo(x, y)
-                } else {
-                  ctx.lineTo(x, y)
-                }
-
-                // Conectar com próximo
-                if (i === numBars - 1) {
-                  const dataIndex0 = 0
-                  const value0 = oscillatorData[dataIndex0] || 0
-                  const angle0 = 0
-                  const radius0 = baseRadius + layerRadiusOffset + value0 * maxRadius
-                  const x0 = centerX + Math.cos(angle0) * radius0
-                  const y0 = centerY + Math.sin(angle0) * radius0
-                  ctx.lineTo(x0, y0)
-                }
-              }
-
-              ctx.strokeStyle = `rgba(136, 206, 17, ${layerAlpha})`
-              ctx.lineWidth = 1.5
-              ctx.stroke()
-            }
-
-            // Desenhar bolinhas nos pontos mais altos
-            for (let i = 0; i < Math.min(numBars, 64); i += 4) {
-              const dataIndex = Math.floor((i / numBars) * oscillatorData.length)
-              const value = oscillatorData[dataIndex] || 0
-
-              const angle = (i / numBars) * Math.PI * 2
-              const radius = baseRadius + value * maxRadius
-
-              const x = centerX + Math.cos(angle) * radius
-              const y = centerY + Math.sin(angle) * radius
-
-              const blobSize = 2 + value * 6
-              ctx.fillStyle = `rgba(136, 206, 17, ${0.4 + value * 0.6})`
-              ctx.beginPath()
-              ctx.arc(x, y, blobSize, 0, Math.PI * 2)
-              ctx.fill()
-
-              // Glow ao redor
-              ctx.strokeStyle = `rgba(136, 206, 17, ${(0.4 + value * 0.6) * 0.5})`
-              ctx.lineWidth = 1
-              ctx.beginPath()
-              ctx.arc(x, y, blobSize + 2, 0, Math.PI * 2)
-              ctx.stroke()
-            }
-
-            // Círculos concêntricos
-            const avgValue = oscillatorData.reduce((a, b) => a + b, 0) / oscillatorData.length
-            for (let i = 1; i <= 4; i++) {
-              ctx.strokeStyle = `rgba(136, 206, 17, ${(0.2 - i * 0.04) * avgValue})`
-              ctx.lineWidth = 1
-              ctx.beginPath()
-              ctx.arc(centerX, centerY, baseRadius + i * 15, 0, Math.PI * 2)
-              ctx.stroke()
-            }
-
-            // Centro
-            ctx.fillStyle = `rgba(136, 206, 17, ${0.3 + avgValue * 0.4})`
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, 8, 0, Math.PI * 2)
-            ctx.fill()
-
-            ctx.strokeStyle = `rgba(136, 206, 17, ${0.6 + avgValue * 0.4})`
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, 8, 0, Math.PI * 2)
-            ctx.stroke()
-          } else {
-            // Modo idle - círculo cinza
-            const baseRadius = 70
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)'
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, baseRadius, 0, Math.PI * 2)
-            ctx.fill()
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, baseRadius, 0, Math.PI * 2)
-            ctx.stroke()
-
-            // Ícone de microfone
-            ctx.fillStyle = '#FFFFFF'
-            ctx.font = 'bold 40px Arial'
-            ctx.textAlign = 'center'
-            ctx.textBaseline = 'middle'
-            ctx.fillText('🎤', centerX, centerY)
-          }
-        } catch (err) {
-          console.error('Erro:', err)
+          const cos = Math.cos(angle), sin = Math.sin(angle)
+          ctx.beginPath()
+          ctx.moveTo(cx + cos * INNER_R, cy + sin * INNER_R)
+          ctx.lineTo(cx + cos * (INNER_R + barLen), cy + sin * (INNER_R + barLen))
+          ctx.strokeStyle = `rgba(${R},${G},${B},${0.28 + v * 0.72})`
+          ctx.lineWidth = 2.2
+          ctx.lineCap = 'round'
+          ctx.stroke()
         }
 
-        animationFrameRef.current = requestAnimationFrame(draw)
+        // Inner ring
+        ctx.beginPath()
+        ctx.arc(cx, cy, INNER_R - 1, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(${R},${G},${B},${0.22 + avg * 0.48})`
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+
+        // Center radial glow
+        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 34)
+        grd.addColorStop(0, `rgba(${R},${G},${B},${0.5 + avg * 0.4})`)
+        grd.addColorStop(1, `rgba(${R},${G},${B},0)`)
+        ctx.fillStyle = grd
+        ctx.beginPath()
+        ctx.arc(cx, cy, 34, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Center pulsing dot
+        const dotR = 9 + avg * 7
+        ctx.beginPath()
+        ctx.arc(cx, cy, dotR, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(${R},${G},${B},${0.7 + avg * 0.3})`
+        ctx.fill()
+
+        // Stop icon (square) — indicates "click to stop"
+        const sq = 8 + avg * 3
+        ctx.fillStyle = '#0a0a0a'
+        ctx.fillRect(cx - sq / 2, cy - sq / 2, sq, sq)
+
+        animRef.current = requestAnimationFrame(drawRecording)
       }
 
-      draw()
-
-      return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current)
-          animationFrameRef.current = null
-        }
-      }
+      animRef.current = requestAnimationFrame(drawRecording)
     } catch (err) {
-      return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current)
-          animationFrameRef.current = null
-        }
+      console.error('AudioVisualizer setup error:', err)
+    }
+
+    return () => {
+      cancelAnimationFrame(animRef.current)
+      try { sourceRef.current?.disconnect() } catch {}
+      sourceRef.current = null
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        try { audioCtxRef.current.close() } catch {}
       }
+      audioCtxRef.current = null
+      analyserRef.current = null
     }
   }, [isRecording, audioStream])
 
   return (
     <div
       onClick={onToggleRecording}
-      className="cursor-pointer transition-transform hover:scale-105"
       style={{
         padding: '20px',
-        borderRadius: '50%'
+        borderRadius: '50%',
+        cursor: 'pointer',
+        transition: 'transform 200ms',
       }}
+      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
+      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
     >
       <canvas
         ref={canvasRef}
@@ -265,9 +200,11 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           borderRadius: '50%',
           cursor: 'pointer',
           display: 'block',
-          boxShadow: '0 0 50px rgba(136, 206, 17, 0.15), inset 0 0 50px rgba(136, 206, 17, 0.05)',
-          border: '2px solid rgba(136, 206, 17, 0.2)',
-          transition: 'box-shadow 0.3s'
+          boxShadow: isRecording
+            ? '0 0 64px rgba(136,206,17,0.35), inset 0 0 48px rgba(136,206,17,0.1)'
+            : '0 0 40px rgba(136,206,17,0.1), inset 0 0 30px rgba(136,206,17,0.03)',
+          border: `2px solid rgba(136,206,17,${isRecording ? 0.45 : 0.16})`,
+          transition: 'box-shadow 600ms ease, border-color 600ms ease',
         }}
       />
     </div>

@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../utils/config'
 import { HistoryManager } from '../utils/history'
 import HistoryPanel from './HistoryPanel'
 import AudioVisualizer from './AudioVisualizer'
+import Toast from './Toast'
 
 export default function STTComponent() {
   const [isRecording, setIsRecording] = useState(false)
@@ -11,11 +12,21 @@ export default function STTComponent() {
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastVisible(true)
+    setTimeout(() => setToastVisible(false), 2200)
+  }
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioStreamRef = useRef<MediaStream | null>(null)
   const permissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordingStartTimeRef = useRef<number | null>(null)
+  const volumeAnimRef = useRef<number>(0)
+  const volumeCtxRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
     return () => {
@@ -28,6 +39,46 @@ export default function STTComponent() {
       }
     }
   }, [])
+
+  // Real-time volume → particles
+  useEffect(() => {
+    if (!isRecording || !audioStreamRef.current) {
+      cancelAnimationFrame(volumeAnimRef.current)
+      try { volumeCtxRef.current?.close() } catch {}
+      volumeCtxRef.current = null
+      window.dispatchEvent(new CustomEvent('gama:volume', { detail: { volume: 0 } }))
+      return
+    }
+
+    try {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext
+      volumeCtxRef.current = new AudioCtx()
+      const ac = volumeCtxRef.current as AudioContext
+      const source = ac.createMediaStreamSource(audioStreamRef.current)
+      const analyser = ac.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.75
+      source.connect(analyser)
+      const data = new Uint8Array(analyser.frequencyBinCount)
+
+      const measure = () => {
+        analyser.getByteFrequencyData(data)
+        let sum = 0
+        for (let i = 0; i < data.length; i++) sum += data[i]
+        const volume = sum / (data.length * 255)
+        window.dispatchEvent(new CustomEvent('gama:volume', { detail: { volume } }))
+        volumeAnimRef.current = requestAnimationFrame(measure)
+      }
+      volumeAnimRef.current = requestAnimationFrame(measure)
+
+      return () => {
+        cancelAnimationFrame(volumeAnimRef.current)
+        try { source.disconnect() } catch {}
+        try { ac.close() } catch {}
+        window.dispatchEvent(new CustomEvent('gama:volume', { detail: { volume: 0 } }))
+      }
+    } catch {}
+  }, [isRecording])
 
   const handleStartRecording = async () => {
     try {
@@ -100,8 +151,10 @@ export default function STTComponent() {
   }
 
   const handleCopy = async () => {
-    try { await navigator.clipboard.writeText(transcript) }
-    catch { setError('Falha ao copiar') }
+    try {
+      await navigator.clipboard.writeText(transcript)
+      showToast('Texto copiado!')
+    } catch { setError('Falha ao copiar') }
   }
 
   const handleDownload = () => {
@@ -129,6 +182,7 @@ export default function STTComponent() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
 
         {/* LEFT: History */}
@@ -209,6 +263,8 @@ export default function STTComponent() {
           )}
         </div>
       </div>
+
+      <Toast message={toastMsg} visible={toastVisible} />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
