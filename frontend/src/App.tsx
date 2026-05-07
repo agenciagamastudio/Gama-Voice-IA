@@ -5,6 +5,7 @@ import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
 import AudiobookGenerator from './components/AudiobookGenerator'
 import SettingsModal from './components/SettingsModal'
+import ParticleBackground from './components/ParticleBackground'
 import { useAPI } from './hooks/useAPI'
 import type { Voice, TTSSettings } from './types'
 
@@ -25,10 +26,8 @@ export default function App() {
   const { fetchVoices, checkHealth } = useAPI()
 
   useEffect(() => {
-    // Check if user is already logged in
     const token = localStorage.getItem('gama_voz_token')
     const userData = localStorage.getItem('gama_voz_user')
-
     if (token && userData) {
       setIsAuthenticated(true)
       setUser(JSON.parse(userData))
@@ -37,27 +36,18 @@ export default function App() {
 
   useEffect(() => {
     if (!isAuthenticated) return
-
     const init = async () => {
       try {
-        // Load voices
         const voicesData = await fetchVoices()
         setVoices(voicesData)
-
-        // Check health
         const healthData = await checkHealth()
         setHealth(healthData)
-
-        // Load saved settings from localStorage
         const savedSettings = localStorage.getItem('gama_tts_settings')
-        if (savedSettings) {
-          setSettings(JSON.parse(savedSettings))
-        }
+        if (savedSettings) setSettings(JSON.parse(savedSettings))
       } catch (error) {
         console.error('Init error:', error)
       }
     }
-
     init()
   }, [isAuthenticated])
 
@@ -79,112 +69,176 @@ export default function App() {
     localStorage.setItem('gama_tts_settings', JSON.stringify(updated))
   }
 
-  // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLoginSuccess} />
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#161616] to-[#1a1a1a]">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-[#161616]/80 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#88CE11] to-[#6ba50d] rounded-lg flex items-center justify-center">
-              <Volume2 className="w-6 h-6 text-black" />
-            </div>
-            <h1 className="text-2xl font-black text-white">GAMA Voz</h1>
-            {health?.version && (
-              <span className="text-xs text-gray-500 ml-2">v{health.version}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400">
-              👤 {user?.name || user?.email}
-            </div>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="p-2 hover:bg-white/10 rounded-lg transition"
-              title="Configurações"
-            >
-              <Settings className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-red-500/20 rounded-lg transition text-red-400 hover:text-red-300"
-              title="Sair"
-            >
-              <LogOut className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-      </header>
+  const tabs = [
+    { id: 'tts' as const, label: 'Texto para Fala', icon: <Volume2 className="w-5 h-5" /> },
+    { id: 'stt' as const, label: 'Fala para Texto', icon: <Mic className="w-5 h-5" /> },
+    { id: 'audiobook' as const, label: 'Audiobook', icon: <BookOpen className="w-5 h-5" /> },
+  ]
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Status Banner */}
-        {health && (
-          <div className="mb-6 p-4 bg-white/5 border border-[#88CE11]/30 rounded-xl">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">
-                {health.gpu_available ? '🟢' : '🟡'} {health.gpu_available ? 'GPU Disponível' : 'Modo CPU'} • TTS: Kokoro + Edge-TTS
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg)', position: 'relative' }}>
+      <ParticleBackground />
+
+      {/* All content above canvas */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+
+        {/* Header */}
+        <header className="topnav">
+          <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                className="pulse-green"
+                style={{
+                  width: '42px', height: '42px', borderRadius: '10px',
+                  background: 'linear-gradient(135deg, var(--color-primary), #6fa80a)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Volume2 style={{ width: '22px', height: '22px', color: '#000' }} />
+              </div>
+              <h1 style={{ fontSize: '24px', fontWeight: 900, margin: 0 }} className="gradient-text">
+                GAMA Voz
+              </h1>
+              {health?.version && (
+                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                  v{health.version}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
+                👤 {user?.name || user?.email}
               </span>
-              <span className="text-gray-500 text-xs">
+              <button
+                onClick={() => setShowSettings(true)}
+                title="Configurações"
+                style={{
+                  padding: '8px', borderRadius: '8px', background: 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--color-text)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 200ms',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Settings style={{ width: '22px', height: '22px' }} />
+              </button>
+              <button
+                onClick={handleLogout}
+                title="Sair"
+                style={{
+                  padding: '8px', borderRadius: '8px', background: 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--color-error)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 200ms',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(225,29,72,0.12)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <LogOut style={{ width: '22px', height: '22px' }} />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main */}
+        <main style={{ maxWidth: '1152px', margin: '0 auto', padding: '32px 24px' }}>
+
+          {/* Status Banner */}
+          {health && (
+            <div
+              className="glass-card fade-up"
+              style={{
+                padding: '14px 20px',
+                marginBottom: '24px',
+                borderColor: 'var(--color-border-green)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                {health.gpu_available ? '🟢' : '🟡'}{' '}
+                {health.gpu_available ? 'GPU Disponível' : 'Modo CPU'} · TTS: Kokoro + Edge-TTS
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
                 Circuit Breaker: {health.circuit_breaker?.state || 'N/A'}
               </span>
             </div>
+          )}
+
+          {/* Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '4px',
+              marginBottom: '32px',
+              borderBottom: '1px solid var(--color-border)',
+            }}
+          >
+            {tabs.map(({ id, label, icon }) => {
+              const active = activeTab === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
+                    color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                    fontWeight: active ? 700 : 500,
+                    fontSize: '14px',
+                    fontFamily: 'var(--font-main)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 200ms',
+                    marginBottom: '-1px',
+                  }}
+                  onMouseEnter={e => {
+                    if (!active) e.currentTarget.style.color = 'var(--color-text)'
+                  }}
+                  onMouseLeave={e => {
+                    if (!active) e.currentTarget.style.color = 'var(--color-text-secondary)'
+                  }}
+                >
+                  {icon}
+                  {label}
+                </button>
+              )
+            })}
           </div>
-        )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('tts')}
-            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'tts'
-                ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Volume2 className="w-5 h-5" /> Texto para Fala
-          </button>
-          <button
-            onClick={() => setActiveTab('stt')}
-            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'stt'
-                ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Mic className="w-5 h-5" /> Fala para Texto
-          </button>
-          <button
-            onClick={() => setActiveTab('audiobook')}
-            className={`px-6 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'audiobook'
-                ? 'text-[#88CE11] border-b-2 border-[#88CE11]'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <BookOpen className="w-5 h-5" /> Audiobook
-          </button>
-        </div>
+          {/* Tab Content */}
+          <div className="fade-up">
+            {activeTab === 'tts' && (
+              <div className="glass-card" style={{ padding: '32px' }}>
+                <TTSComponent voices={voices} settings={settings} onSettingsChange={handleSettingChange} />
+              </div>
+            )}
+            {activeTab === 'stt' && (
+              <div className="glass-card" style={{ padding: '32px' }}>
+                <STTComponent />
+              </div>
+            )}
+            {activeTab === 'audiobook' && (
+              <div className="glass-card" style={{ padding: '32px' }}>
+                <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
-        {/* Tab Content */}
-        {activeTab === 'tts' && (
-          <TTSComponent voices={voices} settings={settings} onSettingsChange={handleSettingChange} />
-        )}
-
-        {activeTab === 'stt' && (
-          <STTComponent />
-        )}
-
-        {activeTab === 'audiobook' && (
-          <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />
-        )}
-      </main>
-
-      {/* Settings Modal */}
       {showSettings && (
         <SettingsModal
           isOpen={showSettings}

@@ -9,6 +9,19 @@ interface Props {
   onSettingsChange: (settings: Partial<TTSSettings>) => void
 }
 
+const btn: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  fontFamily: 'var(--font-main)',
+  fontWeight: 700,
+  cursor: 'pointer',
+  border: 'none',
+  borderRadius: 'var(--radius-xl)',
+  transition: 'all 200ms',
+}
+
 export default function TTSComponent({ voices, settings, onSettingsChange }: Props) {
   const [text, setText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -17,48 +30,28 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const [copied, setCopied] = useState(false)
 
   const handleSynthesize = async () => {
-    if (!text.trim()) {
-      setError('Texto não pode estar vazio')
-      return
-    }
-
+    if (!text.trim()) { setError('Texto não pode estar vazio'); return }
     setIsLoading(true)
     setError(null)
-
     try {
-      // Use AbortController for long text synthesis (180 seconds timeout)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 180000)
-
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          voice: settings.voice,
-          speed: settings.speed,
-          engine: 'kokoro'
-        }),
-        signal: controller.signal
+        body: JSON.stringify({ text, voice: settings.voice, speed: settings.speed, engine: 'kokoro' }),
+        signal: controller.signal,
       })
-
       clearTimeout(timeoutId)
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Falha na síntese')
       }
-
       const audioBlob = await response.blob()
-      const url = URL.createObjectURL(audioBlob)
-      setAudioUrl(url)
+      setAudioUrl(URL.createObjectURL(audioBlob))
     } catch (err) {
       if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          setError('Tempo esgotado - texto muito longo. Tente dividir em partes.')
-        } else {
-          setError(err.message)
-        }
+        setError(err.name === 'AbortError' ? 'Tempo esgotado — tente dividir em partes.' : err.message)
       } else {
         setError('Erro desconhecido')
       }
@@ -72,14 +65,11 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      setError('Falha ao copiar')
-    }
+    } catch { setError('Falha ao copiar') }
   }
 
   const handleDownload = () => {
     if (!audioUrl) return
-
     const a = document.createElement('a')
     a.href = audioUrl
     a.download = `synthesis_${Date.now()}.mp3`
@@ -87,41 +77,29 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   }
 
   const handlePreview = async () => {
-    const previewText = "Teste de qualidade com voz " + settings.voice
     setIsLoading(true)
     setError(null)
-
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000)
-
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: previewText,
+          text: `Teste de qualidade com voz ${settings.voice}`,
           voice: settings.voice,
           speed: settings.speed,
-          engine: 'edge-tts'
+          engine: 'edge-tts',
         }),
-        signal: controller.signal
+        signal: controller.signal,
       })
-
       clearTimeout(timeoutId)
-
       if (!response.ok) throw new Error('Falha na prévia')
-
       const audioBlob = await response.blob()
-      const url = URL.createObjectURL(audioBlob)
-      const audio = new Audio(url)
-      audio.play()
+      new Audio(URL.createObjectURL(audioBlob)).play()
     } catch (err) {
       if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          setError('Prévia esgotou o tempo')
-        } else {
-          setError(err.message)
-        }
+        setError(err.name === 'AbortError' ? 'Prévia esgotou o tempo' : err.message)
       } else {
         setError('Falha na prévia')
       }
@@ -130,50 +108,85 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     }
   }
 
-  const handleReset = () => {
-    onSettingsChange({ voice: 'pm_alex', speed: 1.0 })
-  }
+  const handleReset = () => onSettingsChange({ voice: 'pm_alex', speed: 1.0 })
+
+  const speedPct = ((settings.speed - 0.5) / 1.5) * 100
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
       {/* Text Input */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Texto para Sintetizar</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>
+          Texto para Sintetizar
+        </label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, 50000))}
           placeholder="Digite o texto para converter em fala..."
-          className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#88CE11]/50 focus:ring-2 focus:ring-[#88CE11]/20"
+          style={{
+            width: '100%',
+            height: '128px',
+            padding: '16px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--glass-bg-2)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text)',
+            fontFamily: 'var(--font-main)',
+            fontSize: '14px',
+            resize: 'vertical',
+            outline: 'none',
+            boxSizing: 'border-box',
+            transition: 'border-color 200ms, box-shadow 200ms',
+          }}
+          onFocus={e => {
+            e.target.style.borderColor = 'var(--color-primary)'
+            e.target.style.boxShadow = '0 0 0 3px var(--color-primary-dim)'
+          }}
+          onBlur={e => {
+            e.target.style.borderColor = 'var(--color-border)'
+            e.target.style.boxShadow = 'none'
+          }}
         />
-        <div className="flex justify-between text-xs text-gray-500">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)' }}>
           <span>{text.length} / 50000</span>
           {text.length > 0 && (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-[#88CE11] hover:text-white transition"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--color-primary)', fontFamily: 'var(--font-main)',
+                fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#a3d500')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-primary)')}
             >
-              <Copy className="w-3 h-3" />
+              <Copy style={{ width: '12px', height: '12px' }} />
               {copied ? 'Copiado!' : 'Copiar'}
             </button>
           )}
         </div>
       </div>
 
-      {/* Voice Selection */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Voz</label>
+      {/* Voice + Speed */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          {/* Voice select */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>Voz</label>
             <select
               value={settings.voice}
               onChange={(e) => onSettingsChange({ voice: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#88CE11]/50"
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                color: 'var(--color-text)', fontFamily: 'var(--font-main)', fontSize: '14px',
+                outline: 'none', cursor: 'pointer',
+              }}
             >
               {voices.length > 0 ? (
-                voices.map((voice) => (
-                  <option key={voice.id} value={voice.id}>
-                    {voice.name || voice.id}
-                  </option>
+                voices.map((v) => (
+                  <option key={v.id} value={v.id}>{v.description || v.id}</option>
                 ))
               ) : (
                 <>
@@ -185,43 +198,72 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
             </select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Velocidade ({settings.speed.toFixed(1)}x)</label>
+          {/* Speed slider */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>
+              Velocidade ({settings.speed.toFixed(1)}x)
+            </label>
             <input
               type="range"
-              min="0.5"
-              max="2.0"
-              step="0.1"
+              min="0.5" max="2.0" step="0.1"
               value={settings.speed}
               onChange={(e) => onSettingsChange({ speed: parseFloat(e.target.value) })}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
               style={{
-                background: `linear-gradient(to right, #88CE11 0%, #88CE11 ${((settings.speed - 0.5) / 1.5) * 100}%, rgba(255,255,255,0.1) ${((settings.speed - 0.5) / 1.5) * 100}%, rgba(255,255,255,0.1) 100%)`
+                width: '100%', height: '6px', borderRadius: '8px',
+                appearance: 'none', cursor: 'pointer', marginTop: '8px',
+                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${speedPct}%, rgba(255,255,255,0.1) ${speedPct}%, rgba(255,255,255,0.1) 100%)`,
               }}
             />
           </div>
         </div>
 
-        <div className="flex gap-2">
+        {/* Preview / Reset */}
+        <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={handlePreview}
             disabled={isLoading || !text.trim()}
-            className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              ...btn,
+              flex: 1,
+              padding: '10px 16px',
+              fontSize: '14px',
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+              opacity: (isLoading || !text.trim()) ? 0.45 : 1,
+              cursor: (isLoading || !text.trim()) ? 'not-allowed' : 'pointer',
+            }}
+            onMouseEnter={e => { if (!isLoading && text.trim()) e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)' }}
           >
             Prévia
           </button>
           <button
             onClick={handleReset}
-            className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition"
+            style={{
+              ...btn,
+              flex: 1,
+              padding: '10px 16px',
+              fontSize: '14px',
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)' }}
           >
             Restaurar Padrões
           </button>
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div style={{
+          padding: '14px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px',
+          background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.25)',
+          color: 'var(--color-error)',
+        }}>
           {error}
         </div>
       )}
@@ -230,42 +272,60 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
       <button
         onClick={handleSynthesize}
         disabled={isLoading || !text.trim()}
-        className="w-full bg-gradient-to-r from-[#88CE11] to-[#6ba50d] text-black font-black py-4 rounded-xl hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+        style={{
+          ...btn,
+          width: '100%',
+          padding: '16px',
+          fontSize: '16px',
+          background: (isLoading || !text.trim())
+            ? 'rgba(136,206,17,0.35)'
+            : 'var(--color-primary)',
+          color: '#000',
+          opacity: (isLoading || !text.trim()) ? 0.65 : 1,
+          cursor: (isLoading || !text.trim()) ? 'not-allowed' : 'pointer',
+          boxShadow: (isLoading || !text.trim()) ? 'none' : '0 4px 24px var(--color-primary-glow)',
+        }}
+        onMouseEnter={e => { if (!isLoading && text.trim()) e.currentTarget.style.filter = 'brightness(1.1)' }}
+        onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}
       >
         {isLoading ? (
-          <>
-            <Loader className="w-5 h-5 animate-spin" />
-            Sintetizando...
-          </>
+          <><Loader style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} /> Sintetizando...</>
         ) : (
-          <>
-            <Volume2 className="w-5 h-5" />
-            Sintetizar
-          </>
+          <><Volume2 style={{ width: '20px', height: '20px' }} /> Sintetizar</>
         )}
       </button>
 
-      {/* Audio Playback */}
+      {/* Audio Result */}
       {audioUrl && (
-        <div className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-gray-400">✅ Síntese Completa</p>
-            <audio
-              controls
-              src={audioUrl}
-              className="w-full bg-white/5 rounded-lg"
-            />
-          </div>
-
+        <div
+          className="glass-card"
+          style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
+          <p style={{ fontSize: '13px', color: 'var(--color-success)', margin: 0 }}>✅ Síntese Completa</p>
+          <audio controls src={audioUrl} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
           <button
             onClick={handleDownload}
-            className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
+            style={{
+              ...btn,
+              width: '100%',
+              padding: '12px',
+              fontSize: '14px',
+              background: 'var(--glass-bg-2)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)' }}
           >
-            <Download className="w-4 h-4" />
+            <Download style={{ width: '16px', height: '16px' }} />
             Baixar Áudio
           </button>
         </div>
       )}
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }

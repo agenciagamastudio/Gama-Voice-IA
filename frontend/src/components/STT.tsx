@@ -6,30 +6,25 @@ import HistoryPanel from './HistoryPanel'
 import AudioVisualizer from './AudioVisualizer'
 
 export default function STTComponent() {
-  console.log('🎙️ STTComponent mounted - History feature available')
   const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [historyOpen, setHistoryOpen] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioStreamRef = useRef<MediaStream | null>(null)
-  const permissionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const permissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordingStartTimeRef = useRef<number | null>(null)
 
-  // Cleanup ao desmontar componente
   useEffect(() => {
     return () => {
-      if (permissionTimeoutRef.current) {
-        clearTimeout(permissionTimeoutRef.current)
-      }
+      if (permissionTimeoutRef.current) clearTimeout(permissionTimeoutRef.current)
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop()
       }
       if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach((track) => track.stop())
+        audioStreamRef.current.getTracks().forEach((t) => t.stop())
       }
     }
   }, [])
@@ -38,36 +33,19 @@ export default function STTComponent() {
     try {
       setIsRequestingPermission(true)
       setError(null)
-
-      // Timeout de 10 segundos para permissão de microfone
       const permissionTimeout = setTimeout(() => {
         setIsRequestingPermission(false)
         setError('⏱️ Timeout: permissão de microfone não respondeu. Verifique suas configurações de privacidade.')
       }, 10000)
-
       permissionTimeoutRef.current = permissionTimeout
-
-      // Solicitar acesso ao microfone
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-
-      // Se chegou aqui, permissão foi concedida - limpar timeout
-      if (permissionTimeoutRef.current) {
-        clearTimeout(permissionTimeoutRef.current)
-      }
-
+      if (permissionTimeoutRef.current) clearTimeout(permissionTimeoutRef.current)
       audioStreamRef.current = stream
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data)
-      }
-
-      mediaRecorder.onstop = () => {
-        handleTranscribe()
-      }
-
+      mediaRecorder.ondataavailable = (event) => { audioChunksRef.current.push(event.data) }
+      mediaRecorder.onstop = () => { handleTranscribe() }
       mediaRecorder.start()
       recordingStartTimeRef.current = Date.now()
       setIsRecording(true)
@@ -75,21 +53,13 @@ export default function STTComponent() {
       setError(null)
     } catch (err) {
       setIsRequestingPermission(false)
-      if (permissionTimeoutRef.current) {
-        clearTimeout(permissionTimeoutRef.current)
-      }
-
+      if (permissionTimeoutRef.current) clearTimeout(permissionTimeoutRef.current)
       let errorMsg = 'Acesso ao microfone negado'
       if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') {
-          errorMsg = '🔒 Permissão negada. Clique no ícone de câmera/microfone na barra de endereço para permitir acesso.'
-        } else if (err.name === 'NotFoundError') {
-          errorMsg = '🎤 Nenhum microfone detectado. Verifique sua conexão de áudio.'
-        } else if (err.name === 'NotReadableError') {
-          errorMsg = '⚠️ Microfone está sendo usado por outro aplicativo. Feche outros programas.'
-        } else {
-          errorMsg = err.message
-        }
+        if (err.name === 'NotAllowedError') errorMsg = '🔒 Permissão negada. Clique no ícone de microfone na barra de endereço.'
+        else if (err.name === 'NotFoundError') errorMsg = '🎤 Nenhum microfone detectado.'
+        else if (err.name === 'NotReadableError') errorMsg = '⚠️ Microfone em uso por outro aplicativo.'
+        else errorMsg = err.message
       }
       setError(errorMsg)
     }
@@ -98,39 +68,28 @@ export default function STTComponent() {
   const handleStopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop()
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop())
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop())
       setIsRecording(false)
     }
   }
 
   const handleTranscribe = async () => {
     if (audioChunksRef.current.length === 0) return
-
     setIsLoading(true)
     setError(null)
-
     try {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
       const formData = new FormData()
       formData.append('audio', audioBlob, 'recording.webm')
       formData.append('language', 'pt')
-
-      const response = await fetch(`${API_BASE_URL}/api/stt/transcribe`, {
-        method: 'POST',
-        body: formData
-      })
-
+      const response = await fetch(`${API_BASE_URL}/api/stt/transcribe`, { method: 'POST', body: formData })
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Falha na transcrição')
       }
-
       const data = await response.json()
       setTranscript(data.text)
-
-      // Salvar no histórico
       const duration = recordingStartTimeRef.current ? Date.now() - recordingStartTimeRef.current : 0
-      console.log('💾 Salvando no histórico - Duration:', duration, 'ms (', (duration / 1000).toFixed(2), 's )')
       HistoryManager.addTranscription(data.text, duration, 'pt')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -141,132 +100,119 @@ export default function STTComponent() {
   }
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(transcript)
-    } catch (err) {
-      setError('Falha ao copiar')
-    }
+    try { await navigator.clipboard.writeText(transcript) }
+    catch { setError('Falha ao copiar') }
   }
 
   const handleDownload = () => {
-    const element = document.createElement('a')
-    element.href = URL.createObjectURL(
-      new Blob([transcript], { type: 'text/plain' })
-    )
-    element.download = `transcript_${Date.now()}.txt`
-    element.click()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([transcript], { type: 'text/plain' }))
+    a.download = `transcript_${Date.now()}.txt`
+    a.click()
   }
 
-  const handleClear = () => {
-    setTranscript('')
-    audioChunksRef.current = []
-  }
-
-  const handleSelectFromHistory = (text: string) => {
-    setTranscript(text)
-  }
+  const handleClear = () => { setTranscript(''); audioChunksRef.current = [] }
 
   const handleToggleRecording = () => {
-    if (isRecording) {
-      handleStopRecording()
-    } else {
-      handleStartRecording()
-    }
+    if (isRecording) handleStopRecording()
+    else handleStartRecording()
+  }
+
+  const ghostBtn: React.CSSProperties = {
+    flex: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '8px 12px', borderRadius: 'var(--radius-md)',
+    background: 'rgba(255,255,255,0.06)', border: '1px solid var(--color-border)',
+    color: 'var(--color-text)', fontFamily: 'var(--font-main)',
+    fontWeight: 600, fontSize: '12px', cursor: 'pointer', transition: 'all 200ms',
   }
 
   return (
-    <div className="space-y-6">
-      {/* Layout: Histórico + Círculo lado a lado */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* ESQUERDA: Histórico */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+
+        {/* LEFT: History */}
         <div>
-          <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4" />
+          <h3 style={{
+            fontSize: '13px', fontWeight: 700, color: 'var(--color-text)',
+            display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px',
+          }}>
+            <Clock style={{ width: '16px', height: '16px', color: 'var(--color-primary)' }} />
             Histórico
           </h3>
-          <HistoryPanel isOpen={true} onSelectTranscription={handleSelectFromHistory} />
+          <HistoryPanel isOpen={true} onSelectTranscription={(t) => setTranscript(t)} />
         </div>
 
-        {/* DIREITA: Círculo + Status + Transcrição */}
-        <div className="flex flex-col items-center gap-4">
-          {/* Status de carregamento */}
+        {/* RIGHT: Visualizer + transcript */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           {isRequestingPermission && (
-            <div className="text-yellow-400 text-sm flex items-center gap-2 animate-pulse">
-              <Loader className="w-4 h-4 animate-spin" />
+            <div style={{ fontSize: '13px', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Loader style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
               Permitir microfone...
             </div>
           )}
-
           {isLoading && (
-            <div className="text-blue-400 text-sm flex items-center gap-2 animate-pulse">
-              <Loader className="w-4 h-4 animate-spin" />
+            <div style={{ fontSize: '13px', color: 'var(--color-info)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Loader style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
               Transcrevendo...
             </div>
           )}
 
-          {/* Círculo Waveform Clicável */}
           <AudioVisualizer
             isRecording={isRecording}
             audioStream={audioStreamRef.current || undefined}
             onToggleRecording={handleToggleRecording}
           />
 
-          {/* Erro */}
           {error && (
-            <div className="p-3 bg-red-950/40 border border-red-500/50 rounded-lg w-full">
-              <div className="flex justify-between items-start gap-2">
-                <div className="text-red-300 text-xs leading-relaxed flex-1">
-                  {error}
-                </div>
-                <button
-                  onClick={() => setError(null)}
-                  className="text-red-400 hover:text-red-300 flex-shrink-0 font-bold"
-                >
-                  ✕
-                </button>
-              </div>
+            <div style={{
+              width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)',
+              background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.3)',
+              display: 'flex', justifyContent: 'space-between', gap: '8px',
+            }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-error)', flex: 1, lineHeight: 1.5 }}>
+                {error}
+              </span>
+              <button
+                onClick={() => setError(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', fontWeight: 700 }}
+              >
+                ✕
+              </button>
             </div>
           )}
 
-          {/* Transcrição Completa */}
           {transcript && (
-            <div className="w-full p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
-              <div className="space-y-2">
-                <p className="text-xs text-gray-400 font-medium">✅ Transcrição</p>
-                <p className="text-white text-sm leading-relaxed">
-                  {transcript}
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 text-xs"
-                >
-                  <Copy className="w-3 h-3" />
-                  Copiar
+            <div style={{
+              width: '100%', padding: '16px', borderRadius: 'var(--radius-lg)',
+              background: 'var(--glass-bg-2)', border: '1px solid var(--color-border)',
+              display: 'flex', flexDirection: 'column', gap: '12px',
+            }}>
+              <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-success)', margin: 0 }}>
+                ✅ Transcrição
+              </p>
+              <p style={{ fontSize: '14px', color: 'var(--color-text)', lineHeight: 1.6, margin: 0 }}>
+                {transcript}
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={handleCopy} style={ghostBtn}>
+                  <Copy style={{ width: '12px', height: '12px' }} /> Copiar
                 </button>
-
-                <button
-                  onClick={handleDownload}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 text-xs"
-                >
-                  <Download className="w-3 h-3" />
-                  Baixar
+                <button onClick={handleDownload} style={ghostBtn}>
+                  <Download style={{ width: '12px', height: '12px' }} /> Baixar
                 </button>
-
-                <button
-                  onClick={handleClear}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-1 text-xs"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  Limpar
+                <button onClick={handleClear} style={ghostBtn}>
+                  <Trash2 style={{ width: '12px', height: '12px' }} /> Limpar
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
