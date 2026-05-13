@@ -46,6 +46,10 @@ const config: Config = {
         xl: '24px',
         '2xl': '32px',
         '3xl': '48px',
+        '4xl': '64px',
+        '5xl': '96px',
+        '6xl': '128px',
+        '7xl': '160px',
       },
       borderRadius: {
         sm: '8px',

@@ -9,6 +9,10 @@ export default function SpacingPage() {
     { name: 'XL', value: '24px', tailwind: 'xl', usage: 'Section spacing, espaço generoso' },
     { name: '2XL', value: '32px', tailwind: '2xl', usage: 'Large grouping, entre seções' },
     { name: '3XL', value: '48px', tailwind: '3xl', usage: 'Hero spacing, seções principais' },
+    { name: '4XL', value: '64px', tailwind: '4xl', usage: 'Extra large spacing, grid gaps' },
+    { name: '5XL', value: '96px', tailwind: '5xl', usage: 'Full-width sections, major dividers' },
+    { name: '6XL', value: '128px', tailwind: '6xl', usage: 'Page sections, large containers' },
+    { name: '7XL', value: '160px', tailwind: '7xl', usage: 'Hero sections, top-level spacing' },
   ]
 
   return (
