@@ -2,45 +2,92 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-// Mock data - TODO: conectar a APIs reais
-const mockClientes = [
-  { id: "1", nome: "Exemplo Ltda" },
-  { id: "2", nome: "Cliente 2" },
-];
+interface Cliente {
+  id: string;
+  nome: string;
+}
 
-const mockEntregaveis = [
-  { id: "1", nome: "Post Estático", categoria: "producao", precoFloor: 36.20 },
-  { id: "2", nome: "Carrossel (3-5 slides)", categoria: "producao", precoFloor: 81.46 },
-  { id: "3", nome: "Reels", categoria: "producao", precoFloor: 18.72 },
-  { id: "4", nome: "Story", categoria: "producao", precoFloor: 18.10 },
-  { id: "5", nome: "Estratégia Mensal", categoria: "estrategia", precoFloor: 284.72 },
-  { id: "6", nome: "Planejamento de Campanha", categoria: "estrategia", precoFloor: 427.08 },
-  { id: "7", nome: "Gestão de Rede Social (mensal)", categoria: "gestao", precoFloor: 441.80 },
-  { id: "8", nome: "Resposta a Comentários/DMs", categoria: "gestao", precoFloor: 88.36 },
-];
+interface Entregavel {
+  id: string;
+  nome: string;
+  categoria: "producao" | "estrategia" | "gestao" | "extras";
+  precoFloorUnitario: number;
+  profissional: { nome: string; funcao: string };
+  tempoMinutos: number;
+  unidade: string;
+}
 
 interface ItemSelecionado {
   entregavelId: string;
   quantidade: number;
   precoFloor: number;
+  nome: string;
 }
 
+type Modo = "construcao" | "template";
+type TagContexto = "premium" | "padrao" | "estrategico" | "indicacao";
+
 export default function NovoOrcamentoPage() {
+  const router = useRouter();
+  const [modo, setModo] = useState<Modo>("construcao");
   const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
+  const [tagContexto, setTagContexto] = useState<TagContexto>("padrao");
   const [itens, setItens] = useState<ItemSelecionado[]>([]);
 
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [entregaveis, setEntregaveis] = useState<Entregavel[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // Carregar dados da API
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        setCarregando(true);
+        const response = await fetch("/api/entregaveis");
+        if (!response.ok) throw new Error("Falha ao carregar entregáveis");
+
+        const data = await response.json();
+        setEntregaveis(data.entregaveis || []);
+
+        // TODO: carregar clientes também (será adicionado em fase posterior)
+        setClientes([
+          { id: "1", nome: "Exemplo Ltda" },
+          { id: "2", nome: "Cliente 2" },
+        ]);
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : "Erro ao carregar dados");
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarDados();
+  }, []);
+
   const adicionarItem = (entregavelId: string) => {
-    const entregavel = mockEntregaveis.find((e) => e.id === entregavelId);
+    const entregavel = entregaveis.find((e) => e.id === entregavelId);
     if (!entregavel) return;
 
     const itemExistente = itens.find((i) => i.entregavelId === entregavelId);
     if (itemExistente) {
-      setItens(itens.map((i) => (i.entregavelId === entregavelId ? { ...i, quantidade: i.quantidade + 1 } : i)));
+      setItens(itens.map((i) =>
+        i.entregavelId === entregavelId ? { ...i, quantidade: i.quantidade + 1 } : i
+      ));
     } else {
-      setItens([...itens, { entregavelId, quantidade: 1, precoFloor: entregavel.precoFloor }]);
+      setItens([
+        ...itens,
+        {
+          entregavelId,
+          quantidade: 1,
+          precoFloor: entregavel.precoFloorUnitario,
+          nome: entregavel.nome,
+        },
+      ]);
     }
   };
 
@@ -56,9 +103,41 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  const precoTotal = itens.reduce((sum, item) => sum + item.precoFloor * item.quantidade, 0);
+  const precoFloorTotal = itens.reduce((sum, item) => sum + item.precoFloor * item.quantidade, 0);
 
-  const entregaveisAdicionados = itens.map((item) => mockEntregaveis.find((e) => e.id === item.entregavelId));
+  const handleCalcularSugestoes = () => {
+    if (!clienteSelecionado || itens.length === 0) return;
+
+    const orcamentoData = {
+      clienteId: clienteSelecionado,
+      tagContexto,
+      itens,
+      precoFloorTotal,
+    };
+
+    sessionStorage.setItem("orcamentoEmEdicao", JSON.stringify(orcamentoData));
+    router.push("/orcamentos/novo/sugestao");
+  };
+
+  if (carregando) {
+    return (
+      <div className="container py-8">
+        <p className="text-center text-gray-600">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="container py-8">
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
+          <CardContent className="pt-6">
+            <p className="text-red-800 dark:text-red-100">⚠️ Erro: {erro}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-8">
@@ -67,6 +146,22 @@ export default function NovoOrcamentoPage() {
           <Button variant="ghost">← Voltar</Button>
         </Link>
         <h1 className="text-3xl font-bold mt-4">Novo Orçamento</h1>
+      </div>
+
+      {/* Mode Toggle */}
+      <div className="mb-6 flex gap-2">
+        <Button
+          variant={modo === "construcao" ? "default" : "outline"}
+          onClick={() => setModo("construcao")}
+        >
+          Modo Construção
+        </Button>
+        <Button
+          variant={modo === "template" ? "default" : "outline"}
+          onClick={() => setModo("template")}
+        >
+          Usar Template
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -80,7 +175,7 @@ export default function NovoOrcamentoPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {mockClientes.map((cliente) => (
+                {clientes.map((cliente) => (
                   <button
                     key={cliente.id}
                     onClick={() => setClienteSelecionado(cliente.id)}
@@ -97,6 +192,31 @@ export default function NovoOrcamentoPage() {
             </CardContent>
           </Card>
 
+          {/* Tag de Contexto */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tag de Contexto</CardTitle>
+              <CardDescription>Classifique o tipo de cliente/orçamento</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {(["premium", "padrao", "estrategico", "indicacao"] as TagContexto[]).map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setTagContexto(tag)}
+                    className={`p-3 rounded border-2 transition-all capitalize ${
+                      tagContexto === tag
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Entregáveis Selection */}
           <Card>
             <CardHeader>
@@ -105,15 +225,18 @@ export default function NovoOrcamentoPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockEntregaveis.map((entregavel) => (
+                {entregaveis.map((entregavel) => (
                   <div
                     key={entregavel.id}
                     className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     <div className="flex-1">
                       <p className="font-medium">{entregavel.nome}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        R$ {entregavel.precoFloor.toFixed(2)} (floor)
+                      <p className="text-xs text-gray-500">
+                        {entregavel.profissional.nome} • {entregavel.tempoMinutos}min
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        R$ {entregavel.precoFloorUnitario.toFixed(2)} (floor)
                       </p>
                     </div>
                     {itens.find((i) => i.entregavelId === entregavel.id) ? (
@@ -155,8 +278,13 @@ export default function NovoOrcamentoPage() {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
                 <p className="font-semibold">
-                  {clienteSelecionado ? mockClientes.find((c) => c.id === clienteSelecionado)?.nome : "Nenhum"}
+                  {clienteSelecionado ? clientes.find((c) => c.id === clienteSelecionado)?.nome : "Nenhum"}
                 </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tag</p>
+                <p className="font-semibold capitalize">{tagContexto}</p>
               </div>
 
               <div className="border-t pt-4">
@@ -165,29 +293,24 @@ export default function NovoOrcamentoPage() {
                   <p className="text-sm text-gray-500">Nenhum item adicionado</p>
                 ) : (
                   <div className="space-y-2">
-                    {entregaveisAdicionados.map((entregavel, idx) => {
-                      const item = itens[idx];
-                      return (
-                        entregavel && (
-                          <div key={entregavel.id} className="flex justify-between text-sm">
-                            <span>
-                              {entregavel.nome} × {item.quantidade}
-                            </span>
-                            <span className="font-medium">
-                              R$ {(entregavel.precoFloor * item.quantidade).toFixed(2)}
-                            </span>
-                          </div>
-                        )
-                      );
-                    })}
+                    {itens.map((item) => (
+                      <div key={item.entregavelId} className="flex justify-between text-sm">
+                        <span>
+                          {item.nome} × {item.quantidade}
+                        </span>
+                        <span className="font-medium">
+                          R$ {(item.precoFloor * item.quantidade).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 bg-gray-50 dark:bg-gray-800 p-3 rounded">
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span>R$ {precoTotal.toFixed(2)}</span>
+                  <span>Floor Total:</span>
+                  <span>R$ {precoFloorTotal.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -195,8 +318,9 @@ export default function NovoOrcamentoPage() {
                 <Button
                   className="w-full"
                   disabled={!clienteSelecionado || itens.length === 0}
+                  onClick={handleCalcularSugestoes}
                 >
-                  Salvar Orçamento
+                  Calcular Sugestões de Preço
                 </Button>
                 <Link href="/orcamentos" className="block">
                   <Button variant="outline" className="w-full">
@@ -212,7 +336,7 @@ export default function NovoOrcamentoPage() {
               <CardTitle className="text-sm">💡 Dica</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-gray-700 dark:text-gray-300">
-              Preços mostrados são o floor (mínimo). Você pode adicionar markup ao salvar.
+              Preços mostrados são o floor (mínimo). O próximo passo te mostrará sugestões de preço com markup.
             </CardContent>
           </Card>
         </div>
