@@ -21,6 +21,13 @@ export default function ConfiguracoesPage() {
       href: "/configuracoes/overhead",
     },
     {
+      id: "entregaveis",
+      title: "Catálogo de Entregáveis",
+      description: "Configure tipos de serviço com tempo padrão e preço floor",
+      icon: "📦",
+      href: "/configuracoes/entregaveis",
+    },
+    {
       id: "rate-card",
       title: "Rate Card",
       description: "Visualize a tabela de preços calculada automaticamente",

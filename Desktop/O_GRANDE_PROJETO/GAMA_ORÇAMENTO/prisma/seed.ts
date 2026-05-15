@@ -120,51 +120,86 @@ async function main() {
   // 4. EntregavelCatalogo (service catalog)
   console.log("Creating EntregavelCatalogo...");
   const entregaveis = await Promise.all([
+    // Produção
     prisma.entregavelCatalogo.create({
       data: {
-        nome: "Post Instagram",
-        tipo: "post",
-        descricao: "Post estático para Instagram",
-        horasPadraoMin: 2,
-        horasPadraoMax: 4,
+        nome: "Post Estático",
+        categoria: "producao",
+        tempoMinutos: 20,
+        unidade: "unidade",
         profissionalId: profissionais[0].id, // Designer
-        precoFisoOpcional: null,
         ativo: true,
       },
     }),
     prisma.entregavelCatalogo.create({
       data: {
-        nome: "Reels 30s",
-        tipo: "reels",
-        descricao: "Vídeo curto para Reels",
-        horasPadraoMin: 4,
-        horasPadraoMax: 8,
+        nome: "Carrossel (3-5 slides)",
+        categoria: "producao",
+        tempoMinutos: 45,
+        unidade: "unidade",
+        profissionalId: profissionais[0].id, // Designer
+        ativo: true,
+      },
+    }),
+    prisma.entregavelCatalogo.create({
+      data: {
+        nome: "Reels",
+        categoria: "producao",
+        tempoMinutos: 15,
+        unidade: "unidade",
         profissionalId: profissionais[1].id, // Editor
-        precoFisoOpcional: null,
         ativo: true,
       },
     }),
     prisma.entregavelCatalogo.create({
       data: {
-        nome: "Consultoria Estratégica",
-        tipo: "consultoria",
-        descricao: "Sessão de planejamento com especialista",
-        horasPadraoMin: 2,
-        horasPadraoMax: 2,
+        nome: "Story",
+        categoria: "producao",
+        tempoMinutos: 10,
+        unidade: "unidade",
+        profissionalId: profissionais[0].id, // Designer
+        ativo: true,
+      },
+    }),
+    // Estratégia
+    prisma.entregavelCatalogo.create({
+      data: {
+        nome: "Estratégia Mensal",
+        categoria: "estrategia",
+        tempoMinutos: 120, // 2h
+        unidade: "mensal",
         profissionalId: profissionais[2].id, // Matheus
-        precoFisoOpcional: null,
         ativo: true,
       },
     }),
     prisma.entregavelCatalogo.create({
       data: {
-        nome: "Gestão de Redes (mês)",
-        tipo: "management",
-        descricao: "Gerenciamento mensal de redes sociais",
-        horasPadraoMin: 20,
-        horasPadraoMax: 40,
+        nome: "Planejamento de Campanha",
+        categoria: "estrategia",
+        tempoMinutos: 180, // 3h
+        unidade: "unidade",
+        profissionalId: profissionais[2].id, // Matheus
+        ativo: true,
+      },
+    }),
+    // Gestão
+    prisma.entregavelCatalogo.create({
+      data: {
+        nome: "Gestão de Rede Social (mensal)",
+        categoria: "gestao",
+        tempoMinutos: 300, // 5h
+        unidade: "mensal",
         profissionalId: profissionais[3].id, // Graça
-        precoFisoOpcional: null,
+        ativo: true,
+      },
+    }),
+    prisma.entregavelCatalogo.create({
+      data: {
+        nome: "Resposta a Comentários/DMs",
+        categoria: "gestao",
+        tempoMinutos: 60, // 1h
+        unidade: "mensal",
+        profissionalId: profissionais[3].id, // Graça
         ativo: true,
       },
     }),

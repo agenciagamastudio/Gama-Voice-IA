@@ -69,23 +69,17 @@ model OverheadItem {
 // CATÁLOGO DE SERVIÇOS
 // ============================================================================
 
-/// Tipos de entregável (Post, Reels, Stories, etc) com tempo padrão
+/// Tipos de entregável (Post, Reels, Estratégia, etc) com tempo padrão em minutos
 model EntregavelCatalogo {
   id                    String   @id @default(cuid())
-  nome                  String   // "Post Instagram", "Reels 30s", etc
-  descricao             String?
-  tipo                  String   // "post" | "reels" | "stories" | "email" | "design" | etc
-
-  // Tempo padrão de criação
-  horasPadraoMin        Int      // Horas mínimas estimadas
-  horasPadraoMax        Int      // Horas máximas estimadas
+  nome                  String   // "Post Estático", "Reels", "Estratégia Mensal", etc
+  categoria             String   // "producao" | "estrategia" | "gestao" | "extras"
+  tempoMinutos          Int      // Tempo em minutos (ex: 20 para 20 min)
+  unidade               String   @default("unidade") // "unidade" | "hora" | "mensal"
 
   // Profissional responsável
-  profissionalId        String?
-  profissional          Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
-
-  // Preço fixo alternativo (se não usar modelo de horas)
-  precoFisoOpcional     Float?
+  profissionalId        String
+  profissional          Profissional @relation(fields: [profissionalId], references: [id], onDelete: Restrict)
 
   ativo                 Boolean  @default(true)
   criadoEm              DateTime @default(now())
