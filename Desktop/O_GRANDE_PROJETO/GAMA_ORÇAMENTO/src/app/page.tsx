@@ -70,17 +70,13 @@ export default function HomePage() {
     setExpandedDates(newExpanded);
   };
 
-  const totalValue = orcamentos.reduce((sum, orc) => {
-    const subtotal = orc.itens.reduce((s, i) => s + i.total, 0);
-    const desconto = orc.desconto_percentual > 0 ? subtotal * (orc.desconto_percentual / 100) : 0;
-    return sum + (subtotal - desconto);
-  }, 0);
+  const totalValue = orcamentos.reduce((sum, orc) => sum + orc.precoPraticado, 0);
 
   const countByStatus = {
-    Aprovado: orcamentos.filter((o) => o.status === "Aprovado").length,
-    Pendente: orcamentos.filter((o) => o.status === "Pendente").length,
-    Rejeitado: orcamentos.filter((o) => o.status === "Rejeitado").length,
-    Rascunho: orcamentos.filter((o) => o.status === "Rascunho").length,
+    rascunho: orcamentos.filter((o) => o.status === "rascunho").length,
+    enviado: orcamentos.filter((o) => o.status === "enviado").length,
+    aprovado: orcamentos.filter((o) => o.status === "aprovado").length,
+    rejeitado: orcamentos.filter((o) => o.status === "rejeitado").length,
   };
 
   return (
@@ -120,12 +116,12 @@ export default function HomePage() {
             <div style={{ fontSize: 26, fontWeight: 900, color: "var(--primary)" }}>{fmt(totalValue)}</div>
             <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>Total</div>
           </div>
-          {["Aprovado", "Pendente", "Rejeitado", "Rascunho"].map((status) => (
+          {["rascunho", "enviado", "aprovado", "rejeitado"].map((status) => (
             <div key={status} style={{ padding: "16px 20px", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer" }}>
               <div style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
                 {countByStatus[status as keyof typeof countByStatus]}
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{status}</div>
+              <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{status.charAt(0).toUpperCase() + status.slice(1)}</div>
             </div>
           ))}
         </div>
@@ -169,11 +165,7 @@ export default function HomePage() {
             {filteredDates.map((date) => {
               const isExpanded = expandedDates.has(date);
               const orcsInDate = groupedByDate.get(date)!;
-              const dateTotal = orcsInDate.reduce((sum, orc) => {
-                const subtotal = orc.itens.reduce((s, i) => s + i.total, 0);
-                const desconto = orc.desconto_percentual > 0 ? subtotal * (orc.desconto_percentual / 100) : 0;
-                return sum + (subtotal - desconto);
-              }, 0);
+              const dateTotal = orcsInDate.reduce((sum, orc) => sum + orc.precoPraticado, 0);
 
               return (
                 <div key={date}>
@@ -209,9 +201,7 @@ export default function HomePage() {
                   {isExpanded && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, paddingLeft: 24 }}>
                       {orcsInDate.map((orc) => {
-                        const subtotal = orc.itens.reduce((s, i) => s + i.total, 0);
-                        const desconto = orc.desconto_percentual > 0 ? subtotal * (orc.desconto_percentual / 100) : 0;
-                        const total = subtotal - desconto;
+                        const total = orc.precoPraticado;
 
                         return (
                           <div
@@ -238,11 +228,9 @@ export default function HomePage() {
 
                             <div style={{ textAlign: "right", marginRight: 16 }}>
                               <div style={{ fontWeight: 900, fontSize: 14, color: "var(--primary)" }}>{fmt(total)}</div>
-                              {orc.desconto_percentual > 0 && (
-                                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>
-                                  −{orc.desconto_percentual}% desc.
-                                </div>
-                              )}
+                              <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>
+                                Margem: {((orc.precoPraticado - orc.precoFloor) / orc.precoFloor * 100).toFixed(1)}%
+                              </div>
                             </div>
 
                             {/* Status badge */}
@@ -253,20 +241,20 @@ export default function HomePage() {
                                 fontSize: 11,
                                 fontWeight: 700,
                                 background: {
-                                  Aprovado: "rgba(16,185,129,0.12)",
-                                  Pendente: "rgba(245,158,11,0.12)",
-                                  Rejeitado: "rgba(225,29,72,0.12)",
-                                  Rascunho: "rgba(113,113,122,0.12)",
+                                  rascunho: "rgba(113,113,122,0.12)",
+                                  enviado: "rgba(245,158,11,0.12)",
+                                  aprovado: "rgba(16,185,129,0.12)",
+                                  rejeitado: "rgba(225,29,72,0.12)",
                                 }[orc.status],
                                 color: {
-                                  Aprovado: "#10b981",
-                                  Pendente: "#f59e0b",
-                                  Rejeitado: "#e11d48",
-                                  Rascunho: "#71717a",
+                                  rascunho: "#71717a",
+                                  enviado: "#f59e0b",
+                                  aprovado: "#10b981",
+                                  rejeitado: "#e11d48",
                                 }[orc.status],
                               }}
                             >
-                              {orc.status}
+                              {orc.status.charAt(0).toUpperCase() + orc.status.slice(1)}
                             </div>
 
                             {/* Ações */}
