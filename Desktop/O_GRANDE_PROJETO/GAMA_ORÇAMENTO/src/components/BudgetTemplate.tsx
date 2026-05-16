@@ -10,9 +10,7 @@ interface BudgetTemplateProps {
 }
 
 export default function BudgetTemplate({ orcamento, onPrint }: BudgetTemplateProps) {
-  const subtotal = orcamento.itens.reduce((s, i) => s + i.total, 0);
-  const desconto = orcamento.desconto_percentual > 0 ? subtotal * (orcamento.desconto_percentual / 100) : 0;
-  const total = subtotal - desconto;
+  const total = orcamento.precoPraticado;
 
   const statusColor: Record<string, string> = {
     Aprovado: "#10b981",
@@ -93,17 +91,15 @@ export default function BudgetTemplate({ orcamento, onPrint }: BudgetTemplatePro
               <tr>
                 <th className={styles.colItem}>ITEM</th>
                 <th className={styles.colQty}>QTD</th>
-                <th className={styles.colPrice}>PREÇO UNITÁRIO</th>
-                <th className={styles.colTotal}>TOTAL</th>
+                <th className={styles.colTotal}>SUBTOTAL</th>
               </tr>
             </thead>
             <tbody>
               {orcamento.itens.map((item) => (
                 <tr key={item.id}>
-                  <td className={styles.colItem}>{item.descricao}</td>
+                  <td className={styles.colItem}>{item.nome}</td>
                   <td className={styles.colQty}>{item.quantidade}</td>
-                  <td className={styles.colPrice}>{fmtObj.currency(item.preco_unitario)}</td>
-                  <td className={styles.colTotal}>{fmtObj.currency(item.total)}</td>
+                  <td className={styles.colTotal}>{fmtObj.currency(item.subtotal)}</td>
                 </tr>
               ))}
             </tbody>
@@ -115,20 +111,20 @@ export default function BudgetTemplate({ orcamento, onPrint }: BudgetTemplatePro
         {/* Totais */}
         <section className={styles.totalsSection}>
           <div className={styles.totalRow}>
-            <span>SUBTOTAL</span>
-            <span>{fmtObj.currency(subtotal)}</span>
+            <span>PREÇO FLOOR (MÍNIMO)</span>
+            <span className={styles.secondary}>{fmtObj.currency(orcamento.precoFloor)}</span>
           </div>
 
-          {desconto > 0 && (
-            <div className={styles.totalRow}>
-              <span>DESCONTO ({orcamento.desconto_percentual}%)</span>
-              <span className={styles.discount}>-{fmtObj.currency(desconto)}</span>
-            </div>
-          )}
-
           <div className={styles.totalRow + " " + styles.grand}>
-            <span>VALOR TOTAL</span>
-            <span>{fmtObj.currency(total)}</span>
+            <span>VALOR TOTAL A COBRAR</span>
+            <span>{fmtObj.currency(orcamento.precoPraticado)}</span>
+          </div>
+
+          <div className={styles.totalRow}>
+            <span>MARGEM SOBRE PISO</span>
+            <span className={styles.secondary}>
+              {((orcamento.precoPraticado - orcamento.precoFloor) / orcamento.precoFloor * 100).toFixed(1)}%
+            </span>
           </div>
         </section>
 

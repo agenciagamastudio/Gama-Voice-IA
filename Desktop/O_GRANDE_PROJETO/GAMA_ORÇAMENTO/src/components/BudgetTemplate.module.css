@@ -265,6 +265,11 @@
   color: #1f2937;
 }
 
+.secondary {
+  color: #6b7280;
+  font-weight: 500;
+}
+
 /* Footer */
 
 .footerSection {

@@ -1,11 +1,18 @@
-export type OrcamentoStatus = "Aprovado" | "Pendente" | "Rejeitado" | "Rascunho";
+export type OrcamentoStatus = "rascunho" | "enviado" | "aprovado" | "rejeitado";
+export type TagContexto = "premium" | "padrao" | "estrategico" | "indicacao";
 
 export interface OrcamentoItem {
   id: string;
-  descricao: string;
+  entregavelId: string;
+  nome: string;
   quantidade: number;
-  preco_unitario: number;
-  total: number;
+  profissional: string;
+  // Internos (não mostrar ao cliente)
+  tempoMinutos?: number;
+  horaVendida?: number;
+  // Para o cliente
+  precoFloorUnitario: number;
+  subtotal: number;
 }
 
 export interface Empresa {
@@ -36,7 +43,11 @@ export interface Orcamento {
   cliente: Cliente;
   itens: OrcamentoItem[];
   datas: { emissao: string; validade: string };
-  desconto_percentual: number;
+  tagContexto?: TagContexto;
+  precoFloor: number;
+  precoPraticado: number;
+  multiplicador: number;
+  desconto_percentual?: number;
   termos: string;
   garantia: string;
   criado_em: string;
