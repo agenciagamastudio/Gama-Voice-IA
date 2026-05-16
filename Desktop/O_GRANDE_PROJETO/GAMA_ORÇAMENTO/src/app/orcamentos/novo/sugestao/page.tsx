@@ -13,11 +13,19 @@ interface OrcamentoEmEdicao {
   precoFloorTotal: number;
 }
 
+interface SugestaoLente {
+  valor: number;
+  fonte: "historico" | "fallback_tag";
+  amostras: number;
+  tagUsada?: string;
+}
+
 interface SugestaoPreco {
-  mediaHistorica: number;
-  multiplicador: number;
-  faixaContexto: number;
+  mediaHistorica: SugestaoLente;
+  multiplicador: SugestaoLente;
+  faixaSegmentada: SugestaoLente;
   convergencia: "total" | "parcial" | "divergente" | "sem_dados";
+  variacao?: number;
 }
 
 export default function SugestaoPrecoPage() {
@@ -37,18 +45,39 @@ export default function SugestaoPrecoPage() {
     const orcamentoData = JSON.parse(dados) as OrcamentoEmEdicao;
     setOrcamento(orcamentoData);
 
-    // Calcular sugestões (versão simplificada para MVP)
-    const floor = orcamentoData.precoFloorTotal;
-    const sugestoes: SugestaoPreco = {
-      mediaHistorica: floor * 1.59, // Multiplicador histórico de 59%
-      multiplicador: floor * 1.59,
-      faixaContexto: floor * 1.58,
-      convergencia: "sem_dados", // Sem histórico ainda
+    // Chamar API para gerar sugestões
+    const carregarSugestoes = async () => {
+      try {
+        // Buscar templateId do sessionStorage (deve estar salvo antes)
+        const templateId = sessionStorage.getItem("templateId");
+        if (!templateId) {
+          console.warn("templateId não encontrado em sessionStorage");
+          setCarregando(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/sugestoes?templateId=${templateId}&clienteId=${orcamentoData.clienteId}&floor=${orcamentoData.precoFloorTotal}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const sugestoes: SugestaoPreco = await response.json();
+        setSugestao(sugestoes);
+        // Seleciona o multiplicador como default (mais robusto)
+        setPrecoPraticado(sugestoes.multiplicador.valor);
+      } catch (error) {
+        console.error("Erro ao carregar sugestões:", error);
+        // Fallback: mantém a página funcional mesmo sem API
+        setCarregando(false);
+      } finally {
+        setCarregando(false);
+      }
     };
 
-    setSugestao(sugestoes);
-    setPrecoPraticado(sugestoes.multiplicador);
-    setCarregando(false);
+    carregarSugestoes();
   }, [router]);
 
   if (carregando || !orcamento || !sugestao) {
@@ -97,48 +126,60 @@ export default function SugestaoPrecoPage() {
         {/* Média Histórica */}
         <Card
           className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.mediaHistorica)}
+          onClick={() => setPrecoPraticado(sugestao.mediaHistorica.valor)}
         >
           <CardHeader>
             <CardTitle className="text-base">📈 Média Histórica</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-2xl font-bold text-blue-600">
-              R$ {sugestao.mediaHistorica.toFixed(2)}
+              R$ {sugestao.mediaHistorica.valor.toFixed(2)}
             </div>
-            <p className="text-xs text-gray-500">7 orçamentos fechados</p>
+            {sugestao.mediaHistorica.fonte === "historico" ? (
+              <p className="text-xs text-green-600">✅ {sugestao.mediaHistorica.amostras} orçamentos</p>
+            ) : (
+              <p className="text-xs text-yellow-600">⚠️ Fallback: tag {sugestao.mediaHistorica.tagUsada}</p>
+            )}
           </CardContent>
         </Card>
 
         {/* Multiplicador */}
         <Card
           className="cursor-pointer hover:border-green-500 dark:hover:border-green-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.multiplicador)}
+          onClick={() => setPrecoPraticado(sugestao.multiplicador.valor)}
         >
           <CardHeader>
-            <CardTitle className="text-base">🔄 Multiplicador (1.59x)</CardTitle>
+            <CardTitle className="text-base">🔄 Multiplicador</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-2xl font-bold text-green-600">
-              R$ {sugestao.multiplicador.toFixed(2)}
+              R$ {sugestao.multiplicador.valor.toFixed(2)}
             </div>
-            <p className="text-xs text-gray-500">Mantém margem histórica</p>
+            {sugestao.multiplicador.fonte === "historico" ? (
+              <p className="text-xs text-green-600">✅ {sugestao.multiplicador.amostras} orçamentos</p>
+            ) : (
+              <p className="text-xs text-yellow-600">⚠️ Padrão (sem histórico)</p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Faixa Contexto */}
+        {/* Faixa Segmentada */}
         <Card
           className="cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.faixaContexto)}
+          onClick={() => setPrecoPraticado(sugestao.faixaSegmentada.valor)}
         >
           <CardHeader>
             <CardTitle className="text-base">🎯 Faixa: {orcamento.tagContexto}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-2xl font-bold text-purple-600">
-              R$ {sugestao.faixaContexto.toFixed(2)}
+              R$ {sugestao.faixaSegmentada.valor.toFixed(2)}
             </div>
-            <p className="text-xs text-gray-500">Média de clientes {orcamento.tagContexto}</p>
+            {sugestao.faixaSegmentada.fonte === "historico" ? (
+              <p className="text-xs text-green-600">✅ {sugestao.faixaSegmentada.amostras} clientes</p>
+            ) : (
+              <p className="text-xs text-yellow-600">⚠️ Fallback: tag {sugestao.faixaSegmentada.tagUsada}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -149,25 +190,25 @@ export default function SugestaoPrecoPage() {
           <CardTitle>⭐ Sugestão Inteligente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="text-2xl font-bold">R$ {sugestao.multiplicador.toFixed(2)}</div>
+          <div className="text-2xl font-bold">R$ {sugestao.multiplicador.valor.toFixed(2)}</div>
           {sugestao.convergencia === "sem_dados" && (
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              ⚠️ Sem dados históricos ainda (primeiro orçamento)
+              ⚠️ Sem dados históricos suficientes — usando fallback
             </p>
           )}
           {sugestao.convergencia === "total" && (
             <p className="text-sm text-green-700 dark:text-green-300">
-              ✅ Forte sinal — as 3 lentes convergem
+              ✅ Forte sinal — as 3 lentes convergem (variação: &lt;3%)
             </p>
           )}
           {sugestao.convergencia === "parcial" && (
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              ⚠️ Sinal moderado — 2 de 3 lentes concordam
+              ⚠️ Sinal moderado — lentes próximas (variação: 3-7%)
             </p>
           )}
           {sugestao.convergencia === "divergente" && (
             <p className="text-sm text-red-700 dark:text-red-300">
-              ❌ Sinal fraco — lentes divergem
+              ❌ Sinal fraco — lentes divergem (variação: &gt;7%)
             </p>
           )}
         </CardContent>

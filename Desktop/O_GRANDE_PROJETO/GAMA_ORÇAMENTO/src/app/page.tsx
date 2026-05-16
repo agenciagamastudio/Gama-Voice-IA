@@ -79,6 +79,54 @@ export default function HomePage() {
     rejeitado: orcamentos.filter((o) => o.status === "rejeitado").length,
   };
 
+  // Gerar alertas contextuais
+  const alerts: Array<{ tipo: "warning" | "danger" | "success"; mensagem: string }> = [];
+
+  // Alerta: orçamentos em espera (enviado)
+  if (countByStatus.enviado > 0) {
+    alerts.push({
+      tipo: "warning",
+      mensagem: `⏳ ${countByStatus.enviado} orçamento${countByStatus.enviado > 1 ? "s" : ""} em espera por aprovação`,
+    });
+  }
+
+  // Alerta: orçamentos rejeitados
+  if (countByStatus.rejeitado > 0) {
+    alerts.push({
+      tipo: "danger",
+      mensagem: `⚠️ ${countByStatus.rejeitado} orçamento${countByStatus.rejeitado > 1 ? "s" : ""} rejeitado${countByStatus.rejeitado > 1 ? "s" : ""} — revisar estratégia de preços`,
+    });
+  }
+
+  // Alerta: orçamentos com baixa margem (<35%)
+  const orcamentosLowMargin = orcamentos.filter((o) => {
+    const margin = (o.precoPraticado - o.precoFloor) / o.precoFloor * 100;
+    return margin < 35 && o.status === "aprovado";
+  });
+  if (orcamentosLowMargin.length > 0) {
+    alerts.push({
+      tipo: "warning",
+      mensagem: `💰 ${orcamentosLowMargin.length} orçamento${orcamentosLowMargin.length > 1 ? "s" : ""} com margem abaixo da meta (35%)`,
+    });
+  }
+
+  // Alerta: oportunidade de premium
+  const orcamentosPadrao = orcamentos.filter((o) => o.tagContexto === "padrao" && o.status === "aprovado");
+  if (orcamentosPadrao.length >= 3) {
+    alerts.push({
+      tipo: "success",
+      mensagem: `✨ ${orcamentosPadrao.length} clientes Padrão — considere oferecer upgrade para Premium`,
+    });
+  }
+
+  // Alerta: sem orçamentos
+  if (orcamentos.length === 0) {
+    alerts.push({
+      tipo: "success",
+      mensagem: "🚀 Comece criando seu primeiro orçamento",
+    });
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       {/* Topbar */}
@@ -93,6 +141,9 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
+          <Link href="/orcamentos/auditoria" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+            📊 Auditoria
+          </Link>
           <Link href="/lixeira" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
             🗑️ Lixeira
           </Link>
@@ -125,6 +176,42 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+
+        {/* Alertas */}
+        {alerts.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+            {alerts.map((alert, idx) => {
+              const bgColor = {
+                danger: "rgba(239,68,68,0.1)",
+                warning: "rgba(245,158,11,0.1)",
+                success: "rgba(16,185,129,0.1)",
+              }[alert.tipo];
+
+              const borderColor = {
+                danger: "#ef4444",
+                warning: "#f59e0b",
+                success: "#10b981",
+              }[alert.tipo];
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    padding: "12px 16px",
+                    borderRadius: "var(--radius-sm)",
+                    border: `1px solid ${borderColor}`,
+                    background: bgColor,
+                    color: alert.tipo === "danger" ? "#ef4444" : alert.tipo === "warning" ? "#f59e0b" : "#10b981",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  {alert.mensagem}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Busca */}
         <div style={{ position: "relative", marginBottom: 24 }}>
