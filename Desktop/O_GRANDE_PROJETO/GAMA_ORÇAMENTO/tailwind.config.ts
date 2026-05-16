@@ -24,6 +24,7 @@ const config: Config = {
         error: 'var(--error)',
         warning: 'var(--warning)',
         success: 'var(--success)',
+        info: 'var(--info)',
       },
       borderRadius: {
         DEFAULT: 'var(--radius)',
