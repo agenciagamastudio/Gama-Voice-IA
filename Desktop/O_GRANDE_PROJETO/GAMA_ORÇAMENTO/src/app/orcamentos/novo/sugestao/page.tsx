@@ -1,7 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,12 +46,40 @@ export default function SugestaoPrecoPage() {
     // Chamar API para gerar sugestões
     const carregarSugestoes = async () => {
       try {
-        // Buscar templateId do sessionStorage (deve estar salvo antes)
-        const templateId = sessionStorage.getItem("templateId");
+        // Buscar templateId do sessionStorage
+        let templateId = sessionStorage.getItem("templateId");
+
+        // Fallback: se templateId não existe, gerar sugestão padrão baseada no modo
         if (!templateId) {
-          console.warn("templateId não encontrado em sessionStorage");
-          setCarregando(false);
-          return;
+          const modo = sessionStorage.getItem("modo");
+          if (modo === "construcao") {
+            // Gerar sugestão default com multiplicador padrão (sem histórico)
+            const sugestaoDefault: SugestaoPreco = {
+              mediaHistorica: {
+                valor: orcamentoData.precoFloorTotal * 1.45,
+                fonte: "fallback_tag",
+                amostras: 0,
+                tagUsada: orcamentoData.tagContexto,
+              },
+              multiplicador: {
+                valor: orcamentoData.precoFloorTotal * 1.65,
+                fonte: "fallback_tag",
+                amostras: 0,
+              },
+              faixaSegmentada: {
+                valor: orcamentoData.precoFloorTotal * 1.55,
+                fonte: "fallback_tag",
+                amostras: 0,
+                tagUsada: orcamentoData.tagContexto,
+              },
+              convergencia: "sem_dados",
+            };
+            setSugestao(sugestaoDefault);
+            setPrecoPraticado(sugestaoDefault.multiplicador.valor);
+            setCarregando(false);
+            return;
+          }
+          throw new Error("templateId e modo não encontrados");
         }
 
         const response = await fetch(
@@ -82,8 +108,8 @@ export default function SugestaoPrecoPage() {
 
   if (carregando || !orcamento || !sugestao) {
     return (
-      <div className="container py-8">
-        <p className="text-center text-gray-600">Carregando sugestões de preço...</p>
+      <div className="min-h-screen bg-gradient-to-br from-bg via-surface to-surface-2 relative overflow-hidden flex items-center justify-center">
+        <p className="text-slate-400 text-lg">Carregando sugestões de preço...</p>
       </div>
     );
   }
@@ -105,169 +131,204 @@ export default function SugestaoPrecoPage() {
   };
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <Link href="/orcamentos/novo">
-          <Button variant="ghost">← Voltar para Construção</Button>
-        </Link>
-        <h1 className="text-3xl font-bold mt-4">💰 Precificação do Orçamento</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-bg via-surface to-surface-2 relative overflow-hidden">
+      {/* Volumetric background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-primary/15 to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-primary/10 to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-      {/* Floor */}
-      <div className="mb-8 p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">Preço Floor (Mínimo)</p>
-        <p className="text-3xl font-bold text-gray-900 dark:text-white">
-          R$ {orcamento.precoFloorTotal.toFixed(2)}
-        </p>
-      </div>
-
-      {/* Sugestões */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {/* Média Histórica */}
-        <Card
-          className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.mediaHistorica.valor)}
-        >
-          <CardHeader>
-            <CardTitle className="text-base">📈 Média Histórica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-blue-600">
-              R$ {sugestao.mediaHistorica.valor.toFixed(2)}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)]">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="flex items-start justify-between">
+              <div>
+                <Link href="/orcamentos/novo" className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors mb-4">
+                  <span>←</span>
+                  <span>Voltar para Construção</span>
+                </Link>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+                  💰 Precificação do Orçamento
+                </h1>
+              </div>
             </div>
-            {sugestao.mediaHistorica.fonte === "historico" ? (
-              <p className="text-xs text-green-600">✅ {sugestao.mediaHistorica.amostras} orçamentos</p>
-            ) : (
-              <p className="text-xs text-yellow-600">⚠️ Fallback: tag {sugestao.mediaHistorica.tagUsada}</p>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Multiplicador */}
-        <Card
-          className="cursor-pointer hover:border-green-500 dark:hover:border-green-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.multiplicador.valor)}
-        >
-          <CardHeader>
-            <CardTitle className="text-base">🔄 Multiplicador</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-green-600">
-              R$ {sugestao.multiplicador.valor.toFixed(2)}
-            </div>
-            {sugestao.multiplicador.fonte === "historico" ? (
-              <p className="text-xs text-green-600">✅ {sugestao.multiplicador.amostras} orçamentos</p>
-            ) : (
-              <p className="text-xs text-yellow-600">⚠️ Padrão (sem histórico)</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Faixa Segmentada */}
-        <Card
-          className="cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 transition-colors"
-          onClick={() => setPrecoPraticado(sugestao.faixaSegmentada.valor)}
-        >
-          <CardHeader>
-            <CardTitle className="text-base">🎯 Faixa: {orcamento.tagContexto}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-purple-600">
-              R$ {sugestao.faixaSegmentada.valor.toFixed(2)}
-            </div>
-            {sugestao.faixaSegmentada.fonte === "historico" ? (
-              <p className="text-xs text-green-600">✅ {sugestao.faixaSegmentada.amostras} clientes</p>
-            ) : (
-              <p className="text-xs text-yellow-600">⚠️ Fallback: tag {sugestao.faixaSegmentada.tagUsada}</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Sugestão Inteligente */}
-      <Card className="mb-8 border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950">
-        <CardHeader>
-          <CardTitle>⭐ Sugestão Inteligente</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="text-2xl font-bold">R$ {sugestao.multiplicador.valor.toFixed(2)}</div>
-          {sugestao.convergencia === "sem_dados" && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              ⚠️ Sem dados históricos suficientes — usando fallback
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          {/* Floor Card */}
+          <div className="glass glass-card p-8 border border-primary/30 bg-primary/5 mb-12">
+            <p className="text-slate-400 text-xs uppercase mb-2 tracking-wider">Preço Floor (Mínimo Obrigatório)</p>
+            <p className="text-5xl font-bold text-primary">
+              R$ {orcamento.precoFloorTotal.toFixed(2)}
             </p>
-          )}
-          {sugestao.convergencia === "total" && (
-            <p className="text-sm text-green-700 dark:text-green-300">
-              ✅ Forte sinal — as 3 lentes convergem (variação: &lt;3%)
-            </p>
-          )}
-          {sugestao.convergencia === "parcial" && (
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              ⚠️ Sinal moderado — lentes próximas (variação: 3-7%)
-            </p>
-          )}
-          {sugestao.convergencia === "divergente" && (
-            <p className="text-sm text-red-700 dark:text-red-300">
-              ❌ Sinal fraco — lentes divergem (variação: &gt;7%)
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Preço Praticado */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>💼 Preço Praticado</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Valor (R$)</label>
-            <input
-              type="number"
-              value={precoPraticado}
-              onChange={(e) => setPrecoPraticado(parseFloat(e.target.value) || 0)}
-              className="w-full px-4 py-2 border rounded text-2xl font-bold dark:bg-gray-800 dark:border-gray-700"
-            />
           </div>
 
-          {/* Margem */}
-          <div className="border-t pt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Margem</p>
-            <div
-              className={`p-3 rounded ${
-                margemAlerta
-                  ? "bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-700"
-                  : "bg-green-100 dark:bg-green-950 border border-green-300 dark:border-green-700"
-              }`}
-            >
-              {margemAlerta ? (
-                <p className="font-bold text-red-800 dark:text-red-200">
-                  ⚠️ Abaixo do floor: R$ {margem.toFixed(2)} ({margemPercentual.toFixed(1)}%)
+          {/* 3 Lentes de Precificação */}
+          <div className="mb-12">
+            <p className="text-slate-400 text-sm uppercase mb-4 tracking-wider">3 Lentes de Precificação</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Média Histórica */}
+              <button
+                onClick={() => setPrecoPraticado(sugestao.mediaHistorica.valor)}
+                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-95 text-left"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-2xl">📈</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary">Histórica</span>
+                </div>
+                <p className="text-2xl font-bold text-white mb-2">
+                  R$ {sugestao.mediaHistorica.valor.toFixed(2)}
                 </p>
-              ) : (
-                <>
-                  <p className="font-bold text-green-800 dark:text-green-200">
-                    💚 R$ {margem.toFixed(2)} (+{margemPercentual.toFixed(1)}%)
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    {margemPercentual >= 35 ? "✅ Margem-alvo alcançada" : "⚠️ Margem abaixo do alvo"}
-                  </p>
-                </>
-              )}
+                {sugestao.mediaHistorica.fonte === "historico" ? (
+                  <p className="text-xs text-green-400">✅ {sugestao.mediaHistorica.amostras} orçamentos analisados</p>
+                ) : (
+                  <p className="text-xs text-yellow-400">⚠️ Fallback: tag {sugestao.mediaHistorica.tagUsada}</p>
+                )}
+              </button>
+
+              {/* Multiplicador */}
+              <button
+                onClick={() => setPrecoPraticado(sugestao.multiplicador.valor)}
+                className="glass glass-card p-6 border border-primary/50 bg-primary/10 rounded-lg hover:border-primary hover:bg-primary/15 transition-all active:scale-95 text-left ring-1 ring-primary/30"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-2xl">🔄</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary text-black">Recomendado</span>
+                </div>
+                <p className="text-2xl font-bold text-primary mb-2">
+                  R$ {sugestao.multiplicador.valor.toFixed(2)}
+                </p>
+                {sugestao.multiplicador.fonte === "historico" ? (
+                  <p className="text-xs text-green-400">✅ {sugestao.multiplicador.amostras} orçamentos analisados</p>
+                ) : (
+                  <p className="text-xs text-yellow-400">⚠️ Padrão (sem histórico suficiente)</p>
+                )}
+              </button>
+
+              {/* Faixa Segmentada */}
+              <button
+                onClick={() => setPrecoPraticado(sugestao.faixaSegmentada.valor)}
+                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-95 text-left"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-2xl">🎯</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary">Segmentado</span>
+                </div>
+                <p className="text-xl font-bold text-white mb-1">{orcamento.tagContexto}</p>
+                <p className="text-2xl font-bold text-primary mb-2">
+                  R$ {sugestao.faixaSegmentada.valor.toFixed(2)}
+                </p>
+                {sugestao.faixaSegmentada.fonte === "historico" ? (
+                  <p className="text-xs text-green-400">✅ {sugestao.faixaSegmentada.amostras} clientes</p>
+                ) : (
+                  <p className="text-xs text-yellow-400">⚠️ Fallback: tag {sugestao.faixaSegmentada.tagUsada}</p>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Ações */}
-          <div className="grid grid-cols-2 gap-2 pt-4">
-            <Button variant="outline" onClick={handleSalvarRascunho}>
-              Salvar Rascunho
-            </Button>
-            <Button onClick={handleGerarProposta} disabled={margemAlerta}>
-              Gerar Proposta
-            </Button>
+          {/* Sugestão Inteligente */}
+          <div className="glass glass-card p-8 border border-primary/50 bg-primary/8 mb-12 rounded-lg">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <p className="text-slate-400 text-xs uppercase mb-2 tracking-wider">Sugestão Inteligente</p>
+                <p className="text-4xl font-bold text-primary">R$ {sugestao.multiplicador.valor.toFixed(2)}</p>
+              </div>
+              <span className="text-3xl">⭐</span>
+            </div>
+
+            {sugestao.convergencia === "sem_dados" && (
+              <div className="p-3 rounded-lg bg-[rgba(251,146,60,0.1)] border border-orange-500/30 text-orange-300 text-sm">
+                ⚠️ Sem dados históricos suficientes — usando fallback
+              </div>
+            )}
+            {sugestao.convergencia === "total" && (
+              <div className="p-3 rounded-lg bg-[rgba(34,197,94,0.1)] border border-green-500/30 text-green-300 text-sm">
+                ✅ Forte sinal — as 3 lentes convergem (variação &lt;3%)
+              </div>
+            )}
+            {sugestao.convergencia === "parcial" && (
+              <div className="p-3 rounded-lg bg-[rgba(251,146,60,0.1)] border border-yellow-500/30 text-yellow-300 text-sm">
+                ⚠️ Sinal moderado — lentes próximas (variação 3-7%)
+              </div>
+            )}
+            {sugestao.convergencia === "divergente" && (
+              <div className="p-3 rounded-lg bg-[rgba(239,68,68,0.1)] border border-red-500/30 text-red-300 text-sm">
+                ❌ Sinal fraco — lentes divergem (variação &gt;7%)
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Preço Praticado */}
+          <div className="glass glass-card p-8 border border-[rgba(148,163,184,0.1)] rounded-lg">
+            <div className="mb-8">
+              <p className="text-slate-400 text-xs uppercase mb-4 tracking-wider">Ajuste o Preço Final</p>
+              <div>
+                <label className="block text-slate-400 text-sm mb-3">Valor Final (R$)</label>
+                <input
+                  type="number"
+                  value={precoPraticado}
+                  onChange={(e) => setPrecoPraticado(parseFloat(e.target.value) || 0)}
+                  className="w-full px-6 py-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-4xl font-bold text-primary placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Margem Analysis */}
+            <div className="border-t border-[rgba(148,163,184,0.1)] pt-8">
+              <p className="text-slate-400 text-xs uppercase mb-4 tracking-wider">Análise de Margem</p>
+
+              {margemAlerta ? (
+                <div className="p-6 rounded-lg bg-[rgba(239,68,68,0.1)] border border-red-500/30 mb-6">
+                  <p className="font-bold text-red-300 text-lg mb-2">
+                    ⚠️ Preço abaixo do floor
+                  </p>
+                  <p className="text-red-200">
+                    Diferença: R$ {margem.toFixed(2)} ({margemPercentual.toFixed(1)}%)
+                  </p>
+                </div>
+              ) : (
+                <div className="p-6 rounded-lg bg-[rgba(34,197,94,0.1)] border border-green-500/30 mb-6">
+                  <div className="flex items-baseline gap-4 mb-2">
+                    <p className="text-3xl font-bold text-primary">R$ {margem.toFixed(2)}</p>
+                    <p className="text-xl text-green-300">+{margemPercentual.toFixed(1)}%</p>
+                  </div>
+                  <p className={`text-sm ${margemPercentual >= 35 ? "text-green-300" : "text-yellow-300"}`}>
+                    {margemPercentual >= 35 ? "✅ Margem-alvo alcançada (35%+)" : "⚠️ Margem abaixo do alvo"}
+                  </p>
+                </div>
+              )}
+
+              {/* Floor Reference */}
+              <div className="p-4 rounded-lg bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)]">
+                <p className="text-xs text-slate-500 mb-1">Floor (mínimo)</p>
+                <p className="text-sm font-semibold text-slate-300">R$ {orcamento.precoFloorTotal.toFixed(2)}</p>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="flex gap-4 pt-8 border-t border-[rgba(148,163,184,0.1)]">
+              <button
+                onClick={handleSalvarRascunho}
+                className="flex-1 px-6 py-3 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-slate-300 font-medium hover:border-primary/50 hover:bg-primary/5 transition-all"
+              >
+                💾 Salvar Rascunho
+              </button>
+              <button
+                onClick={handleGerarProposta}
+                disabled={margemAlerta}
+                className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all ${
+                  margemAlerta
+                    ? "bg-slate-700 text-slate-500 cursor-not-allowed opacity-50"
+                    : "bg-primary text-black hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] hover:scale-105 active:scale-95"
+                }`}
+              >
+                📤 Gerar Proposta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
