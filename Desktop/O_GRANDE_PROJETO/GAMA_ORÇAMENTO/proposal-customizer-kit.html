@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposal Customizer Kit — GAMA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        :root {
+            --bg-base: #0a0a0a;
+            --bg-layer-1: #111;
+            --bg-layer-2: #161616;
+            --border-color: #2a2a2a;
+            --text-high: #e8e8e8;
+            --text-normal: #888;
+            --text-muted: #555;
+            --accent: #88CE11;
+            --accent-dim: rgba(136, 206, 17, 0.2);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-high);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            gap: 0;
+        }
+
+        /* PREVIEW SECTION (65%) */
+        .preview-section {
+            flex: 1.86;
+            background: var(--bg-base);
+            padding: 2rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* CONTROL PANEL (35%) */
+        .control-section {
+            flex: 1;
+            background: var(--bg-layer-1);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* PROPOSAL PREVIEW */
+        .proposal-preview {
+            max-width: 600px;
+            background: var(--bg-layer-2);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            border-radius: 8px;
+        }
+
+        /* HEADER */
+        .proposal-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .proposal-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .proposal-company {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .proposal-date {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* SECTION TITLES */
+        .proposal-section-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.25rem;
+            margin: 1.5rem 0 0.75rem 0;
+            color: var(--text-high);
+        }
+
+        .proposal-section-title.hidden {
+            display: none;
+        }
+
+        .proposal-section-content {
+            color: var(--text-normal);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        /* TABLE */
+        .proposal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .proposal-table th {
+            text-align: left;
+            padding: 0.75rem;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .proposal-table td {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            color: var(--text-normal);
+        }
+
+        .proposal-table td:last-child {
+            text-align: right;
+        }
+
+        .proposal-total {
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* TIMELINE */
+        .proposal-timeline {
+            margin: 1rem 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-top: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .timeline-text {
+            font-size: 0.9rem;
+            color: var(--text-normal);
+        }
+
+        /* SIGNATURE */
+        .proposal-signature {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .sig-line {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .sig-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-high);
+            padding: 0.5rem 0;
+            font-family: 'Sora', sans-serif;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .sig-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* CONTROL GROUP */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .control-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .control-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-option {
+            padding: 0.75rem 1rem;
+            background: var(--bg-layer-2);
+            border: 1px solid var(--border-color);
+            color: var(--text-normal);
+            cursor: pointer;
+            font-family: 'Sora', sans-serif;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            transition: all 150ms ease;
+        }
+
+        .btn-option:hover {
+            background: var(--bg-base);
+            border-color: var(--accent);
+        }
+
+        .btn-option.active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* CHECKBOXES */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-item label {
+            font-size: 0.875rem;
+            color: var(--text-normal);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* SLIDERS */
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slider-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .slider-value {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border: none;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* PRESETS */
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn-preset {
+            padding: 0.75rem;
+            background: var(--bg-layer-2);
+            border: 1px solid var(--border-color);
+            color: var(--text-normal);
+            cursor: pointer;
+            font-family: 'Sora', sans-serif;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            transition: all 150ms ease;
+        }
+
+        .btn-preset:hover {
+            background: var(--bg-base);
+            border-color: var(--accent);
+        }
+
+        .btn-save {
+            padding: 0.75rem;
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            color: var(--bg-base);
+            cursor: pointer;
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            transition: all 150ms ease;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        /* GLASS EFFECT */
+        [data-effect="glass"] {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* NEUMORPHIC EFFECT */
+        [data-effect="neumorphic"] {
+            background: var(--bg-layer-2) !important;
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5), -2px -2px 4px rgba(255, 255, 255, 0.02);
+            border: none !important;
+        }
+
+        /* BRUTALISM EFFECT */
+        [data-effect="brutalism"] {
+            background: var(--bg-layer-2) !important;
+            border: 2px solid var(--text-high) !important;
+            box-shadow: 4px 4px 0 rgba(136, 206, 17, 0.3);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .preview-section {
+                flex: 1;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .control-section {
+                flex: 1;
+            }
+
+            .signature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- PREVIEW -->
+        <div class="preview-section">
+            <div class="proposal-preview" data-effect="flat">
+                <div class="proposal-header">
+                    <div class="proposal-logo">GAMA Studio</div>
+                    <div class="proposal-company">Proposta Comercial</div>
+                    <div class="proposal-date" id="previewDate"></div>
+                </div>
+
+                <div id="sectionProblema">
+                    <h2 class="proposal-section-title">Problema</h2>
+                    <p class="proposal-section-content">Seu negócio enfrenta desafios na automação e na escalabilidade dos processos comerciais.</p>
+                </div>
+
+                <div id="sectionSolucao">
+                    <h2 class="proposal-section-title">Solução</h2>
+                    <p class="proposal-section-content">Propomos um sistema integrado de orçamentação e gestão que automatiza seu fluxo de vendas e melhora a experiência do cliente.</p>
+                </div>
+
+                <div id="sectionEscopo">
+                    <h2 class="proposal-section-title">Escopo</h2>
+                    <p class="proposal-section-content">
+                        • Auditoria de processos atuais<br>
+                        • Design de arquitetura de solução<br>
+                        • Desenvolvimento e integração<br>
+                        • Testes e validação<br>
+                    </p>
+                </div>
+
+                <div id="sectionInvestimento">
+                    <h2 class="proposal-section-title">Investimento</h2>
+                    <table class="proposal-table">
+                        <thead>
+                            <tr>
+                                <th>Serviço</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Diagnóstico e Planejamento</td>
+                                <td>R$ 5.000</td>
+                            </tr>
+                            <tr>
+                                <td>Desenvolvimento da Solução</td>
+                                <td>R$ 15.000</td>
+                            </tr>
+                            <tr>
+                                <td>Integração e Testes</td>
+                                <td>R$ 5.000</td>
+                            </tr>
+                            <tr class="proposal-total">
+                                <td>TOTAL</td>
+                                <td>R$ 25.000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="sectionPrazo">
+                    <h2 class="proposal-section-title">Timeline</h2>
+                    <div class="proposal-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-text"><strong>Semana 1-2:</strong> Diagnóstico e Planejamento</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-text"><strong>Semana 3-5:</strong> Desenvolvimento</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-text"><strong>Semana 6:</strong> Testes e Entrega</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sectionAssinatura">
+                    <h2 class="proposal-section-title">Assinatura</h2>
+                    <div class="proposal-signature">
+                        <div>
+                            <div class="sig-line">Cliente</div>
+                            <input type="text" class="sig-input" placeholder="Nome do Cliente">
+                        </div>
+                        <div>
+                            <div class="sig-line">Data</div>
+                            <input type="date" class="sig-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="control-section">
+            <!-- Theme -->
+            <div class="control-group">
+                <label class="control-label">Theme</label>
+                <div class="control-options">
+                    <button class="btn-option active" data-control="theme" data-value="minimalista">Minimalista</button>
+                    <button class="btn-option" data-control="theme" data-value="editorial">Editorial</button>
+                    <button class="btn-option" data-control="theme" data-value="cockpit">Cockpit Tech</button>
+                    <button class="btn-option" data-control="theme" data-value="soft">Soft Cliente</button>
+                </div>
+            </div>
+
+            <!-- Palette -->
+            <div class="control-group">
+                <label class="control-label">Palette</label>
+                <div class="control-options">
+                    <button class="btn-option active" data-control="palette" data-value="gama">Gama Default</button>
+                    <button class="btn-option" data-control="palette" data-value="azul-ouro">Azul + Ouro</button>
+                </div>
+            </div>
+
+            <!-- Visible Blocks -->
+            <div class="control-group">
+                <label class="control-label">Visible Blocks</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-header" data-control="visibility" data-block="header" checked disabled>
+                        <label for="cb-header">Header</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-problema" data-control="visibility" data-block="problema" checked>
+                        <label for="cb-problema">Problema</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-solucao" data-control="visibility" data-block="solucao" checked>
+                        <label for="cb-solucao">Solução</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-escopo" data-control="visibility" data-block="escopo" checked>
+                        <label for="cb-escopo">Escopo</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-investimento" data-control="visibility" data-block="investimento" checked>
+                        <label for="cb-investimento">Investimento</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-prazo" data-control="visibility" data-block="prazo" checked>
+                        <label for="cb-prazo">Timeline</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cb-assinatura" data-control="visibility" data-block="assinatura" checked>
+                        <label for="cb-assinatura">Assinatura</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typography -->
+            <div class="control-group">
+                <label class="control-label">Typography</label>
+                <div class="slider-item">
+                    <div class="slider-label">Title Size: <span class="slider-value" id="val-titleSize">1.75rem</span></div>
+                    <input type="range" id="slider-titleSize" data-control="typography" data-prop="titleSize" min="1" max="3" value="1.75" step="0.25">
+                </div>
+                <div class="slider-item">
+                    <div class="slider-label">Subtitle Size: <span class="slider-value" id="val-subtitleSize">1rem</span></div>
+                    <input type="range" id="slider-subtitleSize" data-control="typography" data-prop="subtitleSize" min="0.75" max="2" value="1" step="0.125">
+                </div>
+                <div class="slider-item">
+                    <div class="slider-label">Body Size: <span class="slider-value" id="val-bodySize">0.95rem</span></div>
+                    <input type="range" id="slider-bodySize" data-control="typography" data-prop="bodySize" min="0.8" max="1.2" value="0.95" step="0.05">
+                </div>
+                <div class="slider-item">
+                    <div class="slider-label">Weight: <span class="slider-value" id="val-weight">400</span></div>
+                    <input type="range" id="slider-weight" data-control="typography" data-prop="weight" min="400" max="700" value="400" step="100">
+                </div>
+            </div>
+
+            <!-- Effects -->
+            <div class="control-group">
+                <label class="control-label">Visual Effects</label>
+                <div class="control-options">
+                    <button class="btn-option active" data-control="effect" data-value="flat">Flat</button>
+                    <button class="btn-option" data-control="effect" data-value="glass">Glass</button>
+                    <button class="btn-option" data-control="effect" data-value="neumorphic">Neumorphic</button>
+                    <button class="btn-option" data-control="effect" data-value="brutalism">Brutalism</button>
+                </div>
+            </div>
+
+            <!-- Presets -->
+            <div class="control-group">
+                <label class="control-label">Presets</label>
+                <div class="preset-buttons">
+                    <button class="btn-preset" data-preset="minima">Mínima</button>
+                    <button class="btn-preset" data-preset="editorial">Editorial</button>
+                    <button class="btn-preset" data-preset="cockpit">Cockpit</button>
+                    <button class="btn-preset" data-preset="soft">Soft</button>
+                </div>
+                <button class="btn-save" id="btn-save">Salvar Customização</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // STATE MANAGEMENT
+        const state = {
+            theme: 'minimalista',
+            palette: 'gama',
+            visibility: {
+                header: true,
+                problema: true,
+                solucao: true,
+                escopo: true,
+                investimento: true,
+                prazo: true,
+                assinatura: true
+            },
+            typography: {
+                titleSize: 1.75,
+                subtitleSize: 1,
+                bodySize: 0.95,
+                weight: 400
+            },
+            effect: 'flat'
+        };
+
+        // SET: Atomic state updater
+        function setState(updates) {
+            const needsRender = Object.keys(updates).some(key => {
+                if (key === 'visibility' || key === 'typography') {
+                    return JSON.stringify(state[key]) !== JSON.stringify(updates[key]);
+                }
+                return state[key] !== updates[key];
+            });
+
+            Object.assign(state, updates);
+            if (needsRender) {
+                render();
+            }
+            saveState();
+        }
+
+        // RENDER: Read state, write DOM
+        function render() {
+            const preview = document.querySelector('.proposal-preview');
+
+            // Apply effect
+            preview.setAttribute('data-effect', state.effect);
+
+            // Apply typography
+            document.documentElement.style.setProperty('--proposal-title-size', state.typography.titleSize + 'rem');
+            document.documentElement.style.setProperty('--proposal-body-size', state.typography.bodySize + 'rem');
+            preview.style.fontSize = state.typography.bodySize + 'rem';
+
+            // Apply visibility
+            for (const [block, visible] of Object.entries(state.visibility)) {
+                const elem = document.getElementById(`section${block.charAt(0).toUpperCase() + block.slice(1)}`);
+                if (elem) {
+                    elem.style.display = visible ? 'block' : 'none';
+                }
+            }
+
+            // Apply palette
+            if (state.palette === 'azul-ouro') {
+                document.documentElement.style.setProperty('--accent', '#0066cc');
+                document.documentElement.style.setProperty('--accent-dim', 'rgba(0, 102, 204, 0.2)');
+            } else {
+                document.documentElement.style.setProperty('--accent', '#88CE11');
+                document.documentElement.style.setProperty('--accent-dim', 'rgba(136, 206, 17, 0.2)');
+            }
+
+            // Update button states
+            document.querySelectorAll('[data-control="theme"]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === state.theme);
+            });
+
+            document.querySelectorAll('[data-control="palette"]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === state.palette);
+            });
+
+            document.querySelectorAll('[data-control="effect"]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === state.effect);
+            });
+
+            document.querySelectorAll('[data-control="visibility"]').forEach(cb => {
+                cb.checked = state.visibility[cb.getAttribute('data-block')];
+            });
+
+            document.getElementById('slider-titleSize').value = state.typography.titleSize;
+            document.getElementById('slider-subtitleSize').value = state.typography.subtitleSize;
+            document.getElementById('slider-bodySize').value = state.typography.bodySize;
+            document.getElementById('slider-weight').value = state.typography.weight;
+
+            document.getElementById('val-titleSize').textContent = state.typography.titleSize.toFixed(2) + 'rem';
+            document.getElementById('val-subtitleSize').textContent = state.typography.subtitleSize.toFixed(2) + 'rem';
+            document.getElementById('val-bodySize').textContent = state.typography.bodySize.toFixed(2) + 'rem';
+            document.getElementById('val-weight').textContent = state.typography.weight;
+        }
+
+        // LISTENERS
+        document.addEventListener('click', (e) => {
+            if (e.target.hasAttribute('data-control')) {
+                const control = e.target.getAttribute('data-control');
+                const value = e.target.getAttribute('data-value');
+
+                if (control === 'theme') {
+                    setState({ theme: value });
+                } else if (control === 'palette') {
+                    setState({ palette: value });
+                } else if (control === 'effect') {
+                    setState({ effect: value });
+                }
+            }
+
+            if (e.target.hasAttribute('data-preset')) {
+                applyPreset(e.target.getAttribute('data-preset'));
+            }
+
+            if (e.target.id === 'btn-save') {
+                saveState();
+                alert('Customização salva com sucesso!');
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.hasAttribute('data-control') && e.target.getAttribute('data-control') === 'visibility') {
+                const block = e.target.getAttribute('data-block');
+                const visibility = { ...state.visibility };
+                visibility[block] = e.target.checked;
+                setState({ visibility });
+            }
+        });
+
+        document.addEventListener('input', (e) => {
+            if (e.target.hasAttribute('data-control') && e.target.getAttribute('data-control') === 'typography') {
+                const prop = e.target.getAttribute('data-prop');
+                const value = parseFloat(e.target.value);
+                const typography = { ...state.typography, [prop]: value };
+                setState({ typography });
+            }
+        });
+
+        // PRESETS
+        const presets = {
+            minima: {
+                theme: 'minimalista',
+                palette: 'gama',
+                effect: 'flat',
+                visibility: { header: true, problema: true, solucao: true, escopo: false, investimento: true, prazo: false, assinatura: false },
+                typography: { titleSize: 1.5, subtitleSize: 0.9, bodySize: 0.85, weight: 400 }
+            },
+            editorial: {
+                theme: 'editorial',
+                palette: 'gama',
+                effect: 'glass',
+                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1.1, bodySize: 0.95, weight: 500 }
+            },
+            cockpit: {
+                theme: 'cockpit',
+                palette: 'gama',
+                effect: 'glass',
+                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 600 }
+            },
+            soft: {
+                theme: 'soft',
+                palette: 'azul-ouro',
+                effect: 'neumorphic',
+                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 500 }
+            }
+        };
+
+        function applyPreset(presetName) {
+            const preset = presets[presetName];
+            if (preset) {
+                setState(preset);
+            }
+        }
+
+        // STORAGE
+        function saveState() {
+            try {
+                localStorage.setItem('proposalCustomizer', JSON.stringify(state));
+            } catch (e) {
+                console.error('Storage error:', e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('proposalCustomizer');
+                if (saved) {
+                    const loaded = JSON.parse(saved);
+                    Object.assign(state, loaded);
+                }
+            } catch (e) {
+                console.error('Storage error:', e);
+            }
+        }
+
+        // INIT
+        function init() {
+            loadState();
+            document.getElementById('previewDate').textContent = new Date().toLocaleDateString('pt-BR');
+            render();
+        }
+
+        init();
+    </script>
+</body>
+</html>
