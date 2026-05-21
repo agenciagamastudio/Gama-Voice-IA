@@ -24,6 +24,11 @@
             --accent: #88CE11;
             --accent-dim: rgba(136, 206, 17, 0.2);
             --glass-bg: rgba(255, 255, 255, 0.05);
+            --proposal-title-size: 1.75rem;
+            --proposal-subtitle-size: 1rem;
+            --proposal-body-size: 0.95rem;
+            --proposal-line-height: 1.6;
+            --proposal-font-weight: 400;
         }
 
         body {
@@ -88,7 +93,7 @@
 
         .proposal-company {
             font-family: 'Instrument Serif', serif;
-            font-size: 1.75rem;
+            font-size: var(--proposal-title-size);
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
@@ -96,14 +101,16 @@
         .proposal-date {
             font-size: 0.875rem;
             color: var(--text-muted);
+            line-height: var(--proposal-line-height);
         }
 
         /* SECTION TITLES */
         .proposal-section-title {
             font-family: 'Instrument Serif', serif;
-            font-size: 1.25rem;
+            font-size: calc(var(--proposal-title-size) * 0.85);
             margin: 1.5rem 0 0.75rem 0;
             color: var(--text-high);
+            line-height: var(--proposal-line-height);
         }
 
         .proposal-section-title.hidden {
@@ -112,8 +119,8 @@
 
         .proposal-section-content {
             color: var(--text-normal);
-            font-size: 0.95rem;
-            line-height: 1.6;
+            font-size: var(--proposal-body-size);
+            line-height: var(--proposal-line-height);
             margin-bottom: 1rem;
         }
 
@@ -122,7 +129,8 @@
             width: 100%;
             border-collapse: collapse;
             margin: 1rem 0;
-            font-size: 0.9rem;
+            font-size: calc(var(--proposal-body-size) * 0.95);
+            line-height: var(--proposal-line-height);
         }
 
         .proposal-table th {
@@ -168,11 +176,13 @@
             border-radius: 50%;
             margin-top: 0.5rem;
             flex-shrink: 0;
+            box-shadow: 0 0 8px var(--accent);
         }
 
         .timeline-text {
-            font-size: 0.9rem;
+            font-size: var(--proposal-body-size);
             color: var(--text-normal);
+            line-height: var(--proposal-line-height);
         }
 
         /* SIGNATURE */
@@ -197,7 +207,7 @@
             color: var(--text-high);
             padding: 0.5rem 0;
             font-family: 'Sora', sans-serif;
-            font-size: 0.875rem;
+            font-size: var(--proposal-body-size);
             margin-top: 0.5rem;
         }
 
@@ -405,7 +415,7 @@
                 flex: 1;
             }
 
-            .signature-grid {
+            .proposal-signature {
                 grid-template-columns: 1fr;
             }
         }
@@ -424,12 +434,12 @@
 
                 <div id="sectionProblema">
                     <h2 class="proposal-section-title">Problema</h2>
-                    <p class="proposal-section-content">Seu negócio enfrenta desafios na automação e na escalabilidade dos processos comerciais.</p>
+                    <p class="proposal-section-content">Seu negócio enfrenta desafios na automação e na escalabilidade dos processos comerciais. A falta de integração entre sistemas causa retrabalho e atrasos.</p>
                 </div>
 
                 <div id="sectionSolucao">
                     <h2 class="proposal-section-title">Solução</h2>
-                    <p class="proposal-section-content">Propomos um sistema integrado de orçamentação e gestão que automatiza seu fluxo de vendas e melhora a experiência do cliente.</p>
+                    <p class="proposal-section-content">Propomos um sistema integrado de orçamentação e gestão que automatiza seu fluxo de vendas, melhora a experiência do cliente e reduz custos operacionais em até 40%.</p>
                 </div>
 
                 <div id="sectionEscopo">
@@ -519,45 +529,36 @@
                 </div>
             </div>
 
-            <!-- Palette -->
-            <div class="control-group">
-                <label class="control-label">Palette</label>
-                <div class="control-options">
-                    <button class="btn-option active" data-control="palette" data-value="gama">Gama Default</button>
-                    <button class="btn-option" data-control="palette" data-value="azul-ouro">Azul + Ouro</button>
-                </div>
-            </div>
-
             <!-- Visible Blocks -->
             <div class="control-group">
                 <label class="control-label">Visible Blocks</label>
                 <div class="checkbox-group">
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-header" data-control="visibility" data-block="header" checked disabled>
+                        <input type="checkbox" id="cb-header" data-control="visibility" data-block="Problema" checked disabled>
                         <label for="cb-header">Header</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-problema" data-control="visibility" data-block="problema" checked>
+                        <input type="checkbox" id="cb-problema" data-control="visibility" data-block="Problema" checked>
                         <label for="cb-problema">Problema</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-solucao" data-control="visibility" data-block="solucao" checked>
+                        <input type="checkbox" id="cb-solucao" data-control="visibility" data-block="Solucao" checked>
                         <label for="cb-solucao">Solução</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-escopo" data-control="visibility" data-block="escopo" checked>
+                        <input type="checkbox" id="cb-escopo" data-control="visibility" data-block="Escopo" checked>
                         <label for="cb-escopo">Escopo</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-investimento" data-control="visibility" data-block="investimento" checked>
+                        <input type="checkbox" id="cb-investimento" data-control="visibility" data-block="Investimento" checked>
                         <label for="cb-investimento">Investimento</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-prazo" data-control="visibility" data-block="prazo" checked>
+                        <input type="checkbox" id="cb-prazo" data-control="visibility" data-block="Prazo" checked>
                         <label for="cb-prazo">Timeline</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="cb-assinatura" data-control="visibility" data-block="assinatura" checked>
+                        <input type="checkbox" id="cb-assinatura" data-control="visibility" data-block="Assinatura" checked>
                         <label for="cb-assinatura">Assinatura</label>
                     </div>
                 </div>
@@ -581,6 +582,10 @@
                 <div class="slider-item">
                     <div class="slider-label">Weight: <span class="slider-value" id="val-weight">400</span></div>
                     <input type="range" id="slider-weight" data-control="typography" data-prop="weight" min="400" max="700" value="400" step="100">
+                </div>
+                <div class="slider-item">
+                    <div class="slider-label">Line Height: <span class="slider-value" id="val-lineHeight">1.6</span></div>
+                    <input type="range" id="slider-lineHeight" data-control="typography" data-prop="lineHeight" min="1.2" max="2.0" value="1.6" step="0.1">
                 </div>
             </div>
 
@@ -613,33 +618,36 @@
         // STATE MANAGEMENT
         const state = {
             theme: 'minimalista',
-            palette: 'gama',
             visibility: {
-                header: true,
-                problema: true,
-                solucao: true,
-                escopo: true,
-                investimento: true,
-                prazo: true,
-                assinatura: true
+                Problema: true,
+                Solucao: true,
+                Escopo: true,
+                Investimento: true,
+                Prazo: true,
+                Assinatura: true
             },
             typography: {
                 titleSize: 1.75,
                 subtitleSize: 1,
                 bodySize: 0.95,
-                weight: 400
+                weight: 400,
+                lineHeight: 1.6
             },
             effect: 'flat'
         };
 
         // SET: Atomic state updater
         function setState(updates) {
-            const needsRender = Object.keys(updates).some(key => {
-                if (key === 'visibility' || key === 'typography') {
-                    return JSON.stringify(state[key]) !== JSON.stringify(updates[key]);
+            let needsRender = false;
+            for (const key in updates) {
+                if (typeof updates[key] === 'object') {
+                    if (JSON.stringify(state[key]) !== JSON.stringify(updates[key])) {
+                        needsRender = true;
+                    }
+                } else if (state[key] !== updates[key]) {
+                    needsRender = true;
                 }
-                return state[key] !== updates[key];
-            });
+            }
 
             Object.assign(state, updates);
             if (needsRender) {
@@ -655,26 +663,19 @@
             // Apply effect
             preview.setAttribute('data-effect', state.effect);
 
-            // Apply typography
+            // Apply typography as CSS variables
             document.documentElement.style.setProperty('--proposal-title-size', state.typography.titleSize + 'rem');
+            document.documentElement.style.setProperty('--proposal-subtitle-size', state.typography.subtitleSize + 'rem');
             document.documentElement.style.setProperty('--proposal-body-size', state.typography.bodySize + 'rem');
-            preview.style.fontSize = state.typography.bodySize + 'rem';
+            document.documentElement.style.setProperty('--proposal-font-weight', state.typography.weight);
+            document.documentElement.style.setProperty('--proposal-line-height', state.typography.lineHeight);
 
             // Apply visibility
             for (const [block, visible] of Object.entries(state.visibility)) {
-                const elem = document.getElementById(`section${block.charAt(0).toUpperCase() + block.slice(1)}`);
+                const elem = document.getElementById(`section${block}`);
                 if (elem) {
                     elem.style.display = visible ? 'block' : 'none';
                 }
-            }
-
-            // Apply palette
-            if (state.palette === 'azul-ouro') {
-                document.documentElement.style.setProperty('--accent', '#0066cc');
-                document.documentElement.style.setProperty('--accent-dim', 'rgba(0, 102, 204, 0.2)');
-            } else {
-                document.documentElement.style.setProperty('--accent', '#88CE11');
-                document.documentElement.style.setProperty('--accent-dim', 'rgba(136, 206, 17, 0.2)');
             }
 
             // Update button states
@@ -682,27 +683,30 @@
                 btn.classList.toggle('active', btn.getAttribute('data-value') === state.theme);
             });
 
-            document.querySelectorAll('[data-control="palette"]').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === state.palette);
-            });
-
             document.querySelectorAll('[data-control="effect"]').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-value') === state.effect);
             });
 
+            // Update checkbox states
             document.querySelectorAll('[data-control="visibility"]').forEach(cb => {
-                cb.checked = state.visibility[cb.getAttribute('data-block')];
+                const block = cb.getAttribute('data-block');
+                if (block) {
+                    cb.checked = state.visibility[block] || false;
+                }
             });
 
+            // Update slider values and displays
             document.getElementById('slider-titleSize').value = state.typography.titleSize;
             document.getElementById('slider-subtitleSize').value = state.typography.subtitleSize;
             document.getElementById('slider-bodySize').value = state.typography.bodySize;
             document.getElementById('slider-weight').value = state.typography.weight;
+            document.getElementById('slider-lineHeight').value = state.typography.lineHeight;
 
             document.getElementById('val-titleSize').textContent = state.typography.titleSize.toFixed(2) + 'rem';
             document.getElementById('val-subtitleSize').textContent = state.typography.subtitleSize.toFixed(2) + 'rem';
             document.getElementById('val-bodySize').textContent = state.typography.bodySize.toFixed(2) + 'rem';
             document.getElementById('val-weight').textContent = state.typography.weight;
+            document.getElementById('val-lineHeight').textContent = state.typography.lineHeight.toFixed(1);
         }
 
         // LISTENERS
@@ -713,8 +717,6 @@
 
                 if (control === 'theme') {
                     setState({ theme: value });
-                } else if (control === 'palette') {
-                    setState({ palette: value });
                 } else if (control === 'effect') {
                     setState({ effect: value });
                 }
@@ -726,16 +728,22 @@
 
             if (e.target.id === 'btn-save') {
                 saveState();
-                alert('Customização salva com sucesso!');
+                const msg = document.createElement('div');
+                msg.textContent = '✓ Salvo!';
+                msg.style.cssText = 'position:fixed;top:20px;right:20px;background:#88CE11;color:#0a0a0a;padding:12px 20px;border-radius:4px;font-weight:600;z-index:9999;';
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 2000);
             }
         });
 
         document.addEventListener('change', (e) => {
             if (e.target.hasAttribute('data-control') && e.target.getAttribute('data-control') === 'visibility') {
                 const block = e.target.getAttribute('data-block');
-                const visibility = { ...state.visibility };
-                visibility[block] = e.target.checked;
-                setState({ visibility });
+                if (block) {
+                    const visibility = { ...state.visibility };
+                    visibility[block] = e.target.checked;
+                    setState({ visibility });
+                }
             }
         });
 
@@ -752,31 +760,27 @@
         const presets = {
             minima: {
                 theme: 'minimalista',
-                palette: 'gama',
                 effect: 'flat',
-                visibility: { header: true, problema: true, solucao: true, escopo: false, investimento: true, prazo: false, assinatura: false },
-                typography: { titleSize: 1.5, subtitleSize: 0.9, bodySize: 0.85, weight: 400 }
+                visibility: { Problema: true, Solucao: true, Escopo: false, Investimento: true, Prazo: false, Assinatura: false },
+                typography: { titleSize: 1.5, subtitleSize: 0.9, bodySize: 0.85, weight: 400, lineHeight: 1.4 }
             },
             editorial: {
                 theme: 'editorial',
-                palette: 'gama',
                 effect: 'glass',
-                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
-                typography: { titleSize: 1.75, subtitleSize: 1.1, bodySize: 0.95, weight: 500 }
+                visibility: { Problema: true, Solucao: true, Escopo: true, Investimento: true, Prazo: true, Assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1.1, bodySize: 0.95, weight: 500, lineHeight: 1.8 }
             },
             cockpit: {
                 theme: 'cockpit',
-                palette: 'gama',
                 effect: 'glass',
-                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
-                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 600 }
+                visibility: { Problema: true, Solucao: true, Escopo: true, Investimento: true, Prazo: true, Assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 600, lineHeight: 1.6 }
             },
             soft: {
                 theme: 'soft',
-                palette: 'azul-ouro',
                 effect: 'neumorphic',
-                visibility: { header: true, problema: true, solucao: true, escopo: true, investimento: true, prazo: true, assinatura: true },
-                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 500 }
+                visibility: { Problema: true, Solucao: true, Escopo: true, Investimento: true, Prazo: true, Assinatura: true },
+                typography: { titleSize: 1.75, subtitleSize: 1, bodySize: 0.95, weight: 500, lineHeight: 1.7 }
             }
         };
 
