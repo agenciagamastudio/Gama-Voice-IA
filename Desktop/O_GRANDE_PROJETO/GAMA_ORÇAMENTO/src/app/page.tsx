@@ -128,251 +128,175 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Topbar */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, color: "#0a0a0a" }}>
-            G
-          </div>
-          <span style={{ fontWeight: 800, fontSize: 16 }}>
-            GAMA <span style={{ color: "var(--primary)" }}>Orçamento</span>
-          </span>
-        </div>
+    <div className="min-h-screen bg-gama-bg relative overflow-hidden">
+      {/* Volumetric background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-gama-primary-glow to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-gama-primary-dim to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Link href="/orcamentos/auditoria" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-            📊 Auditoria
-          </Link>
-          <Link href="/lixeira" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-            🗑️ Lixeira
-          </Link>
-          <Link href="/catalogo" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-            📦 Catálogo
-          </Link>
-          <Link href="/empresa" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-            ⚙ Empresa
-          </Link>
-          <Link href="/novo" style={{ padding: "8px 20px", borderRadius: "var(--radius-sm)", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-            + Novo Orçamento
-          </Link>
-        </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div style={{ padding: "32px", maxWidth: 1100, margin: "0 auto" }}>
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32 }}>
-          <div style={{ padding: "16px 20px", borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--primary-dim)", cursor: "pointer" }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "var(--primary)" }}>{fmt(totalValue)}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>Total</div>
-          </div>
-          {["rascunho", "enviado", "aprovado", "rejeitado"].map((status) => (
-            <div key={status} style={{ padding: "16px 20px", borderRadius: "var(--radius)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer" }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
-                {countByStatus[status as keyof typeof countByStatus]}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-gama-border backdrop-blur-md bg-gama-surface/40">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-5xl font-bold text-gama-primary mb-2">
+                  GAMA Orçamento
+                </h1>
+                <p className="text-gama-text-secondary text-lg">Gerencie seus orçamentos com inteligência</p>
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{status.charAt(0).toUpperCase() + status.slice(1)}</div>
+              <Link href="/orcamentos/novo" className="px-6 py-3 bg-gama-primary text-gama-bg font-bold rounded-lg hover:shadow-lg hover:scale-105 active:scale-95 transition-all">
+                + Novo Orçamento
+              </Link>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Alertas */}
-        {alerts.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-            {alerts.map((alert, idx) => {
-              const bgColor = {
-                danger: "rgba(239,68,68,0.1)",
-                warning: "rgba(245,158,11,0.1)",
-                success: "rgba(16,185,129,0.1)",
-              }[alert.tipo];
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-5 gap-4 mb-8">
+            <div className="glass-card p-6 border-gama-primary/30 bg-gama-primary/5">
+              <p className="text-gama-text-muted text-xs uppercase mb-2">Total</p>
+              <p className="text-3xl font-bold text-gama-primary">{fmt(totalValue)}</p>
+            </div>
+            <div className="glass-card p-6">
+              <p className="text-gama-text-muted text-xs uppercase mb-2">Rascunho</p>
+              <p className="text-3xl font-bold text-gama-text">{countByStatus.rascunho}</p>
+            </div>
+            <div className="glass-card p-6">
+              <p className="text-gama-text-muted text-xs uppercase mb-2">Enviado</p>
+              <p className="text-3xl font-bold text-gama-warning">{countByStatus.enviado}</p>
+            </div>
+            <div className="glass-card p-6">
+              <p className="text-gama-text-muted text-xs uppercase mb-2">Aprovado</p>
+              <p className="text-3xl font-bold text-gama-success">{countByStatus.aprovado}</p>
+            </div>
+            <div className="glass-card p-6">
+              <p className="text-gama-text-muted text-xs uppercase mb-2">Rejeitado</p>
+              <p className="text-3xl font-bold text-gama-error">{countByStatus.rejeitado}</p>
+            </div>
+          </div>
 
-              const borderColor = {
-                danger: "#ef4444",
-                warning: "#f59e0b",
-                success: "#10b981",
-              }[alert.tipo];
-
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: "var(--radius-sm)",
-                    border: `1px solid ${borderColor}`,
-                    background: bgColor,
-                    color: alert.tipo === "danger" ? "#ef4444" : alert.tipo === "warning" ? "#f59e0b" : "#10b981",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
+          {/* Alertas */}
+          {alerts.length > 0 && (
+            <div className="space-y-3 mb-8">
+              {alerts.map((alert, idx) => (
+                <div key={idx} className={`glass-card p-4 border-l-4 text-sm font-medium ${
+                  alert.tipo === "danger" ? "border-gama-error bg-gama-error/10 text-gama-error" :
+                  alert.tipo === "warning" ? "border-gama-warning bg-gama-warning/10 text-gama-warning" :
+                  "border-gama-success bg-gama-success/10 text-gama-success"
+                }`}>
                   {alert.mensagem}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="mb-8 relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gama-text-muted">🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar por cliente ou número..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full max-w-sm px-4 py-2 pl-10 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text placeholder-gama-text-muted focus:outline-none focus:border-gama-primary/50"
+            />
           </div>
-        )}
 
-        {/* Busca */}
-        <div style={{ position: "relative", marginBottom: 24 }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)", fontSize: 14 }}>
-            🔍
-          </span>
-          <input
-            type="text"
-            placeholder="Buscar por cliente ou número..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              maxWidth: 320,
-              padding: "9px 12px 9px 36px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--border)",
-              background: "var(--surface-2)",
-              color: "var(--text)",
-              fontSize: 13,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        {/* Datas agrupadas */}
-        {filteredDates.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px", border: "1px dashed var(--border)", borderRadius: "var(--radius)" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Nenhum orçamento encontrado</div>
-            <div style={{ color: "var(--text-2)", marginBottom: 24 }}>Crie seu primeiro orçamento agora.</div>
-            <Link href="/novo" style={{ padding: "10px 24px", borderRadius: "var(--radius-sm)", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 14, textDecoration: "none", display: "inline-block" }}>
-              + Novo Orçamento
+          {/* Quicklinks */}
+          <div className="flex gap-3 mb-8 flex-wrap">
+            <Link href="/catalogo" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text-secondary text-sm font-medium hover:border-gama-primary/50 transition-colors">
+              📦 Catálogo
+            </Link>
+            <Link href="/proposal" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text-secondary text-sm font-medium hover:border-gama-primary/50 transition-colors">
+              📄 Proposta
+            </Link>
+            <Link href="/orcamentos/auditoria" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text-secondary text-sm font-medium hover:border-gama-primary/50 transition-colors">
+              📊 Auditoria
+            </Link>
+            <Link href="/empresa" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text-secondary text-sm font-medium hover:border-gama-primary/50 transition-colors">
+              ⚙️ Empresa
+            </Link>
+            <Link href="/lixeira" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text-secondary text-sm font-medium hover:border-gama-primary/50 transition-colors">
+              🗑️ Lixeira
             </Link>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {filteredDates.map((date) => {
-              const isExpanded = expandedDates.has(date);
-              const orcsInDate = groupedByDate.get(date)!;
-              const dateTotal = orcsInDate.reduce((sum, orc) => sum + orc.precoPraticado, 0);
 
-              return (
-                <div key={date}>
-                  {/* Pasta da data */}
-                  <button
-                    onClick={() => toggleDate(date)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: "var(--text-1)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span>{isExpanded ? "📂" : "📁"}</span>
-                      <span>{date}</span>
-                      <span style={{ color: "var(--text-2)", fontWeight: 600, fontSize: 12 }}>
-                        {orcsInDate.length} {orcsInDate.length === 1 ? "orçamento" : "orçamentos"}
-                      </span>
-                    </div>
-                    <span style={{ color: "var(--primary)", fontWeight: 900, fontSize: 14 }}>{fmt(dateTotal)}</span>
-                  </button>
+          {/* Orçamentos agrupados por data */}
+          {filteredDates.length === 0 ? (
+            <div className="glass-card p-12 text-center">
+              <p className="text-4xl mb-4">📋</p>
+              <p className="text-xl font-bold text-gama-text mb-2">Nenhum orçamento encontrado</p>
+              <p className="text-gama-text-secondary mb-6">Crie seu primeiro orçamento agora</p>
+              <Link href="/orcamentos/novo" className="inline-block px-6 py-2 bg-gama-primary/20 border border-gama-primary text-gama-primary rounded-lg hover:bg-gama-primary/30 transition-all font-medium">
+                + Criar Orçamento
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredDates.map((date) => {
+                const isExpanded = expandedDates.has(date);
+                const orcsInDate = groupedByDate.get(date)!;
+                const dateTotal = orcsInDate.reduce((sum, orc) => sum + orc.precoPraticado, 0);
 
-                  {/* Conteúdo da pasta */}
-                  {isExpanded && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, paddingLeft: 24 }}>
-                      {orcsInDate.map((orc) => {
-                        const total = orc.precoPraticado;
+                return (
+                  <div key={date}>
+                    <button
+                      onClick={() => toggleDate(date)}
+                      className="w-full px-4 py-3 bg-gama-surface/50 border border-gama-border rounded-lg flex items-center justify-between hover:border-gama-primary/50 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{isExpanded ? "📂" : "📁"}</span>
+                        <span className="font-bold text-gama-text">{date}</span>
+                        <span className="text-xs text-gama-text-muted font-medium">
+                          {orcsInDate.length} {orcsInDate.length === 1 ? "orçamento" : "orçamentos"}
+                        </span>
+                      </div>
+                      <span className="text-gama-primary font-bold">{fmt(dateTotal)}</span>
+                    </button>
 
-                        return (
-                          <div
-                            key={orc.id}
-                            style={{
-                              background: "var(--surface-2)",
-                              border: "1px solid var(--border)",
-                              borderRadius: "var(--radius-sm)",
-                              padding: "12px 16px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              gap: 12,
-                            }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)" }}>
-                                {orc.cliente.nome}
-                              </div>
-                              <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>
-                                #{orc.numero} · {new Date(orc.datas.emissao).toLocaleDateString("pt-BR")} · {orc.itens.length} items
-                              </div>
-                            </div>
+                    {isExpanded && (
+                      <div className="space-y-2 mt-3 pl-4">
+                        {orcsInDate.map((orc) => (
+                          <Link key={orc.id} href={`/orcamentos/${orc.id}`}>
+                            <div className="glass-card p-4 group hover:glass-intense transition-all cursor-pointer">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-bold text-gama-text group-hover:text-gama-primary transition-colors">
+                                    {orc.cliente.nome}
+                                  </p>
+                                  <p className="text-xs text-gama-text-muted mt-1">
+                                    #{orc.numero} • {new Date(orc.datas.emissao).toLocaleDateString("pt-BR")} • {orc.itens.length} itens
+                                  </p>
+                                </div>
 
-                            <div style={{ textAlign: "right", marginRight: 16 }}>
-                              <div style={{ fontWeight: 900, fontSize: 14, color: "var(--primary)" }}>{fmt(total)}</div>
-                              <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>
-                                Margem: {((orc.precoPraticado - orc.precoFloor) / orc.precoFloor * 100).toFixed(1)}%
+                                <div className="text-right mx-4">
+                                  <p className="text-lg font-bold text-gama-primary">{fmt(orc.precoPraticado)}</p>
+                                  <p className="text-xs text-gama-text-muted mt-1">
+                                    Margem: {((orc.precoPraticado - orc.precoFloor) / orc.precoFloor * 100).toFixed(1)}%
+                                  </p>
+                                </div>
+
+                                <div className="px-3 py-1 rounded-full text-xs font-semibold bg-gama-primary/10 text-gama-primary">
+                                  {orc.status.charAt(0).toUpperCase() + orc.status.slice(1)}
+                                </div>
+
+                                <div className="flex gap-2 ml-4">
+                                  <button onClick={(e) => { e.preventDefault(); handleDuplicate(orc.id); }} className="px-2 py-1 text-sm">📋</button>
+                                  <button onClick={(e) => { e.preventDefault(); handleRemove(orc.id); }} className="px-2 py-1 text-sm">🗑️</button>
+                                </div>
                               </div>
                             </div>
-
-                            {/* Status badge */}
-                            <div
-                              style={{
-                                padding: "4px 12px",
-                                borderRadius: "var(--radius-sm)",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                background: {
-                                  rascunho: "rgba(113,113,122,0.12)",
-                                  enviado: "rgba(245,158,11,0.12)",
-                                  aprovado: "rgba(16,185,129,0.12)",
-                                  rejeitado: "rgba(225,29,72,0.12)",
-                                }[orc.status],
-                                color: {
-                                  rascunho: "#71717a",
-                                  enviado: "#f59e0b",
-                                  aprovado: "#10b981",
-                                  rejeitado: "#e11d48",
-                                }[orc.status],
-                              }}
-                            >
-                              {orc.status.charAt(0).toUpperCase() + orc.status.slice(1)}
-                            </div>
-
-                            {/* Ações */}
-                            <div style={{ display: "flex", gap: 6 }}>
-                              <Link href={`/${orc.id}/preview`} style={{ padding: "4px 8px", fontSize: 14 }} title="Visualizar">
-                                👁
-                              </Link>
-                              <Link href={`/${orc.id}/editar`} style={{ padding: "4px 8px", fontSize: 14 }} title="Editar">
-                                ✏️
-                              </Link>
-                              <Link href={`/${orc.id}/historico`} style={{ padding: "4px 8px", fontSize: 14 }} title="Histórico">
-                                📋
-                              </Link>
-                              <button
-                                onClick={() => handleRemove(orc.id)}
-                                style={{ padding: "4px 8px", fontSize: 14, background: "none", border: "none", cursor: "pointer" }}
-                                title="Deletar"
-                              >
-                                🗑
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

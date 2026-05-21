@@ -19,27 +19,27 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   }, ref) => {
     const variants = {
       success: {
-        bg: 'bg-success/10',
-        border: 'border-success/30',
-        text: 'text-success',
+        bg: 'bg-gama-success/10',
+        border: 'border-gama-success/30',
+        text: 'text-gama-success',
         icon: '✓',
       },
       warning: {
-        bg: 'bg-warning/10',
-        border: 'border-warning/30',
-        text: 'text-warning',
+        bg: 'bg-gama-warning/10',
+        border: 'border-gama-warning/30',
+        text: 'text-gama-warning',
         icon: '⚠',
       },
       error: {
-        bg: 'bg-error/10',
-        border: 'border-error/30',
-        text: 'text-error',
+        bg: 'bg-gama-error/10',
+        border: 'border-gama-error/30',
+        text: 'text-gama-error',
         icon: '✕',
       },
       info: {
-        bg: 'bg-info/10',
-        border: 'border-info/30',
-        text: 'text-info',
+        bg: 'bg-gama-info/10',
+        border: 'border-gama-info/30',
+        text: 'text-gama-info',
         icon: 'ℹ',
       },
     };

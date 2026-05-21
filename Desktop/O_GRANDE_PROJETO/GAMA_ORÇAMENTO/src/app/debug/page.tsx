@@ -55,101 +55,102 @@ export default function DebugPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900 }}>🔍 Debug - localStorage</h1>
-          <Link href="/" style={{ padding: "10px 20px", borderRadius: "var(--radius-sm)", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800 }}>
-            ← Voltar
-          </Link>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-[rgba(136,206,17,0.15)] to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-[rgba(136,206,17,0.1)] to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 32 }}>
-          <div style={{ padding: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>{orcamentos.length}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>Orçamentos</div>
-          </div>
-          <div style={{ padding: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>{trash.length}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>Na Lixeira</div>
-          </div>
-          <div style={{ padding: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>{rawData.length}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>Bytes localStorage</div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 32 }}>
-          <button
-            onClick={handleRestoreSample}
-            style={{ padding: "10px 20px", borderRadius: "var(--radius-sm)", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, border: "none", cursor: "pointer" }}
-          >
-            ➕ Restaurar Orçamento de Exemplo
-          </button>
-          <button
-            onClick={handleClearAll}
-            style={{ padding: "10px 20px", borderRadius: "var(--radius-sm)", border: "1px solid var(--error)", background: "transparent", color: "var(--error)", fontWeight: 800, cursor: "pointer" }}
-          >
-            🗑️ Limpar localStorage
-          </button>
-        </div>
-
-        {/* Orçamentos List */}
-        {orcamentos.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>📋 Orçamentos ({orcamentos.length})</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {orcamentos.map((orc) => (
-                <div key={orc.id} style={{ padding: 16, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
-                    #{orc.numero} - {orc.cliente.nome}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-2)" }}>
-                    ID: {orc.id} | Status: {orc.status} | Items: {orc.itens.length}
-                  </div>
-                </div>
-              ))}
+      <div className="relative z-10">
+        <div className="border-b border-gama-border backdrop-blur-md bg-gama-surface/40">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gama-primary to-[primary-light] bg-clip-text text-transparent">🔍 Debug - localStorage</h1>
+              <Link href="/" className="px-4 py-2 bg-gama-primary text-black font-bold rounded-lg hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] transition-all text-sm">
+                ← Voltar
+              </Link>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Trash List */}
-        {trash.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>🗑️ Lixeira ({trash.length})</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {trash.map((orc) => (
-                <div key={orc.id} style={{ padding: 16, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", opacity: 0.6 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
-                    #{orc.numero} - {orc.cliente.nome}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-2)" }}>
-                    ID: {orc.id}
-                  </div>
-                </div>
-              ))}
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-12">
+            <div className="glass glass-card p-6">
+              <div className="text-4xl font-black text-gama-primary">{orcamentos.length}</div>
+              <div className="text-xs uppercase text-gama-text-secondary font-semibold mt-2">Orçamentos</div>
+            </div>
+            <div className="glass glass-card p-6">
+              <div className="text-4xl font-black text-gama-primary">{trash.length}</div>
+              <div className="text-xs uppercase text-gama-text-secondary font-semibold mt-2">Na Lixeira</div>
+            </div>
+            <div className="glass glass-card p-6">
+              <div className="text-4xl font-black text-gama-primary">{rawData.length}</div>
+              <div className="text-xs uppercase text-gama-text-secondary font-semibold mt-2">Bytes localStorage</div>
             </div>
           </div>
-        )}
 
-        {/* Raw JSON */}
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>📄 Raw localStorage (gama_orcamentos)</h2>
-          <pre style={{
-            padding: 16,
-            background: "var(--surface-2)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            overflow: "auto",
-            maxHeight: 400,
-            fontSize: 11,
-            color: "var(--text-2)",
-            fontFamily: "monospace"
-          }}>
-            {rawData}
-          </pre>
+          {/* Actions */}
+          <div className="flex gap-3 mb-12">
+            <button
+              onClick={handleRestoreSample}
+              className="px-4 py-2 bg-gama-primary text-black font-bold rounded-lg hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] transition-all text-sm"
+            >
+              ➕ Restaurar Exemplo
+            </button>
+            <button
+              onClick={handleClearAll}
+              className="px-4 py-2 bg-[error]/10 border border-[error]/30 rounded-lg text-[error] text-sm font-medium hover:bg-[error]/20 transition-colors"
+            >
+              🗑️ Limpar localStorage
+            </button>
+          </div>
+
+          {/* Orçamentos List */}
+          {orcamentos.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-xl font-bold text-white mb-4">📋 Orçamentos ({orcamentos.length})</h2>
+              <div className="space-y-3">
+                {orcamentos.map((orc) => (
+                  <div key={orc.id} className="glass glass-card p-4">
+                    <div className="font-bold text-white mb-1">
+                      #{orc.numero} - {orc.cliente.nome}
+                    </div>
+                    <div className="text-xs text-gama-text-secondary">
+                      ID: {orc.id} | Status: {orc.status} | Items: {orc.itens.length}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Trash List */}
+          {trash.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-xl font-bold text-white mb-4">🗑️ Lixeira ({trash.length})</h2>
+              <div className="space-y-3">
+                {trash.map((orc) => (
+                  <div key={orc.id} className="glass glass-card p-4 opacity-60">
+                    <div className="font-bold text-white mb-1">
+                      #{orc.numero} - {orc.cliente.nome}
+                    </div>
+                    <div className="text-xs text-gama-text-secondary">
+                      ID: {orc.id}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Raw JSON */}
+          <div>
+            <h2 className="text-xl font-bold text-white mb-4">📄 Raw localStorage (gama_orcamentos)</h2>
+            <div className="glass glass-card p-4">
+              <pre className="text-xs text-gama-text font-mono overflow-auto max-h-96">
+                {rawData}
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>

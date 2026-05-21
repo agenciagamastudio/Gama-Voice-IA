@@ -10,11 +10,11 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium rounded-full whitespace-nowrap';
 
     const variants = {
-      default: 'bg-surface text-text border border-border',
-      success: 'bg-success/10 text-success border border-success/30',
-      warning: 'bg-warning/10 text-warning border border-warning/30',
-      error: 'bg-error/10 text-error border border-error/30',
-      info: 'bg-info/10 text-info border border-info/30',
+      default: 'bg-gama-surface text-gama-text border border-gama-border',
+      success: 'bg-gama-success/10 text-gama-success border border-gama-success/30',
+      warning: 'bg-gama-warning/10 text-gama-warning border border-gama-warning/30',
+      error: 'bg-gama-error/10 text-gama-error border border-gama-error/30',
+      info: 'bg-gama-info/10 text-gama-info border border-gama-info/30',
     };
 
     const sizes = {

@@ -108,7 +108,7 @@ export default function SugestaoPrecoPage() {
 
   if (carregando || !orcamento || !sugestao) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-bg via-surface to-surface-2 relative overflow-hidden flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gama-bg via-gama-surface to-gama-surface-2 relative overflow-hidden flex items-center justify-center">
         <p className="text-slate-400 text-lg">Carregando sugestões de preço...</p>
       </div>
     );
@@ -131,10 +131,10 @@ export default function SugestaoPrecoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg via-surface to-surface-2 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gama-bg via-gama-surface to-gama-surface-2 relative overflow-hidden">
       {/* Volumetric background blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-primary/15 to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-primary/10 to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-gama-primary/15 to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-gama-primary/10 to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
       <div className="relative z-10">
         {/* Header */}
@@ -142,11 +142,11 @@ export default function SugestaoPrecoPage() {
           <div className="max-w-6xl mx-auto px-6 py-8">
             <div className="flex items-start justify-between">
               <div>
-                <Link href="/orcamentos/novo" className="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors mb-4">
+                <Link href="/orcamentos/novo" className="inline-flex items-center gap-2 text-slate-400 hover:text-gama-primary transition-colors mb-4">
                   <span>←</span>
                   <span>Voltar para Construção</span>
                 </Link>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gama-primary to-gama-primary bg-clip-text text-transparent">
                   💰 Precificação do Orçamento
                 </h1>
               </div>
@@ -156,9 +156,9 @@ export default function SugestaoPrecoPage() {
 
         <div className="max-w-6xl mx-auto px-6 py-12">
           {/* Floor Card */}
-          <div className="glass glass-card p-8 border border-primary/30 bg-primary/5 mb-12">
+          <div className="glass glass-card p-8 border border-gama-primary/30 bg-gama-primary/5 mb-12">
             <p className="text-slate-400 text-xs uppercase mb-2 tracking-wider">Preço Floor (Mínimo Obrigatório)</p>
-            <p className="text-5xl font-bold text-primary">
+            <p className="text-5xl font-bold text-gama-primary">
               R$ {orcamento.precoFloorTotal.toFixed(2)}
             </p>
           </div>
@@ -170,11 +170,11 @@ export default function SugestaoPrecoPage() {
               {/* Média Histórica */}
               <button
                 onClick={() => setPrecoPraticado(sugestao.mediaHistorica.valor)}
-                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-95 text-left"
+                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-gama-primary/50 hover:bg-gama-primary/5 transition-all active:scale-95 text-left"
               >
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-2xl">📈</span>
-                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary">Histórica</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-gama-primary/10 text-gama-primary">Histórica</span>
                 </div>
                 <p className="text-2xl font-bold text-white mb-2">
                   R$ {sugestao.mediaHistorica.valor.toFixed(2)}
@@ -189,13 +189,13 @@ export default function SugestaoPrecoPage() {
               {/* Multiplicador */}
               <button
                 onClick={() => setPrecoPraticado(sugestao.multiplicador.valor)}
-                className="glass glass-card p-6 border border-primary/50 bg-primary/10 rounded-lg hover:border-primary hover:bg-primary/15 transition-all active:scale-95 text-left ring-1 ring-primary/30"
+                className="glass glass-card p-6 border border-gama-primary/50 bg-gama-primary/10 rounded-lg hover:border-gama-primary hover:bg-gama-primary/15 transition-all active:scale-95 text-left ring-1 ring-gama-primary/30"
               >
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-2xl">🔄</span>
-                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary text-black">Recomendado</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-gama-primary text-black">Recomendado</span>
                 </div>
-                <p className="text-2xl font-bold text-primary mb-2">
+                <p className="text-2xl font-bold text-gama-primary mb-2">
                   R$ {sugestao.multiplicador.valor.toFixed(2)}
                 </p>
                 {sugestao.multiplicador.fonte === "historico" ? (
@@ -208,14 +208,14 @@ export default function SugestaoPrecoPage() {
               {/* Faixa Segmentada */}
               <button
                 onClick={() => setPrecoPraticado(sugestao.faixaSegmentada.valor)}
-                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all active:scale-95 text-left"
+                className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-gama-primary/50 hover:bg-gama-primary/5 transition-all active:scale-95 text-left"
               >
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-2xl">🎯</span>
-                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary">Segmentado</span>
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-gama-primary/10 text-gama-primary">Segmentado</span>
                 </div>
                 <p className="text-xl font-bold text-white mb-1">{orcamento.tagContexto}</p>
-                <p className="text-2xl font-bold text-primary mb-2">
+                <p className="text-2xl font-bold text-gama-primary mb-2">
                   R$ {sugestao.faixaSegmentada.valor.toFixed(2)}
                 </p>
                 {sugestao.faixaSegmentada.fonte === "historico" ? (
@@ -228,11 +228,11 @@ export default function SugestaoPrecoPage() {
           </div>
 
           {/* Sugestão Inteligente */}
-          <div className="glass glass-card p-8 border border-primary/50 bg-primary/8 mb-12 rounded-lg">
+          <div className="glass glass-card p-8 border border-gama-primary/50 bg-gama-primary/8 mb-12 rounded-lg">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <p className="text-slate-400 text-xs uppercase mb-2 tracking-wider">Sugestão Inteligente</p>
-                <p className="text-4xl font-bold text-primary">R$ {sugestao.multiplicador.valor.toFixed(2)}</p>
+                <p className="text-4xl font-bold text-gama-primary">R$ {sugestao.multiplicador.valor.toFixed(2)}</p>
               </div>
               <span className="text-3xl">⭐</span>
             </div>
@@ -269,7 +269,7 @@ export default function SugestaoPrecoPage() {
                   type="number"
                   value={precoPraticado}
                   onChange={(e) => setPrecoPraticado(parseFloat(e.target.value) || 0)}
-                  className="w-full px-6 py-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-4xl font-bold text-primary placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-6 py-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-4xl font-bold text-gama-primary placeholder-slate-600 focus:outline-none focus:border-gama-primary/50 focus:ring-1 focus:ring-gama-primary/20 transition-all"
                 />
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function SugestaoPrecoPage() {
               ) : (
                 <div className="p-6 rounded-lg bg-[rgba(34,197,94,0.1)] border border-green-500/30 mb-6">
                   <div className="flex items-baseline gap-4 mb-2">
-                    <p className="text-3xl font-bold text-primary">R$ {margem.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-gama-primary">R$ {margem.toFixed(2)}</p>
                     <p className="text-xl text-green-300">+{margemPercentual.toFixed(1)}%</p>
                   </div>
                   <p className={`text-sm ${margemPercentual >= 35 ? "text-green-300" : "text-yellow-300"}`}>
@@ -310,7 +310,7 @@ export default function SugestaoPrecoPage() {
             <div className="flex gap-4 pt-8 border-t border-[rgba(148,163,184,0.1)]">
               <button
                 onClick={handleSalvarRascunho}
-                className="flex-1 px-6 py-3 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-slate-300 font-medium hover:border-primary/50 hover:bg-primary/5 transition-all"
+                className="flex-1 px-6 py-3 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.2)] rounded-lg text-slate-300 font-medium hover:border-gama-primary/50 hover:bg-gama-primary/5 transition-all"
               >
                 💾 Salvar Rascunho
               </button>
@@ -320,7 +320,7 @@ export default function SugestaoPrecoPage() {
                 className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all ${
                   margemAlerta
                     ? "bg-slate-700 text-slate-500 cursor-not-allowed opacity-50"
-                    : "bg-primary text-black hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] hover:scale-105 active:scale-95"
+                    : "bg-gama-primary text-black hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] hover:scale-105 active:scale-95"
                 }`}
               >
                 📤 Gerar Proposta

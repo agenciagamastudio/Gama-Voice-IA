@@ -68,81 +68,85 @@ export default function CatalogoPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Topbar */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/" style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Catálogo de Serviços</span>
-          <span style={{ fontSize: 12, color: "var(--text-2)" }}>({filtrados.length} item{filtrados.length !== 1 ? "ns" : ""})</span>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <a href="/catalogo/lixeira" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-2)", fontWeight: 600, fontSize: 12, textDecoration: "none", cursor: "pointer" }}>
-            🗑️ Lixeira
-          </a>
-          <a href="/configuracoes/precificacao" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-2)", fontWeight: 600, fontSize: 12, textDecoration: "none", cursor: "pointer" }}>
-            ⚙️ Configurar Precificação
-          </a>
-          <a href="/catalogo/novo" style={{ padding: "8px 20px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
-            + Novo Serviço
-          </a>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gama-bg via-gama-surface to-gama-surface-2 relative overflow-hidden">
+      {/* Volumetric background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-gama-primary-glow to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-gama-primary-dim to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-      <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 24px" }}>
-        {/* Filtros */}
-        {categorias.length > 0 && (
-          <div style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
-            <button
-              onClick={() => setFiltro(null)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 999,
-                border: "none",
-                background: !filtro ? "var(--primary)" : "var(--surface-2)",
-                color: !filtro ? "#0a0a0a" : "var(--text)",
-                fontWeight: 600,
-                fontSize: 12,
-                cursor: "pointer",
-              }}
-            >
-              Todos ({items.length})
-            </button>
-            {categorias.map((cat) => {
-              const count = items.filter((i) => i.categoria === cat).length;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setFiltro(cat)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: filtro === cat ? "var(--primary)" : "var(--surface-2)",
-                    color: filtro === cat ? "#0a0a0a" : "var(--text)",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
-                >
-                  {cat} ({count})
-                </button>
-              );
-            })}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-gama-border backdrop-blur-md bg-gama-surface/40">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <a href="/" className="text-gama-text-secondary hover:text-gama-text transition-colors text-xl font-bold">←</a>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-gama-primary to-gama-primary bg-clip-text text-transparent">
+                    Catálogo de Serviços
+                  </h1>
+                  <p className="text-gama-text-secondary text-sm mt-1">{filtrados.length} item{filtrados.length !== 1 ? "ns" : ""}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <a href="/catalogo/lixeira" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text font-medium hover:border-gama-primary/50 transition-colors text-sm">
+                  🗑️ Lixeira
+                </a>
+                <a href="/configuracoes/precificacao" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text font-medium hover:border-gama-primary/50 transition-colors text-sm">
+                  ⚙️ Configurar
+                </a>
+                <a href="/catalogo/novo" className="px-4 py-2 bg-gama-primary text-gama-bg font-bold rounded-lg hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] transition-all text-sm">
+                  + Novo Serviço
+                </a>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Filtros */}
+          {categorias.length > 0 && (
+            <div className="flex gap-2 mb-12 flex-wrap">
+              <button
+                onClick={() => setFiltro(null)}
+                className={`px-4 py-2 rounded-full font-medium transition-all backdrop-blur-sm border capitalize text-sm ${
+                  !filtro
+                    ? "bg-gama-primary/20 border-gama-primary text-gama-primary shadow-[0_0_20px_rgba(136,206,17,0.3)]"
+                    : "bg-gama-surface/50 border-gama-border text-gama-text hover:border-gama-primary/50 hover:text-gama-primary"
+                }`}
+              >
+                Todos ({items.length})
+              </button>
+              {categorias.map((cat) => {
+                const count = items.filter((i) => i.categoria === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setFiltro(cat)}
+                    className={`px-4 py-2 rounded-full font-medium transition-all backdrop-blur-sm border capitalize text-sm ${
+                      filtro === cat
+                        ? "bg-gama-primary/20 border-gama-primary text-gama-primary shadow-[0_0_20px_rgba(136,206,17,0.3)]"
+                        : "bg-gama-surface/50 border-gama-border text-gama-text hover:border-gama-primary/50 hover:text-gama-primary"
+                    }`}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
         {/* Lista de itens */}
         {filtrados.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 24px" }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 8px 0" }}>📦 Catálogo vazio</p>
-            <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px 0" }}>Crie seu primeiro serviço/produto para começar</p>
-            <a href="/catalogo/novo" style={{ padding: "10px 24px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 700, fontSize: 13, textDecoration: "none", display: "inline-block" }}>
+          <div className="glass glass-card h-64 flex flex-col items-center justify-center">
+            <p className="text-3xl mb-4">📦</p>
+            <h3 className="text-white text-lg font-bold mb-2">Catálogo vazio</h3>
+            <p className="text-gama-text-secondary mb-6">Crie seu primeiro serviço/produto para começar</p>
+            <a href="/catalogo/novo" className="px-6 py-2 bg-gama-primary/20 border border-gama-primary text-gama-primary rounded-lg hover:bg-gama-primary/30 transition-all font-medium">
               + Criar Serviço
             </a>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="space-y-6">
             {sortedDates.map((date) => {
               const isExpanded = expandedDates.has(date);
               const itemsInDate = groupedByDate.get(date) || [];
@@ -152,112 +156,75 @@ export default function CatalogoPage() {
 
               return (
                 <div key={date}>
-                  {/* Data folder button */}
+                  {/* Date folder button */}
                   <button
                     onClick={() => toggleDate(date)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: "var(--text-1)",
-                    }}
+                    className="w-full px-4 py-3 bg-gama-surface/50 border border-gama-border rounded-lg flex items-center justify-between hover:border-gama-primary/50 transition-colors group"
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span>{isExpanded ? "📂" : "📁"}</span>
-                      <span>{date}</span>
-                      <span style={{ color: "var(--text-2)", fontWeight: 600, fontSize: 12 }}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{isExpanded ? "📂" : "📁"}</span>
+                      <span className="font-bold text-white">{date}</span>
+                      <span className="text-xs text-gama-text-secondary font-medium">
                         {itemsInDateFiltered.length} {itemsInDateFiltered.length === 1 ? "serviço" : "serviços"}
                       </span>
                     </div>
+                    <span className="text-gama-text-secondary group-hover:text-gama-primary transition-colors">
+                      {isExpanded ? "▼" : "▶"}
+                    </span>
                   </button>
 
                   {/* Items in date */}
                   {isExpanded && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginTop: 8, paddingLeft: 16 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pl-4">
                       {itemsInDateFiltered.map((item) => (
-              <div key={item.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{item.nome}</div>
-                  <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 8 }}>{item.categoria}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.4, marginBottom: 8 }}>{item.descricao}</div>
+              <div key={item.id} className="glass glass-card p-4 group">
+                <div className="mb-3">
+                  <h4 className="text-sm font-bold text-white group-hover:text-gama-primary transition-colors">{item.nome}</h4>
+                  <p className="text-xs text-gama-text-secondary mt-1">{item.categoria}</p>
+                  <p className="text-xs text-gama-text mt-2 leading-relaxed">{item.descricao}</p>
                 </div>
 
                 {/* Breakdown */}
-                <div style={{ background: "var(--surface-2)", borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Breakdown</div>
-                  {item.tipo_precificacao === "hora" ? (
-                    <div style={{ fontSize: 11, color: "var(--text-2)", display: "flex", gap: 8 }}>
-                      <span>{item.horas_estimadas}h</span>
-                      <span>×</span>
-                      <span>R$ {item.custo_execucao ? (item.custo_execucao / (item.horas_estimadas || 1)).toFixed(0) : "?"}/h</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 11, color: "var(--text-2)" }}>Preço fixo: {fmt(item.custo_execucao || 0)}</div>
-                  )}
-                  {item.custos_variaveis && item.custos_variaveis > 0 && <div style={{ fontSize: 11, color: "var(--text-2)" }}>+ Variáveis: {fmt(item.custos_variaveis)}</div>}
-                  {item.margem_pct && <div style={{ fontSize: 11, color: "var(--text-2)" }}>+ Margem: {item.margem_pct}%</div>}
+                <div className="bg-gama-primary/5 border border-gama-primary/20 rounded-lg p-3 mb-3">
+                  <div className="text-xs uppercase text-gama-text-secondary font-semibold mb-2">Breakdown</div>
+                  <div className="text-xs text-gama-text space-y-1">
+                    {item.tipo_precificacao === "hora" ? (
+                      <div className="flex gap-1">
+                        <span>{item.horas_estimadas}h</span>
+                        <span>×</span>
+                        <span>R$ {item.custo_execucao ? (item.custo_execucao / (item.horas_estimadas || 1)).toFixed(0) : "?"}/h</span>
+                      </div>
+                    ) : (
+                      <div>Preço fixo: {fmt(item.custo_execucao || 0)}</div>
+                    )}
+                    {item.custos_variaveis && item.custos_variaveis > 0 && <div>+ Variáveis: {fmt(item.custos_variaveis)}</div>}
+                    {item.margem_pct && <div>+ Margem: {item.margem_pct}%</div>}
+                  </div>
                 </div>
 
                 {/* Preço */}
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Preço Final</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "var(--primary)" }}>{fmt(item.preco)}</div>
+                <div className="border-t border-gama-border pt-3 mb-3">
+                  <div className="text-xs uppercase text-gama-text-secondary font-semibold mb-1">Preço Final</div>
+                  <div className="text-xl font-black text-gama-primary">{fmt(item.preco)}</div>
                 </div>
 
                 {/* Ações */}
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => router.push(`/catalogo/${item.id}/editar`)}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface-2)",
-                      color: "var(--text-2)",
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
+                    className="flex-1 px-3 py-2 bg-gama-surface/50 border border-gama-border rounded text-gama-text text-xs font-medium hover:border-gama-primary/50 transition-colors"
                   >
                     ✏️ Editar
                   </button>
                   <button
                     onClick={() => handleDuplicate(item)}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface-2)",
-                      color: "var(--text-2)",
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
+                    className="flex-1 px-3 py-2 bg-gama-surface/50 border border-gama-border rounded text-gama-text text-xs font-medium hover:border-gama-primary/50 transition-colors"
                   >
                     📋 Duplicar
                   </button>
                   <button
                     onClick={() => setConfirmDelete(item.id)}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid #fca5a5",
-                      background: "#fee2e2",
-                      color: "#991b1b",
-                      fontWeight: 600,
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
+                    className="px-3 py-2 bg-[error]/10 border border-[error]/30 rounded text-[error] text-xs font-medium hover:bg-[error]/20 transition-colors"
                   >
                     🗑️
                   </button>
@@ -272,6 +239,7 @@ export default function CatalogoPage() {
           </div>
         )}
       </div>
+        </div>
 
       {/* Confirm Delete Modal */}
       {confirmDelete && (
@@ -288,7 +256,7 @@ export default function CatalogoPage() {
               </button>
               <button
                 onClick={() => handleDelete(confirmDelete)}
-                style={{ flex: 1, padding: "10px 16px", borderRadius: "var(--radius-sm)", border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                style={{ flex: 1, padding: "10px 16px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--error)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
               >
                 Excluir
               </button>

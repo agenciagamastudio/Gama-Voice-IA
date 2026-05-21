@@ -7,10 +7,10 @@ import { fmt } from "@/lib/utils";
 import type { Orcamento, OrcamentoStatus } from "@/types/orcamento";
 
 const STATUS_COLOR: Record<OrcamentoStatus, string> = {
-  Aprovado: "#10b981",
-  Pendente: "#f59e0b",
-  Rejeitado: "#e11d48",
-  Rascunho: "#71717a",
+  Aprovado: "success",
+  Pendente: "warning",
+  Rejeitado: "error",
+  Rascunho: "slate-500",
 };
 
 const STATUS_BG: Record<OrcamentoStatus, string> = {
@@ -47,97 +47,96 @@ export default function LixeiraPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Topbar */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, color: "#0a0a0a" }}>G</div>
-          <span style={{ fontWeight: 800, fontSize: 16 }}>GAMA <span style={{ color: "var(--primary)" }}>Lixeira</span></span>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Link href="/" style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-            ← Voltar
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-[rgba(136,206,17,0.15)] to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-[rgba(136,206,17,0.1)] to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-      <div style={{ padding: "32px", maxWidth: 1100, margin: "0 auto" }}>
+      <div className="relative z-10">
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4 }}>Lixeira</h1>
-            <p style={{ color: "var(--text-2)", fontSize: 14 }}>Aqui estão os orçamentos que você moveu para a lixeira. Você pode restaurá-los ou deletá-los permanentemente.</p>
-          </div>
-          {trash.length > 0 && (
-            <button
-              onClick={() => setConfirmEmptyTrash(true)}
-              style={{ padding: "10px 20px", borderRadius: "var(--radius-sm)", border: "1px solid var(--error)", background: "transparent", color: "var(--error)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-            >
-              Esvaziar Lixeira
-            </button>
-          )}
-        </div>
-
-        {/* Empty state */}
-        {trash.length === 0 && (
-          <div style={{ textAlign: "center", padding: "80px 20px", border: "1px dashed var(--border)", borderRadius: "var(--radius)" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Lixeira vazia</div>
-            <div style={{ color: "var(--text-2)", marginBottom: 24 }}>Seus orçamentos deletados aparecerão aqui.</div>
-            <Link href="/" style={{ padding: "10px 24px", borderRadius: "var(--radius-sm)", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 14 }}>
-              ← Voltar para lista
+        <div className="border-b border-gama-border backdrop-blur-md bg-gama-surface/40">
+          <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gama-primary to-[primary-light] bg-clip-text text-transparent">🗑️ Lixeira</h1>
+            <Link href="/" className="px-4 py-2 bg-gama-surface/50 border border-gama-border rounded-lg text-gama-text font-medium hover:border-gama-primary/50 transition-colors text-sm">
+              ← Voltar
             </Link>
           </div>
-        )}
+        </div>
 
-        {/* List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {trash.map((orc) => {
-            const sub = orc.itens.reduce((a, i) => a + i.total, 0);
-            const desc = orc.desconto_percentual > 0 ? sub * (orc.desconto_percentual / 100) : 0;
-            const total = sub - desc;
-            return (
-              <div key={orc.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", transition: "border-color 0.15s" }}>
-                {/* Status dot */}
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: STATUS_COLOR[orc.status], flexShrink: 0 }} />
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Description */}
+          <div className="mb-8">
+            <p className="text-gama-text-secondary text-sm">Aqui estão os orçamentos que você moveu para a lixeira. Você pode restaurá-los ou deletá-los permanentemente.</p>
+          </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15 }}>{orc.cliente.nome || "Cliente sem nome"}</span>
-                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: STATUS_BG[orc.status], color: STATUS_COLOR[orc.status], fontWeight: 700 }}>{orc.status}</span>
+          {/* Empty state */}
+          {trash.length === 0 && (
+            <div className="glass glass-card h-64 flex flex-col items-center justify-center">
+              <p className="text-3xl mb-4">🗑️</p>
+              <h3 className="text-white text-lg font-bold mb-2">Lixeira vazia</h3>
+              <p className="text-gama-text-secondary mb-6">Seus orçamentos deletados aparecerão aqui.</p>
+              <Link href="/" className="px-6 py-2 bg-gama-primary/20 border border-gama-primary text-gama-primary rounded-lg hover:bg-gama-primary/30 transition-all font-medium">
+                ← Voltar para lista
+              </Link>
+            </div>
+          )}
+
+          {/* Empty trash button */}
+          {trash.length > 0 && (
+            <div className="flex justify-end mb-6">
+              <button
+                onClick={() => setConfirmEmptyTrash(true)}
+                className="px-4 py-2 bg-[error]/10 border border-[error]/30 rounded-lg text-[error] text-sm font-medium hover:bg-[error]/20 transition-colors"
+              >
+                Esvaziar Lixeira
+              </button>
+            </div>
+          )}
+
+          {/* List */}
+          {trash.length > 0 && (
+            <div className="space-y-3">
+              {trash.map((orc) => {
+                const sub = orc.itens.reduce((a, i) => a + i.total, 0);
+                const desc = orc.desconto_percentual > 0 ? sub * (orc.desconto_percentual / 100) : 0;
+                const total = sub - desc;
+                return (
+                  <div key={orc.id} className="glass glass-card p-4 flex items-center justify-between group hover:border-gama-primary/50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-bold text-white">{orc.cliente.nome || "Cliente sem nome"}</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-[rgba(136,206,17,0.1)] border border-gama-primary/20 text-gama-primary font-semibold">{orc.status}</span>
+                      </div>
+                      <div className="text-xs text-gama-text-secondary">
+                        #{orc.numero} · Emitido {orc.datas.emissao} · {orc.itens.length} item{orc.itens.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+
+                    <div className="text-right mr-6">
+                      <div className="font-black text-lg text-gama-primary">{fmt(total)}</div>
+                      {orc.desconto_percentual > 0 && <div className="text-xs text-gama-text-secondary">−{orc.desconto_percentual}% desc.</div>}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        title="Restaurar"
+                        onClick={() => setConfirmRestore(orc.id)}
+                        className="px-3 py-2 bg-gama-surface/50 border border-gama-border rounded text-gama-text text-sm font-medium hover:border-gama-primary/50 transition-colors"
+                      >
+                        ↩️
+                      </button>
+                      <button
+                        title="Deletar permanentemente"
+                        onClick={() => setConfirmDeletePerm(orc.id)}
+                        className="px-3 py-2 bg-[error]/10 border border-[error]/30 rounded text-[error] text-sm font-medium hover:bg-[error]/20 transition-colors"
+                      >
+                        ❌
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-                    #{orc.numero} · Emitido {orc.datas.emissao} · {orc.itens.length} item{orc.itens.length !== 1 ? "s" : ""}
-                  </div>
-                </div>
-
-                {/* Valor */}
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18, color: "var(--primary)" }}>{fmt(total)}</div>
-                  {orc.desconto_percentual > 0 && <div style={{ fontSize: 11, color: "var(--text-3)" }}>−{orc.desconto_percentual}% desc.</div>}
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button
-                    title="Restaurar"
-                    onClick={() => setConfirmRestore(orc.id)}
-                    style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}
-                  >
-                    ↩️
-                  </button>
-                  <button
-                    title="Deletar permanentemente"
-                    onClick={() => setConfirmDeletePerm(orc.id)}
-                    style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "var(--text-2)" }}
-                  >
-                    ❌
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -39,7 +39,7 @@ export default function HistoricoPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)" }}>
+      <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] flex items-center justify-center text-slate-400">
         Carregando...
       </div>
     );
@@ -47,13 +47,13 @@ export default function HistoricoPage() {
 
   if (!history || history.versoes.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <div className="no-print" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-          <a href={`/${id}/preview`} style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
-          <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Histórico de Versões</h1>
-          <div style={{ width: 20 }} />
+      <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
+        <div className="no-print border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+          <a href={`/${id}/preview`} className="text-slate-500 hover:text-slate-300 transition-colors text-lg">←</a>
+          <h1 className="text-base font-bold m-0">Histórico de Versões</h1>
+          <div className="w-5" />
         </div>
-        <div style={{ padding: "24px", textAlign: "center", color: "var(--text-2)" }}>
+        <div className="p-6 text-center text-slate-400">
           <p>Este orçamento ainda não tem histórico de versões.</p>
         </div>
       </div>
@@ -63,22 +63,22 @@ export default function HistoricoPage() {
   const sortedVersions = [...history.versoes].sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime());
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <div className="no-print" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <a href={`/${id}/preview`} style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
-        <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Histórico de Versões</h1>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
+      <div className="no-print border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+        <a href={`/${id}/preview`} className="text-slate-500 hover:text-slate-300 transition-colors text-lg">←</a>
+        <h1 className="text-base font-bold m-0">Histórico de Versões</h1>
         {history.versoes.length >= 2 && (
           <button
             onClick={handleCompare}
-            style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            className="px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
           >
             🔄 Comparar Últimas
           </button>
         )}
       </div>
 
-      <div style={{ padding: "24px 32px", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="p-8 max-w-3xl mx-auto">
+        <div className="flex flex-col gap-3">
           {sortedVersions.map((version, idx) => {
             const subtotal = version.orcamento.itens.reduce((s, i) => s + i.total, 0);
             const desconto = version.orcamento.desconto_percentual > 0 ? subtotal * (version.orcamento.desconto_percentual / 100) : 0;
@@ -88,38 +88,29 @@ export default function HistoricoPage() {
             return (
               <div
                 key={version.id}
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "16px",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--primary)")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                className="glass glass-card p-4 cursor-pointer hover:border-[primary]/50 transition-all"
                 onClick={() => handleViewVersion(version.versao_numero)}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+                <div className="flex items-start justify-between mb-2">
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-1)" }}>
+                    <div className="font-bold text-sm text-white">
                       Versão #{version.versao_numero}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>
+                    <div className="text-xs text-slate-400 mt-1">
                       {date.toLocaleDateString("pt-BR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontWeight: 900, fontSize: 16, color: "var(--primary)" }}>
+                  <div className="text-right">
+                    <div className="font-black text-base text-[primary]">
                       {fmt(total)}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>
+                    <div className="text-xs text-slate-400 mt-1">
                       {version.orcamento.itens.length} itens
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: "var(--text-2)", paddingTop: 8, borderTop: "1px solid var(--border)" }}>
-                  <span style={{ color: "var(--text-3)", marginRight: 8 }}>Motivo:</span>
+                <div className="text-xs text-slate-400 pt-2 border-t border-[rgba(148,163,184,0.1)]">
+                  <span className="text-slate-500 mr-2">Motivo:</span>
                   {version.motivo}
                 </div>
               </div>

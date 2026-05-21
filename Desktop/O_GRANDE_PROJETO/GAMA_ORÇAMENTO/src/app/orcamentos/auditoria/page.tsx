@@ -1,9 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { Download } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -121,14 +120,10 @@ export default function AuditoriaPage() {
   const [templateFiltro, setTemplateFiltro] = useState("todos");
 
   useEffect(() => {
-    // Carregar mock data
     setOrcamentos(mockOrcamentos);
     setTemplates(mockTemplates);
 
-    // Gerar alertas
     const novasAlertas: Alert[] = [];
-
-    // Alertas de templates
     mockTemplates.forEach((t) => {
       if (t.tendencia === "decrescente") {
         novasAlertas.push({
@@ -138,7 +133,6 @@ export default function AuditoriaPage() {
       }
     });
 
-    // Alerta de tag premium
     novasAlertas.push({
       tipo: "success",
       mensagem: "🟢 Tag Premium com margem 18% acima da Padrão — segmentação está funcionando",
@@ -194,205 +188,213 @@ export default function AuditoriaPage() {
   };
 
   return (
-    <div className="container py-8">
-      {/* Back button */}
-      <div className="mb-8">
-        <Link href="/orcamentos">
-          <Button variant="ghost">← Voltar</Button>
-        </Link>
-        <h1 className="text-3xl font-bold mt-4">📊 Auditoria de Orçamentos</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">Análise de performance, margem e tendências</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gama-bg via-gama-surface to-gama-surface-2 relative overflow-hidden">
+      {/* Volumetric background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-[rgba(136,206,17,0.15)] to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-[rgba(136,206,17,0.1)] to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-      {/* Alertas */}
-      <div className="mb-8 space-y-2">
-        {alertas.map((alerta, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded border ${
-              alerta.tipo === "warning"
-                ? "bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200"
-                : alerta.tipo === "danger"
-                  ? "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200"
-                  : "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-700 text-green-800 dark:text-green-200"
-            }`}
-          >
-            {alerta.mensagem}
-          </div>
-        ))}
-      </div>
-
-      {/* Resumo Executivo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Total Fechado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">R$ {totalFechado.toFixed(2)}</p>
-            <p className="text-xs text-gray-500 mt-1">{orcamentos.filter((o) => o.status === "aprovado").length} orçamentos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Média por Orçamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">R$ {mediaOrcamento.toFixed(2)}</p>
-            <p className="text-xs text-gray-500 mt-1">Entre fechados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Margem Média</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{margemMedia.toFixed(1)}%</p>
-            <p className="text-xs text-gray-500 mt-1">Alvo: 35%</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Multiplicador Médio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{multiplicadorMedio.toFixed(2)}x</p>
-            <p className="text-xs text-gray-500 mt-1">Sobre o floor</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Gráfico de Evolução */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Evolução da Margem</CardTitle>
-          <CardDescription>Últimos 5 meses</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="mes" stroke="var(--text-3)" />
-              <YAxis stroke="var(--text-3)" />
-              <Tooltip contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="margem"
-                stroke="var(--primary)"
-                strokeWidth={2}
-                dot={{ fill: "var(--primary)" }}
-                name="Margem %"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Templates */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Performance por Template</CardTitle>
-          <CardDescription>{templates.length} templates em uso</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {templates.map((template) => (
-            <div key={template.nome} className="p-4 border rounded-lg dark:border-gray-700">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="font-semibold">{template.nome}</p>
-                  <p className="text-xs text-gray-500">{template.usos} usos</p>
-                </div>
-                <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${
-                    template.tendencia === "crescente"
-                      ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                      : template.tendencia === "decrescente"
-                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-                        : "bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-                  }`}
-                >
-                  {template.tendencia === "crescente" ? "📈" : template.tendencia === "decrescente" ? "📉" : "➡️"}{" "}
-                  {template.tendencia}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">Margem Média</p>
-                  <p className="font-semibold">{template.margemMedia.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">Multiplicador Médio</p>
-                  <p className="font-semibold">{template.multiplicadorMedio.toFixed(2)}x</p>
-                </div>
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)]">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <Link href="/orcamentos" className="inline-flex items-center gap-2 text-slate-400 hover:text-gama-primary transition-colors mb-4">
+                  <span>←</span>
+                  <span>Voltar</span>
+                </Link>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gama-primary to-gama-primary bg-clip-text text-transparent">
+                  📊 Auditoria de Orçamentos
+                </h1>
+                <p className="text-slate-400 text-sm mt-2">Análise de performance, margem e tendências</p>
               </div>
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </div>
+        </div>
 
-      {/* Tabela de Orçamentos */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Todos os Orçamentos</CardTitle>
-          <CardDescription>{orcamentos.length} orçamentos</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto mb-4">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50 dark:bg-gray-800">
-                  <th className="text-left py-3 px-2 font-semibold">Data</th>
-                  <th className="text-left py-3 px-2 font-semibold">Cliente</th>
-                  <th className="text-left py-3 px-2 font-semibold">Template</th>
-                  <th className="text-right py-3 px-2 font-semibold">Floor</th>
-                  <th className="text-right py-3 px-2 font-semibold">Praticado</th>
-                  <th className="text-center py-3 px-2 font-semibold">Multi.</th>
-                  <th className="text-center py-3 px-2 font-semibold">Margem</th>
-                  <th className="text-center py-3 px-2 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orcamentos.map((orc) => {
-                  const margem = ((orc.precoPraticado - orc.precoFloor) / orc.precoFloor) * 100;
-                  return (
-                    <tr key={orc.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="py-3 px-2 text-xs">{orc.data}</td>
-                      <td className="py-3 px-2 font-medium">{orc.cliente}</td>
-                      <td className="py-3 px-2 text-xs text-gray-600 dark:text-gray-400">{orc.template || "-"}</td>
-                      <td className="py-3 px-2 text-right text-xs">R$ {orc.precoFloor.toFixed(2)}</td>
-                      <td className="py-3 px-2 text-right font-semibold">R$ {orc.precoPraticado.toFixed(2)}</td>
-                      <td className="py-3 px-2 text-center text-xs">{(orc.multiplicador || 1).toFixed(2)}x</td>
-                      <td className="py-3 px-2 text-center text-xs font-semibold">{margem.toFixed(1)}%</td>
-                      <td className="py-3 px-2 text-center">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            orc.status === "aprovado"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : orc.status === "enviado"
-                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                          }`}
-                        >
-                          {orc.status === "aprovado" ? "✅" : orc.status === "enviado" ? "📨" : "📋"}{" "}
-                          {orc.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Alertas */}
+          {alertas.length > 0 && (
+            <div className="space-y-3 mb-12">
+              {alertas.map((alerta, idx) => (
+                <div
+                  key={idx}
+                  className={`glass glass-card p-4 border-l-4 ${
+                    alerta.tipo === "danger"
+                      ? "border-gama-error bg-gama-error/10 text-gama-error"
+                      : alerta.tipo === "warning"
+                        ? "border-gama-warning bg-gama-warning/10 text-gama-warning"
+                        : "border-gama-success bg-gama-success/10 text-gama-success"
+                  } text-sm font-medium`}
+                >
+                  {alerta.mensagem}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Resumo Executivo */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+            <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)]">
+              <p className="text-slate-400 text-xs uppercase mb-2">Total Fechado</p>
+              <p className="text-3xl font-bold text-gama-primary">R$ {totalFechado.toFixed(2)}</p>
+              <p className="text-xs text-slate-500 mt-2">{orcamentos.filter((o) => o.status === "aprovado").length} orçamentos</p>
+            </div>
+
+            <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)]">
+              <p className="text-slate-400 text-xs uppercase mb-2">Média por Orçamento</p>
+              <p className="text-3xl font-bold text-white">R$ {mediaOrcamento.toFixed(2)}</p>
+              <p className="text-xs text-slate-500 mt-2">Entre fechados</p>
+            </div>
+
+            <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)]">
+              <p className="text-slate-400 text-xs uppercase mb-2">Margem Média</p>
+              <p className="text-3xl font-bold text-gama-primary">{margemMedia.toFixed(1)}%</p>
+              <p className="text-xs text-slate-500 mt-2">Alvo: 35%</p>
+            </div>
+
+            <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)]">
+              <p className="text-slate-400 text-xs uppercase mb-2">Multiplicador Médio</p>
+              <p className="text-3xl font-bold text-white">{multiplicadorMedio.toFixed(2)}x</p>
+              <p className="text-xs text-slate-500 mt-2">Sobre o floor</p>
+            </div>
           </div>
 
-          <Button onClick={handleExportCSV} className="w-full">
-            📥 Exportar CSV
-          </Button>
-        </CardContent>
-      </Card>
+          {/* Gráfico de Evolução */}
+          <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] mb-12 rounded-lg">
+            <div className="mb-6">
+              <p className="text-lg font-bold text-white">Evolução da Margem</p>
+              <p className="text-sm text-slate-400">Últimos 5 meses</p>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+                <XAxis dataKey="mes" stroke="rgba(148,163,184,0.6)" />
+                <YAxis stroke="rgba(148,163,184,0.6)" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(5,12,26,0.9)",
+                    border: "1px solid rgba(136,206,17,0.3)",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "#88CE11" }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="margem"
+                  stroke="#88CE11"
+                  strokeWidth={3}
+                  dot={{ fill: "#88CE11", r: 6 }}
+                  name="Margem %"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Templates */}
+          <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] mb-12 rounded-lg">
+            <div className="mb-6">
+              <p className="text-lg font-bold text-white">Performance por Template</p>
+              <p className="text-sm text-slate-400">{templates.length} templates em uso</p>
+            </div>
+            <div className="space-y-4">
+              {templates.map((template) => (
+                <div key={template.nome} className="p-4 border border-[rgba(148,163,184,0.1)] rounded-lg hover:border-gama-primary/30 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="font-semibold text-white">{template.nome}</p>
+                      <p className="text-xs text-slate-400">{template.usos} usos</p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        template.tendencia === "crescente"
+                          ? "bg-gama-success/20 text-gama-success"
+                          : template.tendencia === "decrescente"
+                            ? "bg-gama-error/20 text-gama-error"
+                            : "bg-slate-500/20 text-slate-300"
+                      }`}
+                    >
+                      {template.tendencia === "crescente" ? "📈" : template.tendencia === "decrescente" ? "📉" : "➡️"} {template.tendencia}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-400">Margem Média</p>
+                      <p className="text-lg font-semibold text-white">{template.margemMedia.toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400">Multiplicador Médio</p>
+                      <p className="text-lg font-semibold text-gama-primary">{template.multiplicadorMedio.toFixed(2)}x</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tabela de Orçamentos */}
+          <div className="glass glass-card p-6 border border-[rgba(148,163,184,0.1)] rounded-lg">
+            <div className="mb-6">
+              <p className="text-lg font-bold text-white">Todos os Orçamentos</p>
+              <p className="text-sm text-slate-400">{orcamentos.length} orçamentos</p>
+            </div>
+            <div className="overflow-x-auto mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[rgba(148,163,184,0.1)]">
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Data</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Cliente</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Template</th>
+                    <th className="text-right py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Floor</th>
+                    <th className="text-right py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Praticado</th>
+                    <th className="text-center py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Multi.</th>
+                    <th className="text-center py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Margem</th>
+                    <th className="text-center py-3 px-4 font-semibold text-slate-300 uppercase text-xs">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orcamentos.map((orc) => {
+                    const margem = ((orc.precoPraticado - orc.precoFloor) / orc.precoFloor) * 100;
+                    return (
+                      <tr key={orc.id} className="border-b border-[rgba(148,163,184,0.05)] hover:bg-[rgba(148,163,184,0.05)] transition-colors">
+                        <td className="py-4 px-4 text-xs text-slate-400">{orc.data}</td>
+                        <td className="py-4 px-4 font-medium text-white">{orc.cliente}</td>
+                        <td className="py-4 px-4 text-xs text-slate-400">{orc.template || "-"}</td>
+                        <td className="py-4 px-4 text-right text-xs text-slate-300">R$ {orc.precoFloor.toFixed(2)}</td>
+                        <td className="py-4 px-4 text-right font-semibold text-white">R$ {orc.precoPraticado.toFixed(2)}</td>
+                        <td className="py-4 px-4 text-center text-xs text-slate-300">{(orc.multiplicador || 1).toFixed(2)}x</td>
+                        <td className="py-4 px-4 text-center text-xs font-semibold text-gama-primary">{margem.toFixed(1)}%</td>
+                        <td className="py-4 px-4 text-center">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              orc.status === "aprovado"
+                                ? "bg-gama-success/20 text-gama-success"
+                                : orc.status === "enviado"
+                                  ? "bg-blue-500/20 text-blue-300"
+                                  : "bg-slate-500/20 text-slate-300"
+                            }`}
+                          >
+                            {orc.status === "aprovado" ? "✅" : orc.status === "enviado" ? "📨" : "📋"} {orc.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={handleExportCSV}
+              className="w-full px-4 py-3 bg-gama-primary text-black font-bold rounded-lg hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -40,7 +40,7 @@ export default function CompararPage() {
 
   if (!version1 || !version2) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)" }}>
+      <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] flex items-center justify-center text-slate-400">
         Carregando...
       </div>
     );
@@ -64,59 +64,59 @@ export default function CompararPage() {
   const date2 = new Date(version2.criado_em);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <div className="no-print" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <a href={`/${id}/historico`} style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
-        <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Comparar Versões</h1>
-        <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
+      <div className="no-print border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+        <a href={`/${id}/historico`} className="text-slate-500 hover:text-slate-300 transition-colors text-lg">←</a>
+        <h1 className="text-base font-bold m-0">Comparar Versões</h1>
+        <button onClick={() => window.print()} className="flex items-center gap-2 px-5 py-1.5 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all">
           🖨 Imprimir
         </button>
       </div>
 
-      <div style={{ padding: "24px 32px", maxWidth: 1200, margin: "0 auto" }}>
+      <div className="p-8 max-w-6xl mx-auto">
         {/* Resumo de Diferenças */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, marginBottom: 32 }}>
+        <div className="grid grid-cols-3 gap-4 mb-8">
           {/* Versão 1 */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 16 }}>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 8 }}>Versão #{version1.versao_numero}</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "var(--primary)", marginBottom: 4 }}>{fmt(total1)}</div>
-            <div style={{ fontSize: 11, color: "var(--text-3)" }}>{date1.toLocaleDateString("pt-BR")}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+          <div className="glass glass-card p-4">
+            <div className="text-xs text-slate-400 mb-2">Versão #{version1.versao_numero}</div>
+            <div className="font-black text-2xl text-[primary] mb-1">{fmt(total1)}</div>
+            <div className="text-xs text-slate-500">{date1.toLocaleDateString("pt-BR")}</div>
+            <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-[rgba(148,163,184,0.1)]">
               {orc1.itens.length} itens
             </div>
           </div>
 
           {/* Diferença */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 8 }}>Diferença</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: difference > 0 ? "#10b981" : "#ef4444" }}>
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-xs text-slate-400 mb-2">Diferença</div>
+            <div className={`font-black text-2xl ${difference > 0 ? "text-[success]" : "text-[error]"}`}>
               {difference > 0 ? "+" : ""}{fmt(difference)}
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-3)" }}>
+            <div className="text-xs text-slate-500">
               {differencePercent > 0 ? "+" : ""}{differencePercent}%
             </div>
           </div>
 
           {/* Versão 2 */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 16 }}>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 8 }}>Versão #{version2.versao_numero}</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "var(--primary)", marginBottom: 4 }}>{fmt(total2)}</div>
-            <div style={{ fontSize: 11, color: "var(--text-3)" }}>{date2.toLocaleDateString("pt-BR")}</div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+          <div className="glass glass-card p-4">
+            <div className="text-xs text-slate-400 mb-2">Versão #{version2.versao_numero}</div>
+            <div className="font-black text-2xl text-[primary] mb-1">{fmt(total2)}</div>
+            <div className="text-xs text-slate-500">{date2.toLocaleDateString("pt-BR")}</div>
+            <div className="text-xs text-slate-400 mt-3 pt-3 border-t border-[rgba(148,163,184,0.1)]">
               {orc2.itens.length} itens
             </div>
           </div>
         </div>
 
         {/* Tabela de Itens */}
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <div className="glass glass-card overflow-hidden mb-8">
+          <table className="w-full border-collapse text-xs">
             <thead>
-              <tr style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
-                <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "var(--text-2)" }}>Item</th>
-                <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "var(--text-2)" }}>V{version1.versao_numero}</th>
-                <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "var(--text-2)" }}>V{version2.versao_numero}</th>
-                <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "var(--text-2)" }}>Diferença</th>
+              <tr className="bg-[rgba(5,12,26,0.5)] border-b border-[rgba(148,163,184,0.1)]">
+                <th className="p-3 text-left font-semibold text-slate-400">Item</th>
+                <th className="p-3 text-right font-semibold text-slate-400">V{version1.versao_numero}</th>
+                <th className="p-3 text-right font-semibold text-slate-400">V{version2.versao_numero}</th>
+                <th className="p-3 text-right font-semibold text-slate-400">Diferença</th>
               </tr>
             </thead>
             <tbody>
@@ -126,15 +126,15 @@ export default function CompararPage() {
                 const isChanged = diff !== 0;
 
                 return (
-                  <tr key={item2.id} style={{ borderBottom: "1px solid var(--border)", background: isChanged ? "var(--bg)" : "transparent" }}>
-                    <td style={{ padding: "12px", color: "var(--text-1)" }}>{item2.descricao}</td>
-                    <td style={{ padding: "12px", textAlign: "right", color: "var(--text-2)" }}>
+                  <tr key={item2.id} className={`border-b border-[rgba(148,163,184,0.1)] ${isChanged ? "bg-[rgba(15,23,42,0.3)]" : ""}`}>
+                    <td className="p-3 text-white">{item2.descricao}</td>
+                    <td className="p-3 text-right text-slate-400">
                       {item1 ? fmt(item1.total) : "-"}
                     </td>
-                    <td style={{ padding: "12px", textAlign: "right", color: "var(--text-1)", fontWeight: isChanged ? 600 : 400 }}>
+                    <td className={`p-3 text-right ${isChanged ? "font-semibold text-white" : "text-slate-400"}`}>
                       {fmt(item2.total)}
                     </td>
-                    <td style={{ padding: "12px", textAlign: "right", color: diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--text-3)", fontWeight: 600 }}>
+                    <td className={`p-3 text-right font-semibold ${diff > 0 ? "text-[success]" : diff < 0 ? "text-[error]" : "text-slate-500"}`}>
                       {diff > 0 ? "+" : ""}{fmt(diff)}
                     </td>
                   </tr>
@@ -143,15 +143,15 @@ export default function CompararPage() {
 
               {/* Itens removidos da versão anterior */}
               {orc1.itens.filter((i) => !orc2.itens.find((i2) => i2.id === i.id)).map((item1) => (
-                <tr key={`removed-${item1.id}`} style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
-                  <td style={{ padding: "12px", color: "var(--text-2)" }}>
-                    <span style={{ textDecoration: "line-through" }}>{item1.descricao}</span>
+                <tr key={`removed-${item1.id}`} className="border-b border-[rgba(148,163,184,0.1)] bg-[rgba(15,23,42,0.3)]">
+                  <td className="p-3 text-slate-400">
+                    <span className="line-through">{item1.descricao}</span>
                   </td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "var(--text-2)" }}>
+                  <td className="p-3 text-right text-slate-400">
                     {fmt(item1.total)}
                   </td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "var(--text-3)" }}>-</td>
-                  <td style={{ padding: "12px", textAlign: "right", color: "#ef4444", fontWeight: 600 }}>
+                  <td className="p-3 text-right text-slate-500">-</td>
+                  <td className="p-3 text-right text-[error] font-semibold">
                     {fmt(-item1.total)}
                   </td>
                 </tr>
@@ -161,34 +161,34 @@ export default function CompararPage() {
         </div>
 
         {/* Resumo Final */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 24 }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ color: "var(--text-2)" }}>Subtotal:</span>
-              <span style={{ color: "var(--text-1)" }}>{fmt(subtotal1)}</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="glass glass-card p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-slate-400">Subtotal:</span>
+              <span className="text-white">{fmt(subtotal1)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ color: "var(--text-2)" }}>Desconto:</span>
-              <span style={{ color: "#ef4444" }}>-{fmt(desconto1)}</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-slate-400">Desconto:</span>
+              <span className="text-[error]">-{fmt(desconto1)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: "1px solid var(--border)", fontWeight: 700 }}>
+            <div className="flex justify-between items-center pt-2 border-t border-[rgba(148,163,184,0.1)] font-bold">
               <span>Total:</span>
-              <span style={{ fontSize: 16, color: "var(--primary)" }}>{fmt(total1)}</span>
+              <span className="text-base text-[primary]">{fmt(total1)}</span>
             </div>
           </div>
 
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ color: "var(--text-2)" }}>Subtotal:</span>
-              <span style={{ color: "var(--text-1)" }}>{fmt(subtotal2)}</span>
+          <div className="glass glass-card p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-slate-400">Subtotal:</span>
+              <span className="text-white">{fmt(subtotal2)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ color: "var(--text-2)" }}>Desconto:</span>
-              <span style={{ color: "#ef4444" }}>-{fmt(desconto2)}</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-slate-400">Desconto:</span>
+              <span className="text-[error]">-{fmt(desconto2)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: "1px solid var(--border)", fontWeight: 700 }}>
+            <div className="flex justify-between items-center pt-2 border-t border-[rgba(148,163,184,0.1)] font-bold">
               <span>Total:</span>
-              <span style={{ fontSize: 16, color: "var(--primary)" }}>{fmt(total2)}</span>
+              <span className="text-base text-[primary]">{fmt(total2)}</span>
             </div>
           </div>
         </div>

@@ -23,7 +23,7 @@ export default function VersaoPage() {
   }, [id, versao, router]);
 
   if (!version) return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)" }}>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] flex items-center justify-center text-slate-400">
       Carregando...
     </div>
   );
@@ -35,27 +35,27 @@ export default function VersaoPage() {
   const date = new Date(version.criado_em);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <div className="no-print" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <a href={`/${id}/historico`} style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
+      <div className="no-print border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+        <div className="flex items-center gap-3">
+          <a href={`/${id}/historico`} className="text-slate-500 hover:text-slate-300 transition-colors text-lg">←</a>
           <div>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>Versão #{version.versao_numero}</span>
-            <span style={{ margin: "0 8px", color: "var(--text-3)" }}>·</span>
-            <span style={{ fontSize: 13, color: "var(--text-2)" }}>{date.toLocaleDateString("pt-BR")}</span>
+            <span className="font-bold text-sm">Versão #{version.versao_numero}</span>
+            <span className="mx-2 text-slate-600">·</span>
+            <span className="text-xs text-slate-400">{date.toLocaleDateString("pt-BR")}</span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontWeight: 900, fontSize: 16, color: "var(--primary)" }}>{fmt(total)}</span>
-          <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+        <div className="flex items-center gap-3">
+          <span className="font-black text-base text-[primary]">{fmt(total)}</span>
+          <button onClick={() => window.print()} className="flex items-center gap-2 px-5 py-1.5 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all">
             🖨 Exportar PDF
           </button>
         </div>
       </div>
 
-      <div style={{ padding: "16px 32px 48px" }}>
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "12px 16px", marginBottom: 24, fontSize: 12, color: "var(--text-2)" }}>
+      <div className="p-6 pb-12">
+        <div className="glass glass-card p-4 mb-6 text-xs text-slate-400">
           <strong>Motivo da alteração:</strong> {version.motivo}
         </div>
         <OrcamentoDoc orc={orcamento} />

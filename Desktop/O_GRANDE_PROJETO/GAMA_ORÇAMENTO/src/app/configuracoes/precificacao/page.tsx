@@ -97,57 +97,57 @@ export default function ConfiguraPrecificacaoPage() {
   const overheadPorUnidade = totalUnidades > 0 ? totalCustoFixo / totalUnidades : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
       {/* Topbar */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/catalogo" style={{ color: "var(--text-3)", fontSize: 18 }}>←</a>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Configuração de Precificação</span>
-          {saved && <span style={{ fontSize: 11, color: "var(--success)", fontWeight: 600 }}>✓ Salvo!</span>}
+      <div className="border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+        <div className="flex items-center gap-3">
+          <a href="/catalogo" className="text-slate-500 hover:text-slate-300 transition-colors text-lg">←</a>
+          <span className="font-bold text-sm">Configuração de Precificação</span>
+          {saved && <span className="text-xs text-green-400 font-semibold">✓ Salvo!</span>}
         </div>
-        <button onClick={handleSave} style={{ padding: "8px 20px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--primary)", color: "#0a0a0a", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+        <button onClick={handleSave} className="px-5 py-1.5 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all">
           Salvar Configuração
         </button>
       </div>
 
-      <div style={{ maxWidth: 800, margin: "40px auto", padding: "0 24px" }}>
+      <div className="max-w-2xl mx-auto pt-8 pb-12 px-6">
         {/* Explicação */}
-        <div style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: 12, padding: 16, marginBottom: 32 }}>
-          <p style={{ fontSize: 13, color: "#854d0e", fontWeight: 600, margin: "0 0 8px 0" }}>💡 Como funciona</p>
-          <p style={{ fontSize: 12, color: "#854d0e", lineHeight: 1.6, margin: 0 }}>
+        <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 mb-8">
+          <p className="text-sm text-yellow-200 font-semibold mb-2">💡 Como funciona</p>
+          <p className="text-xs text-yellow-300 leading-relaxed">
             Aqui você configura seus custos fixos <strong>uma vez</strong>. Depois, quando criar serviços no catálogo, o sistema calcula automaticamente quanto cada projeto precisa cobrir de overhead. Nunca mais você esquece um custo fixo!
           </p>
         </div>
 
         {/* Section 1: Taxa Horária */}
-        <div style={{ background: "var(--surface)", borderRadius: 12, padding: 24, marginBottom: 24, border: "1px solid var(--border)" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px 0", color: "var(--text)" }}>💰 Taxa Horária</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Quanto você cobra por hora?</span>
-              <div style={{ display: "flex", gap: 8 }}>
+        <div className="glass glass-card p-6 mb-6">
+          <h2 className="text-sm font-bold mb-4 text-white">💰 Taxa Horária</h2>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase">Quanto você cobra por hora?</span>
+              <div className="flex gap-2">
                 <input
                   type="number"
                   value={cfg.taxa_horaria}
                   onChange={(e) => setCfg({ ...cfg, taxa_horaria: parseFloat(e.target.value) || 0 })}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13 }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
                 />
-                <span style={{ display: "flex", alignItems: "center", color: "var(--text-2)", fontWeight: 600 }}>R$/h</span>
+                <span className="flex items-center text-slate-400 font-semibold">R$/h</span>
               </div>
             </label>
-            <p style={{ fontSize: 11, color: "var(--text-3)", margin: 0 }}>Base para calcular custo de execução de serviços por hora</p>
+            <p className="text-xs text-slate-400">Base para calcular custo de execução de serviços por hora</p>
           </div>
         </div>
 
         {/* Section 2: Unidades de Faturamento */}
-        <div style={{ background: "var(--surface)", borderRadius: 12, padding: 24, marginBottom: 24, border: "1px solid var(--border)" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px 0", color: "var(--text)" }}>📊 Unidades de Faturamento</h2>
-          <p style={{ fontSize: 12, color: "var(--text-2)", margin: "0 0 16px 0", lineHeight: 1.6 }}>
+        <div className="glass glass-card p-6 mb-6">
+          <h2 className="text-sm font-bold mb-4 text-white">📊 Unidades de Faturamento</h2>
+          <p className="text-xs text-slate-400 mb-4 leading-relaxed">
             Quantas unidades de faturamento você tem por mês? Os custos fixos serão distribuídos entre TODAS as unidades (projetos fechados, serviços soltos, pacotes/combos e consultoria).
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Projetos Fechados</span>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase">Projetos Fechados</span>
               <input
                 type="number"
                 min="0"
@@ -159,12 +159,12 @@ export default function ConfiguraPrecificacaoPage() {
                     projetos_fechados: parseInt(e.target.value) || 0
                   }
                 })}
-                style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13 }}
+                className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
               />
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>Contratos/projetos completos</span>
+              <span className="text-xs text-slate-500">Contratos/projetos completos</span>
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Serviços Soltos</span>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase">Serviços Soltos</span>
               <input
                 type="number"
                 min="0"
@@ -176,12 +176,12 @@ export default function ConfiguraPrecificacaoPage() {
                     servicos_soltos: parseInt(e.target.value) || 0
                   }
                 })}
-                style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13 }}
+                className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
               />
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>Posts, stories, pequenos trabalhos</span>
+              <span className="text-xs text-slate-500">Posts, stories, pequenos trabalhos</span>
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Pacotes/Combos</span>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase">Pacotes/Combos</span>
               <input
                 type="number"
                 min="0"
@@ -193,12 +193,12 @@ export default function ConfiguraPrecificacaoPage() {
                     pacotes_combos: parseInt(e.target.value) || 0
                   }
                 })}
-                style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13 }}
+                className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
               />
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>Pacotes de serviços pré-definidos</span>
+              <span className="text-xs text-slate-500">Pacotes de serviços pré-definidos</span>
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Consultoria/Hora</span>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-slate-400 font-bold uppercase">Consultoria/Hora</span>
               <input
                 type="number"
                 min="0"
@@ -210,37 +210,32 @@ export default function ConfiguraPrecificacaoPage() {
                     consultoria_hora: parseInt(e.target.value) || 0
                   }
                 })}
-                style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13 }}
+                className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
               />
-              <span style={{ fontSize: 10, color: "var(--text-3)" }}>Horas de consultoria/atendimento</span>
+              <span className="text-xs text-slate-500">Horas de consultoria/atendimento</span>
             </label>
           </div>
-          <p style={{ fontSize: 11, color: "var(--text-3)", margin: "12px 0 0 0" }}>💡 O overhead será distribuído entre TODAS as unidades, não apenas "projetos"</p>
+          <p className="text-xs text-slate-500">💡 O overhead será distribuído entre TODAS as unidades, não apenas "projetos"</p>
         </div>
 
         {/* Section 3: Custos Fixos */}
-        <div style={{ background: "var(--surface)", borderRadius: 12, padding: 24, marginBottom: 24, border: "1px solid var(--border)" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px 0", color: "var(--text)" }}>📌 Custos Fixos Mensais</h2>
+        <div className="glass glass-card p-6 mb-6">
+          <h2 className="text-sm font-bold mb-4 text-white">📌 Custos Fixos Mensais</h2>
 
           {/* Sugestões prontas */}
-          <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 8px 0" }}>Sugestões (clique para adicionar)</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div className="mb-5">
+            <p className="text-xs text-slate-400 font-semibold uppercase mb-2">Sugestões (clique para adicionar)</p>
+            <div className="flex gap-2 flex-wrap">
               {SUGESTOES_CUSTOS.map((s) => (
                 <button
                   key={s.nome}
                   onClick={() => handleAddSugestao(s.nome, s.valor_sugerido)}
                   disabled={cfg.custos_fixos.some((c) => c.nome === s.nome)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--border)",
-                    background: cfg.custos_fixos.some((c) => c.nome === s.nome) ? "var(--border)" : "var(--surface-2)",
-                    color: cfg.custos_fixos.some((c) => c.nome === s.nome) ? "var(--text-3)" : "var(--text)",
-                    fontSize: 11,
-                    cursor: cfg.custos_fixos.some((c) => c.nome === s.nome) ? "default" : "pointer",
-                    opacity: cfg.custos_fixos.some((c) => c.nome === s.nome) ? 0.5 : 1,
-                  }}
+                  className={`px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
+                    cfg.custos_fixos.some((c) => c.nome === s.nome)
+                      ? "border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-500 cursor-default opacity-50"
+                      : "border-[rgba(148,163,184,0.2)] bg-[rgba(148,163,184,0.1)] text-slate-300 hover:border-[primary]/50 cursor-pointer"
+                  }`}
                 >
                   {s.nome}
                 </button>
@@ -250,25 +245,21 @@ export default function ConfiguraPrecificacaoPage() {
 
           {/* Lista de custos */}
           {cfg.custos_fixos.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 8px 0" }}>Seus custos</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="mb-5">
+              <p className="text-xs text-slate-400 font-semibold uppercase mb-2">Seus custos</p>
+              <div className="flex flex-col gap-2">
                 {cfg.custos_fixos.map((custo) => (
                   <div
                     key={custo.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: editingCustoId === custo.id ? "flex-start" : "center",
-                      padding: "12px",
-                      background: editingCustoId === custo.id ? "var(--primary)/10" : "var(--surface-2)",
-                      borderRadius: "var(--radius-sm)",
-                      border: editingCustoId === custo.id ? "1px solid var(--primary)" : "none",
-                    }}
+                    className={`flex justify-between ${editingCustoId === custo.id ? "items-start" : "items-center"} p-3 rounded-lg transition-all ${
+                      editingCustoId === custo.id
+                        ? "bg-[rgba(136,206,17,0.1)] border border-[primary]"
+                        : "bg-[rgba(148,163,184,0.05)]"
+                    }`}
                   >
                     {editingCustoId === custo.id ? (
                       // Modo edição
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, marginRight: 12 }}>
+                      <div className="flex-1 flex flex-col gap-2 mr-3">
                         <input
                           type="text"
                           placeholder="Nome do custo"
@@ -279,35 +270,21 @@ export default function ConfiguraPrecificacaoPage() {
                             if (e.key === "Escape") handleCancelEdit();
                           }}
                           autoFocus
-                          style={{
-                            padding: "6px 8px",
-                            borderRadius: "var(--radius-sm)",
-                            border: "1px solid var(--primary)",
-                            background: "var(--surface)",
-                            color: "var(--text)",
-                            fontSize: 12,
-                          }}
+                          className="px-2 py-1 rounded-lg border border-[primary] bg-[rgba(15,23,42,0.8)] text-white text-xs focus:outline-none"
                         />
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <div className="grid grid-cols-2 gap-2">
                           <select
                             value={editingCategoria}
                             onChange={(e) => setEditingCategoria(e.target.value as any)}
-                            style={{
-                              padding: "6px 8px",
-                              borderRadius: "var(--radius-sm)",
-                              border: "1px solid var(--primary)",
-                              background: "var(--surface)",
-                              color: "var(--text)",
-                              fontSize: 12,
-                            }}
+                            className="px-2 py-1 rounded-lg border border-[primary] bg-[rgba(15,23,42,0.8)] text-white text-xs focus:outline-none"
                           >
                             <option value="software">Software</option>
                             <option value="infra">Infraestrutura</option>
                             <option value="pessoal">Pessoal</option>
                             <option value="outro">Outro</option>
                           </select>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ fontSize: 12, color: "var(--text-2)" }}>R$</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-slate-400">R$</span>
                             <input
                               type="number"
                               value={editingValor}
@@ -316,42 +293,21 @@ export default function ConfiguraPrecificacaoPage() {
                                 if (e.key === "Enter") handleSaveEdit(custo.id);
                                 if (e.key === "Escape") handleCancelEdit();
                               }}
-                              style={{
-                                flex: 1,
-                                padding: "6px 8px",
-                                borderRadius: "var(--radius-sm)",
-                                border: "1px solid var(--primary)",
-                                background: "var(--surface)",
-                                color: "var(--text)",
-                                fontSize: 12,
-                              }}
+                              className="flex-1 px-2 py-1 rounded-lg border border-[primary] bg-[rgba(15,23,42,0.8)] text-white text-xs focus:outline-none"
                             />
-                            <span style={{ fontSize: 12, color: "var(--text-2)" }}>/mês</span>
+                            <span className="text-xs text-slate-400">/mês</span>
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <div className="flex gap-2 justify-end">
                           <button
                             onClick={() => handleSaveEdit(custo.id)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--success)",
-                              cursor: "pointer",
-                              fontSize: 14,
-                              fontWeight: 700,
-                            }}
+                            className="bg-none border-none text-[success] cursor-pointer text-sm font-bold"
                           >
                             ✓ Salvar
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-3)",
-                              cursor: "pointer",
-                              fontSize: 14,
-                            }}
+                            className="bg-none border-none text-slate-500 cursor-pointer text-sm"
                           >
                             ✕ Cancelar
                           </button>
@@ -360,34 +316,20 @@ export default function ConfiguraPrecificacaoPage() {
                     ) : (
                       // Modo visualização
                       <>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{custo.nome}</div>
-                          <div style={{ fontSize: 11, color: "var(--text-3)" }}>{custo.categoria}</div>
+                        <div className="flex-1">
+                          <div className="text-xs font-semibold text-white">{custo.nome}</div>
+                          <div className="text-xs text-slate-500">{custo.categoria}</div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleStartEdit(custo.id, custo.nome, custo.categoria, custo.valor_mensal)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color: "var(--primary)",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
+                            className="bg-none border-none text-xs font-semibold text-[primary] cursor-pointer p-0"
                           >
                             {fmt(custo.valor_mensal)}/mês
                           </button>
                           <button
                             onClick={() => handleRemoveCusto(custo.id)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-3)",
-                              cursor: "pointer",
-                              fontSize: 16,
-                            }}
+                            className="bg-none border-none text-slate-500 cursor-pointer text-sm"
                           >
                             ✕
                           </button>
@@ -401,18 +343,18 @@ export default function ConfiguraPrecificacaoPage() {
           )}
 
           {/* Adicionar novo custo */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 80px", gap: 8 }}>
+          <div className="grid grid-cols-4 gap-2">
             <input
               type="text"
               placeholder="Nome do custo"
               value={newCustoNome}
               onChange={(e) => setNewCustoNome(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 12 }}
+              className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[primary]"
             />
             <select
               value={newCustoCategoria}
               onChange={(e) => setNewCustoCategoria(e.target.value as any)}
-              style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 12 }}
+              className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary]"
             >
               <option value="software">Software</option>
               <option value="infra">Infraestrutura</option>
@@ -424,21 +366,16 @@ export default function ConfiguraPrecificacaoPage() {
               placeholder="Valor mensal"
               value={newCustoValor}
               onChange={(e) => setNewCustoValor(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 12 }}
+              className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[primary]"
             />
             <button
               onClick={handleAddCusto}
               disabled={!newCustoNome || !newCustoValor}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                background: newCustoNome && newCustoValor ? "var(--primary)" : "var(--border)",
-                color: "#0a0a0a",
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: newCustoNome && newCustoValor ? "pointer" : "default",
-              }}
+              className={`px-3 py-2 rounded-lg border-none text-black font-bold text-sm transition-all ${
+                newCustoNome && newCustoValor
+                  ? "bg-[primary] cursor-pointer hover:shadow-[0_0_20px_rgba(136,206,17,0.4)]"
+                  : "bg-[rgba(148,163,184,0.1)] text-slate-500 cursor-not-allowed"
+              }`}
             >
               + Adicionar
             </button>
@@ -446,47 +383,47 @@ export default function ConfiguraPrecificacaoPage() {
         </div>
 
         {/* Section 4: Margem Padrão */}
-        <div style={{ background: "var(--surface)", borderRadius: 12, padding: 24, marginBottom: 24, border: "1px solid var(--border)" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px 0", color: "var(--text)" }}>📈 Margem Padrão</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="glass glass-card p-6 mb-6">
+          <h2 className="text-sm font-bold mb-4 text-white">📈 Margem Padrão</h2>
+          <div className="flex flex-col gap-3">
             <input
               type="range"
               min="0"
               max="60"
               value={cfg.margem_padrao}
               onChange={(e) => setCfg({ ...cfg, margem_padrao: parseInt(e.target.value) })}
-              style={{ width: "100%" }}
+              className="w-full accent-[primary]"
             />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "var(--text)" }}>Seu lucro padrão: <strong style={{ color: "var(--primary)" }}>{cfg.margem_padrao}%</strong></span>
-              <span style={{ fontSize: 12, color: "var(--text-2)" }}>Se custo = R$ 1000, você ganha R$ {Math.round((cfg.margem_padrao / 100) * 1000)}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-white">Seu lucro padrão: <strong className="text-[primary]">{cfg.margem_padrao}%</strong></span>
+              <span className="text-xs text-slate-400">Se custo = R$ 1000, você ganha R$ {Math.round((cfg.margem_padrao / 100) * 1000)}</span>
             </div>
           </div>
         </div>
 
         {/* Section 5: Resumo */}
-        <div style={{ background: "linear-gradient(135deg, var(--primary)20, transparent)", borderRadius: 12, padding: 24, border: "1px solid var(--primary)50" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px 0", color: "var(--text)" }}>📊 Resumo do Overhead</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="glass glass-card p-6 border border-[primary]/30">
+          <h2 className="text-sm font-bold mb-4 text-white">📊 Resumo do Overhead</h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 4px 0" }}>Total de custos fixos/mês</p>
-              <p style={{ fontSize: 20, fontWeight: 900, color: "var(--primary)", margin: 0 }}>{fmt(totalCustoFixo)}</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Total de custos fixos/mês</p>
+              <p className="text-2xl font-black text-[primary]">{fmt(totalCustoFixo)}</p>
             </div>
             <div>
-              <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 4px 0" }}>Total de unidades</p>
-              <p style={{ fontSize: 20, fontWeight: 900, color: "var(--primary)", margin: 0 }}>{totalUnidades}</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Total de unidades</p>
+              <p className="text-2xl font-black text-[primary]">{totalUnidades}</p>
             </div>
             <div>
-              <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 4px 0" }}>Overhead por unidade</p>
-              <p style={{ fontSize: 20, fontWeight: 900, color: "var(--primary)", margin: 0 }}>{fmt(overheadPorUnidade)}</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Overhead por unidade</p>
+              <p className="text-2xl font-black text-[primary]">{fmt(overheadPorUnidade)}</p>
             </div>
             <div>
-              <p style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", margin: "0 0 4px 0" }}>Margem padrão</p>
-              <p style={{ fontSize: 20, fontWeight: 900, color: "var(--primary)", margin: 0 }}>{cfg.margem_padrao}%</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Margem padrão</p>
+              <p className="text-2xl font-black text-[primary]">{cfg.margem_padrao}%</p>
             </div>
           </div>
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--primary)30" }}>
-            <p style={{ fontSize: 11, color: "var(--text-2)", margin: 0 }}>
+          <div className="pt-4 border-t border-[primary]/20">
+            <p className="text-xs text-slate-400">
               💡 <strong>Como funciona:</strong> Custos fixos totais (R$ {fmt(totalCustoFixo)}) divididos entre suas {totalUnidades} unidade{totalUnidades !== 1 ? 's' : ''} = R$ {fmt(overheadPorUnidade)} por unidade.
               Esse overhead será adicionado automaticamente a cada serviço quando você criar orçamentos.
             </p>

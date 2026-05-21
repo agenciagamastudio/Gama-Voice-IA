@@ -15,6 +15,15 @@ Contém contexto específico, decisões travadas e status atual.
 
 ---
 
+
+## 🚪 Seção 0 · Governança AIOS
+
+**Status:** ✅ ATIVO (Implementado 2026-05-20)
+**Modo:** STANDARD
+**Estrutura:** `.claude/governance/` com CONSTITUICAO-AIOS.md + PIPELINE-STORY-DRIVEN.md
+
+#
+
 ## Decisões Arquiteturais TRAVADAS (Não Revisitar)
 
 | Decisão | Valor | Por Quê |
@@ -161,3 +170,4 @@ npm run db:studio    # Abrir Prisma Studio (GUI do SQLite)
 **Contact:** Matheus (theu02427875@gmail.com)  
 **Stack:** SQLite + Prisma + Next.js 14 + TypeScript + Tailwind v4  
 **Port:** 3004
+

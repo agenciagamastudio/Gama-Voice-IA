@@ -78,9 +78,9 @@ export default function CatalogoEditarPage() {
 
   if (!pricingConfig || !itemOriginal) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", padding: "40px" }}>
-          <p style={{ fontSize: 16, color: "var(--text-2)" }}>Carregando serviço...</p>
+      <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] flex items-center justify-center">
+        <div className="text-center p-10">
+          <p className="text-base text-slate-400">Carregando serviço...</p>
         </div>
       </div>
     );
@@ -176,24 +176,24 @@ export default function CatalogoEditarPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2]">
       {/* Topbar */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/catalogo" style={{ color: "var(--text-3)", fontSize: 18, cursor: "pointer" }}>←</a>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Editar Serviço</span>
-          <span style={{ fontSize: 12, color: "var(--text-2)" }}>Etapa {step} de 5</span>
+      <div className="border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)] px-6 flex items-center justify-between h-14">
+        <div className="flex items-center gap-3">
+          <a href="/catalogo" className="text-slate-500 hover:text-slate-300 transition-colors text-lg cursor-pointer">←</a>
+          <span className="font-bold text-sm">Editar Serviço</span>
+          <span className="text-xs text-slate-400">Etapa {step} de 5</span>
         </div>
       </div>
 
-      <div style={{ maxWidth: 700, margin: "40px auto", padding: "0 24px" }}>
+      <div className="max-w-2xl mx-auto pt-8 pb-12 px-6">
         {/* Etapa 1: Identidade */}
         {step === 1 && (
-          <div style={{ background: "var(--surface)", borderRadius: 12, padding: 32, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24, color: "var(--text)" }}>📝 Identidade do Serviço</h2>
+          <div className="glass glass-card p-8 mb-6">
+            <h2 className="text-lg font-bold mb-6 text-white">📝 Identidade do Serviço</h2>
 
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 8 }}>
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">
                 Nome do Serviço
               </label>
               <input
@@ -201,35 +201,23 @@ export default function CatalogoEditarPage() {
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="ex: Post para Instagram"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: errors.nome ? "1px solid #e11d48" : "1px solid var(--border)",
-                  borderRadius: 8,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  fontSize: 14,
-                }}
+                className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none transition-colors ${
+                  errors.nome
+                    ? "border border-red-500 bg-red-500/10 text-white focus:border-red-500"
+                    : "border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white focus:border-[primary]"
+                }`}
               />
-              {errors.nome && <div style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}>{errors.nome}</div>}
+              {errors.nome && <div className="text-red-500 text-xs mt-1">{errors.nome}</div>}
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 8 }}>
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">
                 Categoria
               </label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  fontSize: 14,
-                }}
+                className="w-full px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary] transition-colors"
               >
                 {CATEGORIAS_PADRAO.map((cat) => (
                   <option key={cat} value={cat}>
@@ -239,59 +227,28 @@ export default function CatalogoEditarPage() {
               </select>
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 8 }}>
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-slate-400 mb-2">
                 Descrição (opcional)
               </label>
               <textarea
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 placeholder="ex: Post estático com copywriting e design"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  fontSize: 14,
-                  minHeight: 80,
-                  fontFamily: "inherit",
-                  resize: "vertical",
-                }}
+                className="w-full px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary] transition-colors resize-vertical min-h-20"
               />
             </div>
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="flex gap-3">
               <button
                 onClick={() => router.push("/catalogo")}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-300 font-semibold text-xs hover:border-[rgba(148,163,184,0.2)] hover:bg-[rgba(148,163,184,0.1)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleProximo}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "none",
-                  background: "var(--primary)",
-                  color: "#0a0a0a",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
               >
                 Próximo →
               </button>
@@ -301,29 +258,23 @@ export default function CatalogoEditarPage() {
 
         {/* Etapa 2: Esforço (idêntica ao novo/page.tsx) */}
         {step === 2 && (
-          <div style={{ background: "var(--surface)", borderRadius: 12, padding: 32, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24, color: "var(--text)" }}>⏱️ Esforço & Custo</h2>
+          <div className="glass glass-card p-8 mb-6">
+            <h2 className="text-lg font-bold mb-6 text-white">⏱️ Esforço & Custo</h2>
 
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 12 }}>
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-400 mb-3">
                 Tipo de Cobrança
               </label>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div className="flex gap-3">
                 {(["hora", "fixo", "pacote"] as const).map((tipo) => (
                   <button
                     key={tipo}
                     onClick={() => setTipoPrecificacao(tipo)}
-                    style={{
-                      flex: 1,
-                      padding: "12px 16px",
-                      borderRadius: "var(--radius-sm)",
-                      border: tipoPrecificacao === tipo ? "none" : "1px solid var(--border)",
-                      background: tipoPrecificacao === tipo ? "var(--primary)" : "var(--surface-2)",
-                      color: tipoPrecificacao === tipo ? "#0a0a0a" : "var(--text-2)",
-                      fontWeight: tipoPrecificacao === tipo ? 700 : 600,
-                      fontSize: 13,
-                      cursor: "pointer",
-                    }}
+                    className={`flex-1 px-4 py-3 rounded-lg text-xs font-semibold transition-colors ${
+                      tipoPrecificacao === tipo
+                        ? "border-none bg-[primary] text-black"
+                        : "border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-400 hover:border-[rgba(148,163,184,0.2)]"
+                    }`}
                   >
                     {tipo === "hora" ? "Por Hora" : tipo === "fixo" ? "Preço Fixo" : "Pacote"}
                   </button>
@@ -332,8 +283,8 @@ export default function CatalogoEditarPage() {
             </div>
 
             {tipoPrecificacao === "hora" && (
-              <div style={{ marginBottom: 20, padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 8 }}>
+              <div className="mb-5 p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+                <label className="block text-xs font-semibold text-slate-400 mb-2">
                   Horas Estimadas
                 </label>
                 <input
@@ -341,26 +292,22 @@ export default function CatalogoEditarPage() {
                   value={horasEstimadas || ""}
                   onChange={(e) => setHorasEstimadas(parseFloat(e.target.value) || 0)}
                   placeholder="ex: 6"
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.horas ? "1px solid #e11d48" : "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface)",
-                    color: "var(--text)",
-                    fontSize: 14,
-                  }}
+                  className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none transition-colors ${
+                    errors.horas
+                      ? "border border-red-500 bg-red-500/10 text-white focus:border-red-500"
+                      : "border border-[rgba(148,163,184,0.1)] bg-[rgba(15,23,42,0.8)] text-white focus:border-[primary]"
+                  }`}
                 />
-                {errors.horas && <div style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}>{errors.horas}</div>}
-                <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 8 }}>
+                {errors.horas && <div className="text-red-500 text-xs mt-1">{errors.horas}</div>}
+                <div className="text-xs text-slate-500 mt-2">
                   Taxa horária: {fmt(pricingConfig?.taxa_horaria || 100)}/h
                 </div>
               </div>
             )}
 
             {(tipoPrecificacao === "fixo" || tipoPrecificacao === "pacote") && (
-              <div style={{ marginBottom: 20, padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", display: "block", marginBottom: 8 }}>
+              <div className="mb-5 p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+                <label className="block text-xs font-semibold text-slate-400 mb-2">
                   Custo de Execução
                 </label>
                 <input
@@ -368,55 +315,31 @@ export default function CatalogoEditarPage() {
                   value={custoFixo || ""}
                   onChange={(e) => setCustoFixo(parseFloat(e.target.value) || 0)}
                   placeholder="ex: 600"
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.custoFixo ? "1px solid #e11d48" : "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface)",
-                    color: "var(--text)",
-                    fontSize: 14,
-                  }}
+                  className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none transition-colors ${
+                    errors.custoFixo
+                      ? "border border-red-500 bg-red-500/10 text-white focus:border-red-500"
+                      : "border border-[rgba(148,163,184,0.1)] bg-[rgba(15,23,42,0.8)] text-white focus:border-[primary]"
+                  }`}
                 />
-                {errors.custoFixo && <div style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}>{errors.custoFixo}</div>}
+                {errors.custoFixo && <div className="text-red-500 text-xs mt-1">{errors.custoFixo}</div>}
               </div>
             )}
 
-            <div style={{ padding: 16, background: "rgba(136, 206, 17, 0.1)", borderRadius: 8, marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 4 }}>Custo de Execução:</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "var(--primary)" }}>{fmt(custoExecucao)}</div>
+            <div className="p-4 bg-[primary]/10 border border-[primary]/30 rounded-lg mb-6">
+              <div className="text-xs text-slate-400 mb-1">Custo de Execução:</div>
+              <div className="text-xl font-black text-[primary]">{fmt(custoExecucao)}</div>
             </div>
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="flex gap-3">
               <button
                 onClick={handleVoltar}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-300 font-semibold text-xs hover:border-[rgba(148,163,184,0.2)] hover:bg-[rgba(148,163,184,0.1)] transition-colors"
               >
                 ← Voltar
               </button>
               <button
                 onClick={handleProximo}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "none",
-                  background: "var(--primary)",
-                  color: "#0a0a0a",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
               >
                 Próximo →
               </button>
@@ -424,138 +347,83 @@ export default function CatalogoEditarPage() {
           </div>
         )}
 
-        {/* Etapa 3, 4, 5 idênticas (omitidas para brevidade) */}
+        {/* Etapa 3: Custos Variáveis */}
         {step === 3 && (
-          <div style={{ background: "var(--surface)", borderRadius: 12, padding: 32, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24, color: "var(--text)" }}>💰 Custos Variáveis</h2>
+          <div className="glass glass-card p-8 mb-6">
+            <h2 className="text-lg font-bold mb-6 text-white">💰 Custos Variáveis</h2>
 
-            <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 12 }}>
+            <div className="mb-6">
+              <p className="text-xs text-slate-400 mb-3">
                 Materiais, freelancers, assets, ou qualquer custo adicional específico
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, marginBottom: 12 }}>
+              <div className="grid grid-cols-3 gap-3 mb-3">
                 <input
                   type="text"
                   value={novoCustom}
                   onChange={(e) => setNovoCustom(e.target.value)}
                   placeholder="ex: Stock photos"
-                  style={{
-                    padding: "10px 12px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface-2)",
-                    color: "var(--text)",
-                    fontSize: 14,
-                  }}
+                  className="col-span-2 px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary] transition-colors"
                 />
                 <input
                   type="number"
                   value={novoValor || ""}
                   onChange={(e) => setNovoValor(parseFloat(e.target.value) || 0)}
                   placeholder="100"
-                  style={{
-                    width: 100,
-                    padding: "10px 12px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface-2)",
-                    color: "var(--text)",
-                    fontSize: 14,
-                  }}
+                  className="px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary] transition-colors"
                 />
               </div>
 
               <button
                 onClick={adicionarCustoVariavel}
                 disabled={!novoCustom || novoValor <= 0}
-                style={{
-                  width: "100%",
-                  padding: "10px 16px",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: !novoCustom || novoValor <= 0 ? "not-allowed" : "pointer",
-                  opacity: !novoCustom || novoValor <= 0 ? 0.5 : 1,
-                }}
+                className={`w-full px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  !novoCustom || novoValor <= 0
+                    ? "border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-500 cursor-not-allowed opacity-50"
+                    : "border-none bg-[primary] text-black hover:shadow-[0_0_20px_rgba(136,206,17,0.4)]"
+                }`}
               >
                 + Adicionar
               </button>
             </div>
 
             {custosVariaveis.length > 0 && (
-              <div style={{ marginBottom: 24, padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
+              <div className="mb-6 p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
                 {custosVariaveis.map((custo) => (
                   <div
                     key={custo.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      paddingBottom: 12,
-                      marginBottom: 12,
-                      borderBottom: "1px solid var(--border)",
-                    }}
+                    className="flex justify-between items-center pb-3 mb-3 border-b border-[rgba(148,163,184,0.1)]"
                   >
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{custo.nome}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-3)" }}>{fmt(custo.valor)}</div>
+                      <div className="text-xs font-semibold text-white">{custo.nome}</div>
+                      <div className="text-xs text-slate-500">{fmt(custo.valor)}</div>
                     </div>
                     <button
                       onClick={() => removerCustoVariavel(custo.id)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#e11d48",
-                        fontSize: 16,
-                        cursor: "pointer",
-                      }}
+                      className="bg-none border-none text-red-500 text-lg hover:text-red-400 transition-colors"
                     >
                       ✕
                     </button>
                   </div>
                 ))}
 
-                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>Total Variáveis:</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--primary)" }}>{fmt(totalVariaveis)}</span>
+                <div className="flex justify-between pt-3">
+                  <span className="text-xs font-semibold text-slate-400">Total Variáveis:</span>
+                  <span className="text-xs font-black text-[primary]">{fmt(totalVariaveis)}</span>
                 </div>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="flex gap-3">
               <button
                 onClick={handleVoltar}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-300 font-semibold text-xs hover:border-[rgba(148,163,184,0.2)] hover:bg-[rgba(148,163,184,0.1)] transition-colors"
               >
                 ← Voltar
               </button>
               <button
                 onClick={handleProximo}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "none",
-                  background: "var(--primary)",
-                  color: "#0a0a0a",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
               >
                 Próximo →
               </button>
@@ -563,116 +431,67 @@ export default function CatalogoEditarPage() {
           </div>
         )}
 
+        {/* Etapa 4: Overhead e Margem */}
         {step === 4 && (
-          <div style={{ background: "var(--surface)", borderRadius: 12, padding: 32, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24, color: "var(--text)" }}>⚙️ Overhead & Margem</h2>
+          <div className="glass glass-card p-8 mb-6">
+            <h2 className="text-lg font-bold mb-6 text-white">⚙️ Overhead e Margem</h2>
 
-            {pricingConfig.custos_fixos.length === 0 ? (
-              <div style={{ marginBottom: 24, padding: 16, background: "rgba(245, 158, 11, 0.1)", borderRadius: 8, border: "1px solid #f59e0b" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", marginBottom: 8 }}>⚠️ Nenhum custo fixo cadastrado</div>
-                <p style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 12 }}>
-                  Configure seus custos fixos mensais para calcular o overhead automaticamente.
-                </p>
-                <a
-                  href="/configuracoes/precificacao"
-                  style={{
-                    display: "inline-block",
-                    padding: "8px 16px",
-                    background: "#f59e0b",
-                    color: "#0a0a0a",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    textDecoration: "none",
-                  }}
-                >
-                  ⚙️ Configurar Agora
-                </a>
-              </div>
-            ) : (
-              <div style={{ marginBottom: 24, padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
-                <div style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 4 }}>Overhead Automático:</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--primary)", marginBottom: 4 }}>{fmt(overheadValor)}</div>
-                <div style={{ fontSize: 11, color: "var(--text-3)" }}>{overheadPct.toFixed(1)}% dos custos fixos mensais</div>
-              </div>
-            )}
-
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>Margem de Lucro</label>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--primary)" }}>{margem}%</div>
-              </div>
+            <div className="mb-6 p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+              <label className="block text-xs font-semibold text-slate-400 mb-3">
+                Margem de Lucro (%): {margem}%
+              </label>
               <input
                 type="range"
                 min="0"
-                max="60"
+                max="100"
                 value={margem}
                 onChange={(e) => setMargem(parseInt(e.target.value))}
-                style={{ width: "100%" }}
+                className="w-full accent-[primary]"
               />
-              <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 8 }}>
-                Padrão: {pricingConfig.margem_padrao}%
+              <div className="text-xs text-slate-500 mt-2">
+                Ajuste a margem desejada. O padrão é {pricingConfig?.margem_padrao}%
               </div>
             </div>
 
-            <div style={{ padding: 16, background: "rgba(136, 206, 17, 0.1)", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 12 }}>Breakdown:</div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
-                <span>Custo de Execução:</span>
-                <span style={{ color: "var(--text-2)" }}>{fmt(custoExecucao)}</span>
-              </div>
-              {totalVariaveis > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
-                  <span>Custos Variáveis:</span>
-                  <span style={{ color: "var(--text-2)" }}>{fmt(totalVariaveis)}</span>
+            <div className="mb-6 p-4 bg-[primary]/10 border border-[primary]/30 rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Custo Total:</div>
+                  <div className="text-base font-bold text-white">{fmt(custoPuro)}</div>
                 </div>
-              )}
-              {overheadValor > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
-                  <span>Overhead:</span>
-                  <span style={{ color: "var(--text-2)" }}>{fmt(overheadValor)}</span>
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Margem:</div>
+                  <div className="text-base font-bold text-[primary]">{fmt(margemValor)}</div>
                 </div>
-              )}
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
-                <span style={{ fontWeight: 600 }}>Custo Total:</span>
-                <span style={{ fontWeight: 700, color: "var(--text)" }}>{fmt(custoPuro)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                <span>Margem ({margem}%):</span>
-                <span style={{ color: "var(--primary)", fontWeight: 600 }}>{fmt(margemValor)}</span>
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+            <div className="mb-6">
+              <div className="text-xs font-semibold text-slate-400 uppercase mb-3">Resumo do Overhead</div>
+              <div className="p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Overhead por Projeto:</div>
+                    <div className="text-lg font-black text-white">{fmt(overheadValor)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Percentual:</div>
+                    <div className="text-lg font-black text-slate-300">{overheadPct.toFixed(1)}%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
               <button
                 onClick={handleVoltar}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-300 font-semibold text-xs hover:border-[rgba(148,163,184,0.2)] hover:bg-[rgba(148,163,184,0.1)] transition-colors"
               >
                 ← Voltar
               </button>
               <button
                 onClick={handleProximo}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "none",
-                  background: "var(--primary)",
-                  color: "#0a0a0a",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
               >
                 Próximo →
               </button>
@@ -681,76 +500,76 @@ export default function CatalogoEditarPage() {
         )}
 
         {step === 5 && (
-          <div style={{ background: "var(--surface)", borderRadius: 12, padding: 32, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 24, color: "var(--text)" }}>✅ Revisão Final</h2>
+          <div className="glass glass-card p-8 mb-6">
+            <h2 className="text-lg font-bold mb-6 text-white">✅ Revisão Final</h2>
 
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", marginBottom: 12 }}>Dados Básicos</div>
-              <div style={{ display: "grid", gap: 8, padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-2)" }}>Nome:</span>
-                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{nome}</span>
+            <div className="mb-6">
+              <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Dados Básicos</div>
+              <div className="space-y-2 p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Nome:</span>
+                  <span className="font-semibold text-white">{nome}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-2)" }}>Categoria:</span>
-                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{categoria}</span>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Categoria:</span>
+                  <span className="font-semibold text-white">{categoria}</span>
                 </div>
                 {descricao && (
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--text-2)" }}>Descrição:</span>
-                    <span style={{ fontWeight: 600, color: "var(--text)" }}>{descricao}</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Descrição:</span>
+                    <span className="font-semibold text-white">{descricao}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", marginBottom: 12 }}>Breakdown de Precificação</div>
-              <div style={{ padding: 16, background: "var(--surface-2)", borderRadius: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>
+            <div className="mb-6">
+              <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Breakdown de Precificação</div>
+              <div className="p-4 bg-[rgba(148,163,184,0.05)] border border-[rgba(148,163,184,0.1)] rounded-lg">
+                <div className="flex justify-between text-xs mb-2 pb-2 border-b border-[rgba(148,163,184,0.1)]">
                   <span>
                     {tipoPrecificacao === "hora" ? `${horasEstimadas}h × R$ ${(pricingConfig?.taxa_horaria || 100).toFixed(0)}/h` : "Custo de Execução"}
                   </span>
-                  <span style={{ fontWeight: 600 }}>{fmt(custoExecucao)}</span>
+                  <span className="font-semibold">{fmt(custoExecucao)}</span>
                 </div>
 
                 {totalVariaveis > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
+                  <div className="flex justify-between text-xs mb-2">
                     <span>Custos Variáveis:</span>
-                    <span style={{ fontWeight: 600 }}>{fmt(totalVariaveis)}</span>
+                    <span className="font-semibold">{fmt(totalVariaveis)}</span>
                   </div>
                 )}
 
                 {overheadValor > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
+                  <div className="flex justify-between text-xs mb-2">
                     <span>Overhead ({overheadPct.toFixed(1)}%):</span>
-                    <span style={{ fontWeight: 600 }}>{fmt(overheadValor)}</span>
+                    <span className="font-semibold">{fmt(overheadValor)}</span>
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
+                <div className="flex justify-between text-sm font-bold mb-3 pb-3 border-b border-[rgba(148,163,184,0.1)]">
                   <span>Custo Total:</span>
-                  <span style={{ color: "var(--text)" }}>{fmt(custoPuro)}</span>
+                  <span className="text-white">{fmt(custoPuro)}</span>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
+                <div className="flex justify-between text-xs">
                   <span>Margem ({margem}%):</span>
-                  <span style={{ fontWeight: 600, color: "var(--primary)" }}>{fmt(margemValor)}</span>
+                  <span className="font-semibold text-[primary]">{fmt(margemValor)}</span>
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", marginBottom: 12 }}>Preço Final</div>
-              <div style={{ padding: 16, background: "rgba(136, 206, 17, 0.1)", borderRadius: 8, border: "1px solid var(--primary)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <span style={{ fontSize: 12, color: "var(--text-2)" }}>Preço Calculado:</span>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: "var(--primary)" }}>{fmt(precoCalculado)}</div>
+            <div className="mb-6">
+              <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Preço Final</div>
+              <div className="p-4 bg-[primary]/10 border border-[primary]/30 rounded-lg mb-3">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs text-slate-400">Preço Calculado:</span>
+                  <div className="text-3xl font-black text-[primary]">{fmt(precoCalculado)}</div>
                 </div>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 12 }}>Você pode ajustar este valor abaixo</p>
+                <p className="text-xs text-slate-500 mt-3">Você pode ajustar este valor abaixo</p>
               </div>
 
-              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", display: "block", marginTop: 12, marginBottom: 6 }}>
+              <label className="block text-xs font-semibold text-slate-400 mb-2">
                 Preço Final Desejado (opcional)
               </label>
               <input
@@ -758,48 +577,20 @@ export default function CatalogoEditarPage() {
                 value={precoFinal || ""}
                 onChange={(e) => setPrecoFinal(parseFloat(e.target.value) || 0)}
                 placeholder={precoCalculado.toFixed(2)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  fontSize: 14,
-                }}
+                className="w-full px-3 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-white text-sm focus:outline-none focus:border-[primary] transition-colors"
               />
             </div>
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="flex gap-3">
               <button
                 onClick={handleVoltar}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-2)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[rgba(148,163,184,0.1)] bg-[rgba(148,163,184,0.05)] text-slate-300 font-semibold text-xs hover:border-[rgba(148,163,184,0.2)] hover:bg-[rgba(148,163,184,0.1)] transition-colors"
               >
                 ← Voltar
               </button>
               <button
                 onClick={handleSalvar}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "none",
-                  background: "var(--primary)",
-                  color: "#0a0a0a",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                className="flex-1 px-4 py-2 rounded-lg border-none bg-[primary] text-black font-bold text-xs hover:shadow-[0_0_20px_rgba(136,206,17,0.4)] transition-all"
               >
                 💾 Salvar Alterações
               </button>

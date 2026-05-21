@@ -18,7 +18,7 @@ export default function EditarPage() {
   }, [id, router]);
 
   if (!orc) return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)", fontSize: 14 }}>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] flex items-center justify-center text-slate-400 text-sm">
       Carregando...
     </div>
   );

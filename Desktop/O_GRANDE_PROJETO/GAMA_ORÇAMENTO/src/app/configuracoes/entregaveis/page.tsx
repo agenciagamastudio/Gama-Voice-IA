@@ -1,7 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 // Mock data - TODO: conectar a API /api/entregaveis
@@ -16,11 +14,11 @@ const mockEntregaveis = [
   { id: "8", nome: "Resposta a Comentários/DMs", categoria: "gestao", profissional: "Graça", tempoMinutos: 60, unidade: "mensal", precoFloor: 88.36, ativo: true },
 ];
 
-const categoriaColors: Record<string, string> = {
-  producao: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  estrategia: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  gestao: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  extras: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+const categoriaColors: Record<string, { bg: string; text: string; badge: string }> = {
+  producao: { bg: "bg-[rgba(59,130,246,0.1)]", text: "text-blue-300", badge: "bg-blue-500/30 text-blue-200" },
+  estrategia: { bg: "bg-[rgba(168,85,247,0.1)]", text: "text-purple-300", badge: "bg-purple-500/30 text-purple-200" },
+  gestao: { bg: "bg-[rgba(34,197,94,0.1)]", text: "text-green-300", badge: "bg-green-500/30 text-green-200" },
+  extras: { bg: "bg-[rgba(249,115,22,0.1)]", text: "text-orange-300", badge: "bg-orange-500/30 text-orange-200" },
 };
 
 const unidadeLabels: Record<string, string> = {
@@ -33,83 +31,106 @@ export default function EntregaveisPage() {
   const [entregaveis] = useState(mockEntregaveis);
 
   return (
-    <div className="container py-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Catálogo de Entregáveis</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Configure tipos de serviço com tempo padrão e profissional responsável
-          </p>
-        </div>
-        <Button>+ Novo Entregável</Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-[bg-bg] via-[bg-surface] to-[bg-surface-2] relative overflow-hidden">
+      {/* Volumetric background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-[rgba(136,206,17,0.15)] to-transparent rounded-full blur-3xl opacity-30 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-[rgba(136,206,17,0.1)] to-transparent rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Entregáveis</CardTitle>
-          <CardDescription>
-            Total de entregáveis ativos: {entregaveis.filter((e) => e.ativo).length}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-2 font-semibold">Nome</th>
-                  <th className="text-left py-3 px-2 font-semibold">Categoria</th>
-                  <th className="text-left py-3 px-2 font-semibold">Profissional</th>
-                  <th className="text-right py-3 px-2 font-semibold">Tempo</th>
-                  <th className="text-center py-3 px-2 font-semibold">Unidade</th>
-                  <th className="text-right py-3 px-2 font-semibold">Preço Floor</th>
-                  <th className="text-center py-3 px-2 font-semibold">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entregaveis.map((entregavel) => (
-                  <tr key={entregavel.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="py-3 px-2 font-medium">{entregavel.nome}</td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          categoriaColors[entregavel.categoria] || categoriaColors.extras
-                        }`}
-                      >
-                        {entregavel.categoria.charAt(0).toUpperCase() + entregavel.categoria.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-gray-600 dark:text-gray-400">{entregavel.profissional}</td>
-                    <td className="py-3 px-2 text-right">{entregavel.tempoMinutos}min</td>
-                    <td className="py-3 px-2 text-center text-xs">
-                      <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">
-                        {unidadeLabels[entregavel.unidade]}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-semibold">R$ {entregavel.precoFloor.toFixed(2)}</td>
-                    <td className="py-3 px-2 text-center text-sm">
-                      <Button variant="ghost" size="sm">
-                        Editar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-[rgba(148,163,184,0.1)] backdrop-blur-md bg-[rgba(15,23,42,0.4)]">
+          <div className="max-w-6xl mx-auto px-6 py-8 flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-[primary] to-[primary-light] bg-clip-text text-transparent">
+                📦 Catálogo de Entregáveis
+              </h1>
+              <p className="text-slate-400 mt-2">
+                Configure tipos de serviço com tempo padrão e profissional responsável
+              </p>
+            </div>
+            <button className="px-6 py-3 bg-[primary] text-black rounded-lg font-bold hover:shadow-[0_0_30px_rgba(136,206,17,0.5)] hover:scale-105 active:scale-95 transition-all">
+              + Novo Entregável
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-950 rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">💡 Como Funciona</h2>
-        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-          Cada entregável tem um tempo padrão em minutos. O preço floor é calculado automaticamente:
-        </p>
-        <code className="block bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs mb-3">
-          Preço Floor = (Tempo em Minutos ÷ 60) × Hora-Vendida do Profissional
-        </code>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          <strong>Exemplo:</strong> Post Estático (20 min) com Designer (R$108,61/h) = (20÷60) × 108,61 = R$36,20
-        </p>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          {/* Table Card */}
+          <div className="glass glass-card p-8 border border-[rgba(148,163,184,0.1)] rounded-lg mb-12">
+            <div className="mb-6">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Lista de Entregáveis</p>
+              <p className="text-slate-300 text-sm">
+                Total de entregáveis ativos: <span className="text-[primary] font-bold">{entregaveis.filter((e) => e.ativo).length}</span>
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[rgba(148,163,184,0.1)]">
+                    <th className="text-left py-4 px-4 font-semibold text-slate-300">Nome</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-300">Categoria</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-300">Profissional</th>
+                    <th className="text-right py-4 px-4 font-semibold text-slate-300">Tempo</th>
+                    <th className="text-center py-4 px-4 font-semibold text-slate-300">Unidade</th>
+                    <th className="text-right py-4 px-4 font-semibold text-slate-300">Preço Floor</th>
+                    <th className="text-center py-4 px-4 font-semibold text-slate-300">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entregaveis.map((entregavel) => (
+                    <tr key={entregavel.id} className="border-b border-[rgba(148,163,184,0.05)] hover:bg-[rgba(136,206,17,0.05)] transition-colors">
+                      <td className="py-4 px-4 font-medium text-white">{entregavel.nome}</td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`px-3 py-1 rounded text-xs font-medium ${
+                            categoriaColors[entregavel.categoria]?.badge || categoriaColors.extras.badge
+                          }`}
+                        >
+                          {entregavel.categoria.charAt(0).toUpperCase() + entregavel.categoria.slice(1)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-slate-300">{entregavel.profissional}</td>
+                      <td className="py-4 px-4 text-right text-slate-300">{entregavel.tempoMinutos}min</td>
+                      <td className="py-4 px-4 text-center">
+                        <span className="px-2 py-1 bg-[rgba(148,163,184,0.1)] text-slate-300 rounded text-xs">
+                          {unidadeLabels[entregavel.unidade]}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold text-[primary]">R$ {entregavel.precoFloor.toFixed(2)}</td>
+                      <td className="py-4 px-4 text-center">
+                        <button className="px-3 py-1 text-[primary] hover:bg-[rgba(136,206,17,0.1)] rounded transition-colors text-sm font-medium">
+                          Editar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Info Section */}
+          <div className="glass glass-card p-8 border border-[primary]/30 bg-[rgba(136,206,17,0.05)] rounded-lg">
+            <div className="flex items-start gap-4">
+              <span className="text-3xl flex-shrink-0">💡</span>
+              <div>
+                <h2 className="text-lg font-bold text-[primary] mb-3">Como Funciona</h2>
+                <p className="text-slate-400 text-sm mb-4 leading-relaxed">
+                  Cada entregável tem um tempo padrão em minutos. O preço floor é calculado automaticamente:
+                </p>
+                <div className="bg-[rgba(0,0,0,0.3)] p-4 rounded-lg mb-4 border border-[rgba(148,163,184,0.1)]">
+                  <code className="text-xs text-slate-300 font-mono">
+                    Preço Floor = (Tempo em Minutos ÷ 60) × Hora-Vendida do Profissional
+                  </code>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  <span className="text-[primary] font-semibold">Exemplo:</span> Post Estático (20 min) com Designer (R$108,61/h) = (20÷60) × 108,61 = R$36,20
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
