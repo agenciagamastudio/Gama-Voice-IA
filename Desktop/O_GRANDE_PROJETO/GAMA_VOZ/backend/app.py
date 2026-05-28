@@ -7,7 +7,7 @@ STT: Groq Whisper Turbo
 
 import os
 import sys
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from groq import Groq
 import io
@@ -20,12 +20,17 @@ from audiobook_processor import (
     create_audiobook_task,
     get_audiobook_status,
     process_audiobook_queue,
-    AUDIOBOOK_QUEUE
+    AUDIOBOOK_QUEUE,
+    AUDIOBOOK_QUEUE_LOCK
 )
 
 # Authentication
 from auth import AuthDB, require_auth
 import time
+
+# License management
+from api.license import license_bp
+from models import LicenseKeyModel
 
 # Try to load .env using python-dotenv, fallback to manual loading
 try:
@@ -61,6 +66,22 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
+# Initialize License database
+LicenseKeyModel.init_db()
+
+# Register license blueprint
+app.register_blueprint(license_bp)
+
+# Configure static files (React build)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_BUILD = os.path.join(os.path.dirname(BASE_DIR), 'frontend', 'dist')
+
+# Check if frontend build exists
+if os.path.exists(FRONTEND_BUILD):
+    print(f"✅ Frontend build found at {FRONTEND_BUILD}")
+else:
+    print(f"⚠️  Frontend build not found at {FRONTEND_BUILD} — run 'npm run build' in frontend/")
+
 # Increase timeout for large text synthesis (client-side timeout in frontend should be increased)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 600
 
@@ -84,6 +105,39 @@ try:
 except Exception as e:
     print(f"❌ Kokoro init failed: {e}")
     traceback.print_exc()
+
+
+# ============== SERVE REACT FRONTEND (MUST BE BEFORE /api/* ROUTES) ==============
+
+@app.route('/', methods=['GET', 'HEAD'])
+def serve_root():
+    """Serve React app index.html"""
+    if not os.path.exists(FRONTEND_BUILD):
+        return jsonify({'error': 'Frontend build not found. Run npm run build in frontend/'}), 404
+
+    index_path = os.path.join(FRONTEND_BUILD, 'index.html')
+    if not os.path.exists(index_path):
+        return jsonify({'error': 'index.html not found'}), 404
+
+    return send_from_directory(FRONTEND_BUILD, 'index.html')
+
+
+@app.route('/<path:filename>', methods=['GET', 'HEAD'])
+def serve_static(filename):
+    """Serve static files from React build"""
+    if not os.path.exists(FRONTEND_BUILD):
+        return jsonify({'error': 'Frontend build not found'}), 404
+
+    # Try to serve the requested file
+    file_path = os.path.join(FRONTEND_BUILD, filename)
+    if os.path.isfile(file_path):
+        return send_from_directory(FRONTEND_BUILD, filename)
+
+    # If file doesn't exist, return index.html for SPA routing (React Router)
+    return send_from_directory(FRONTEND_BUILD, 'index.html')
+
+
+# ============== API ENDPOINTS ==============
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -289,7 +343,6 @@ def transcribe():
 # ============== AUDIOBOOK ENDPOINTS ==============
 
 @app.route('/api/audiobook/create', methods=['POST'])
-@require_auth
 def create_audiobook():
     """Cria nova tarefa de audiobook"""
     try:
@@ -345,7 +398,6 @@ def create_audiobook():
 
 
 @app.route('/api/audiobook/status/<task_id>', methods=['GET'])
-@require_auth
 def get_audiobook_status_endpoint(task_id):
     """Get status de processamento"""
     status = get_audiobook_status(task_id)
@@ -357,34 +409,65 @@ def get_audiobook_status_endpoint(task_id):
 
 
 @app.route('/api/audiobook/download/<task_id>', methods=['GET'])
-@require_auth
 def download_audiobook(task_id):
     """Download do audiobook final"""
-    task = AUDIOBOOK_QUEUE.get(task_id)
+    # Use lock para evitar race condition com background thread
+    with AUDIOBOOK_QUEUE_LOCK:
+        task = AUDIOBOOK_QUEUE.get(task_id)
 
-    if not task:
-        return jsonify({'error': 'Tarefa não encontrada'}), 404
+        if not task:
+            print(f"❌ DOWNLOAD: Task {task_id} não encontrada em AUDIOBOOK_QUEUE")
+            print(f"   Keys disponíveis: {list(AUDIOBOOK_QUEUE.keys())}")
+            return jsonify({'error': 'Tarefa não encontrada'}), 404
 
-    if task['status'] != 'completed':
-        return jsonify({'error': 'Audiobook não está pronto'}), 400
+        status = task.get('status')
+        keys = list(task.keys())
+        print(f"✅ DOWNLOAD: Task encontrada. Status={status}, Keys={keys}")
 
-    if not hasattr(task, 'final_file') or not os.path.exists(task.get('final_file', '')):
-        return jsonify({'error': 'Arquivo não encontrado'}), 404
+        # Debug to file
+        with open('/tmp/download_debug.log', 'a') as f:
+            f.write(f"DOWNLOAD {task_id}: status={status}, has_final_file={'final_file' in task}\n")
+            f.write(f"  Keys: {keys}\n")
+            if 'final_file' in task:
+                f.write(f"  final_file value: {task['final_file']}\n")
+            f.write(f"  Full task: {task}\n\n")
+
+        if task['status'] != 'completed':
+            return jsonify({'error': f'Audiobook ainda não está pronto (status: {task["status"]})'}), 400
+
+        if 'final_file' not in task:
+            print(f"❌ DOWNLOAD: final_file não está em task. Keys: {list(task.keys())}")
+            print(f"   Task dict: status={task.get('status')}, temp_dir={task.get('temp_dir')}")
+            return jsonify({'error': 'Arquivo não foi criado (final_file não setado)'}), 404
+
+        final_file = task['final_file']
+        print(f"✅ DOWNLOAD: final_file={final_file}")
+
+    # Verificar fora do lock (não bloqueia durante I/O)
+    if not os.path.exists(final_file):
+        print(f"❌ DOWNLOAD: Arquivo não existe em: {final_file}")
+        # Debug: check parent directory
+        parent_dir = os.path.dirname(final_file)
+        if os.path.exists(parent_dir):
+            print(f"   Parent dir exists. Contents: {os.listdir(parent_dir)}")
+        return jsonify({'error': 'Arquivo não encontrado no servidor'}), 500
 
     try:
+        print(f"📥 DOWNLOAD: Servindo audiobook: {final_file}")
         return send_file(
-            task['final_file'],
+            final_file,
             mimetype='audio/mpeg',
             as_attachment=True,
             download_name=f'audiobook_{task_id}.mp3'
         )
     except Exception as e:
-        print(f"❌ Download error: {e}")
+        print(f"❌ DOWNLOAD error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/audiobook/cancel/<task_id>', methods=['POST'])
-@require_auth
 def cancel_audiobook(task_id):
     """Cancela processamento de audiobook"""
     task = AUDIOBOOK_QUEUE.get(task_id)
@@ -397,6 +480,7 @@ def cancel_audiobook(task_id):
 
     task['status'] = 'cancelled'
     return jsonify({'status': 'cancelled'}), 200
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=False, threaded=True)
