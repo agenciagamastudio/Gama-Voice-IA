@@ -1,6 +1,6 @@
 ﻿---
 name: STORY-001 — Desktop Shell + PyInstaller Compilation
-status: InReview
+status: Done
 owner: @dev
 estimate: 3 days
 epic: EPIC-001
