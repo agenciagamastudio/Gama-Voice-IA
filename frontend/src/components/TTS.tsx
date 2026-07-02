@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Volume2, Copy, Download, Loader } from 'lucide-react'
-import { API_BASE_URL } from '../utils/config'
+import { API_BASE_URL, getTTSEnginePreference, setTTSEnginePreference } from '../utils/config'
+import type { TTSEngine } from '../utils/config'
 import type { Voice, TTSSettings } from '../types'
 import Toast from './Toast'
 
@@ -30,6 +31,14 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const [error, setError] = useState<string | null>(null)
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
+  const [enginePreference, setEnginePreference] = useState<TTSEngine>(getTTSEnginePreference)
+  const [lastUsedEngine, setLastUsedEngine] = useState<string | null>(null)
+
+  const handleEngineChange = (value: string) => {
+    const engine = value as TTSEngine
+    setEnginePreference(engine)
+    setTTSEnginePreference(engine)
+  }
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -41,13 +50,14 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     if (!text.trim()) { setError('Texto não pode estar vazio'); return }
     setIsLoading(true)
     setError(null)
+    setLastUsedEngine(null)
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 600000)
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: settings.voice, speed: settings.speed, engine: 'kokoro' }),
+        body: JSON.stringify({ text, voice: settings.voice, speed: settings.speed, engine: enginePreference }),
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
@@ -55,6 +65,8 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
         const errorData = await response.json()
         throw new Error(errorData.error || 'Falha na síntese')
       }
+      const engineUsed = response.headers.get('X-TTS-Source')
+      if (engineUsed) setLastUsedEngine(engineUsed)
       const audioBlob = await response.blob()
       setAudioUrl(URL.createObjectURL(audioBlob))
     } catch (err) {
@@ -97,7 +109,7 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
           text: `Teste de qualidade com voz ${settings.voice}`,
           voice: settings.voice,
           speed: settings.speed,
-          engine: 'edge-tts',
+          engine: enginePreference,
         }),
         signal: controller.signal,
       })
@@ -193,9 +205,9 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
         </div>
       </div>
 
-      {/* Voice + Speed */}
+      {/* Voice + Speed + Engine */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
           {/* Voice select */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>Voz</label>
@@ -239,6 +251,25 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
                 background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${speedPct}%, rgba(255,255,255,0.1) ${speedPct}%, rgba(255,255,255,0.1) 100%)`,
               }}
             />
+          </div>
+
+          {/* Engine selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>Engine TTS</label>
+            <select
+              value={enginePreference}
+              onChange={(e) => handleEngineChange(e.target.value)}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                color: 'var(--color-text)', fontFamily: 'var(--font-main)', fontSize: '14px',
+                outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="auto">Automático</option>
+              <option value="kokoro">Kokoro (qualidade)</option>
+              <option value="piper">Piper (rápido)</option>
+            </select>
           </div>
         </div>
 
@@ -326,7 +357,19 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
           className="glass-card"
           style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
         >
-          <p style={{ fontSize: '13px', color: 'var(--color-success)', margin: 0 }}>✅ Síntese Completa</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: '13px', color: 'var(--color-success)', margin: 0 }}>✅ Síntese Completa</p>
+            {lastUsedEngine && (
+              <span style={{
+                fontSize: '11px', fontWeight: 600, padding: '3px 10px',
+                borderRadius: '999px', border: '1px solid var(--color-border)',
+                color: 'var(--color-text-muted)', background: 'var(--glass-bg-2)',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}>
+                via {lastUsedEngine}
+              </span>
+            )}
+          </div>
           <audio controls src={audioUrl} style={{ width: '100%', borderRadius: 'var(--radius-md)' }} />
           <button
             onClick={handleDownload}
