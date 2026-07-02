@@ -31,6 +31,16 @@ function base64ToBlob(b64: string, mime = 'audio/wav'): Blob {
   return new Blob([arr], { type: mime })
 }
 
+// Module-level AudioContext reused across draws; closed by the component on unmount.
+let _sharedAudioCtx: AudioContext | null = null
+function getSharedAudioCtx(): AudioContext {
+  if (!_sharedAudioCtx || _sharedAudioCtx.state === 'closed') {
+    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext
+    _sharedAudioCtx = new AudioCtx() as AudioContext
+  }
+  return _sharedAudioCtx
+}
+
 async function drawWaveform(blob: Blob, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
@@ -41,10 +51,8 @@ async function drawWaveform(blob: Blob, canvas: HTMLCanvasElement) {
 
   try {
     const ab = await blob.arrayBuffer()
-    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext
-    const ac = new AudioCtx()
+    const ac = getSharedAudioCtx()
     const buffer = await ac.decodeAudioData(ab)
-    ac.close()
 
     const data = buffer.getChannelData(0)
     const step = Math.max(1, Math.floor(data.length / canvas.width))
@@ -180,7 +188,20 @@ export default function PostProcessingStudio() {
 
   const [effects, setEffects] = useState<AllEffects>(DEFAULT_EFFECTS)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef   = useRef<HTMLInputElement>(null)
+  const originalUrlRef = useRef<string | null>(null)
+  const processedUrlRef = useRef<string | null>(null)
+
+  // Sync URL refs so the cleanup effect can revoke them even if state has changed.
+  useEffect(() => { originalUrlRef.current  = originalUrl  }, [originalUrl])
+  useEffect(() => { processedUrlRef.current = processedUrl }, [processedUrl])
+
+  // Cleanup on unmount: revoke object URLs and close shared AudioContext.
+  useEffect(() => () => {
+    if (originalUrlRef.current)  URL.revokeObjectURL(originalUrlRef.current)
+    if (processedUrlRef.current) URL.revokeObjectURL(processedUrlRef.current)
+    if (_sharedAudioCtx && _sharedAudioCtx.state !== 'closed') _sharedAudioCtx.close()
+  }, [])
 
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg)

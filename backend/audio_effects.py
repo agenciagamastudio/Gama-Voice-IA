@@ -131,6 +131,7 @@ class AudioEffects:
         """
         y, sr = AudioEffects.load_wav(wav_bytes)
 
+        skipped = []
         for effect_name, params in effects.items():
             if effect_name == 'pitch_shift':
                 y = AudioEffects.pitch_shift(y, sr, **params)
@@ -142,6 +143,7 @@ class AudioEffects:
                 y = AudioEffects.compressor(y, **params)
             elif effect_name == 'eq_bass_boost':
                 y = AudioEffects.eq_bass_boost(y, sr, **params)
-            # Unknown effect names are silently skipped
+            else:
+                skipped.append(effect_name)
 
-        return AudioEffects.save_wav(y, sr)
+        return AudioEffects.save_wav(y, sr), skipped
