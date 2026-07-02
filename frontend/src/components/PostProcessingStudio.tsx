@@ -290,7 +290,7 @@ export default function PostProcessingStudio() {
     showToast('Áudio baixado!')
   }
 
-  const activeCount = Object.values(effects).filter(e => e.enabled).length
+  const activeCount = (Object.values(effects) as Array<{ enabled: boolean }>).filter(e => e.enabled).length
   const canProcess  = !!originalAudio && activeCount > 0 && !loading
 
   // ── Render ──────────────────────────────────────────────────────────────
