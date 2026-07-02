@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Volume2, Mic, Settings, BookOpen, LogOut } from 'lucide-react'
+import { Volume2, Mic, Settings, BookOpen, LogOut, Sliders } from 'lucide-react'
 import { Login } from './components/Login'
 import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
 import AudiobookGenerator from './components/AudiobookGenerator'
+import PostProcessingStudio from './components/PostProcessingStudio'
 import SettingsModal from './components/SettingsModal'
 import ParticleBackground from './components/ParticleBackground'
 import { useAPI } from './hooks/useAPI'
@@ -12,7 +13,7 @@ import type { Voice, TTSSettings } from './types'
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook'>('tts')
+  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook' | 'postprocessing'>('tts')
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
   const [settings, setSettings] = useState<TTSSettings>({
@@ -74,9 +75,10 @@ export default function App() {
   }
 
   const tabs = [
-    { id: 'tts' as const, label: 'Texto para Fala', icon: <Volume2 className="w-5 h-5" /> },
-    { id: 'stt' as const, label: 'Fala para Texto', icon: <Mic className="w-5 h-5" /> },
-    { id: 'audiobook' as const, label: 'Audiobook', icon: <BookOpen className="w-5 h-5" /> },
+    { id: 'tts' as const,           label: 'Texto para Fala', icon: <Volume2 className="w-5 h-5" /> },
+    { id: 'stt' as const,           label: 'Fala para Texto', icon: <Mic className="w-5 h-5" /> },
+    { id: 'audiobook' as const,     label: 'Audiobook',       icon: <BookOpen className="w-5 h-5" /> },
+    { id: 'postprocessing' as const, label: 'Estúdio FX',     icon: <Sliders className="w-5 h-5" /> },
   ]
 
   return (
@@ -233,6 +235,11 @@ export default function App() {
             {activeTab === 'audiobook' && (
               <div className="glass-card" style={{ padding: '32px' }}>
                 <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />
+              </div>
+            )}
+            {activeTab === 'postprocessing' && (
+              <div className="glass-card" style={{ padding: '32px' }}>
+                <PostProcessingStudio />
               </div>
             )}
           </div>
