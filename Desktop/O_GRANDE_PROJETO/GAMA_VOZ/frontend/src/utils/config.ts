@@ -19,3 +19,16 @@ export const TIMEOUTS = {
   TTS: 60000,
   STT: 120000
 }
+
+// TTS Engine preference — persisted in localStorage
+export type TTSEngine = 'auto' | 'kokoro' | 'piper'
+
+export function getTTSEnginePreference(): TTSEngine {
+  const stored = localStorage.getItem('tts_engine_preference')
+  if (stored === 'kokoro' || stored === 'piper') return stored
+  return 'auto'
+}
+
+export function setTTSEnginePreference(engine: TTSEngine): void {
+  localStorage.setItem('tts_engine_preference', engine)
+}

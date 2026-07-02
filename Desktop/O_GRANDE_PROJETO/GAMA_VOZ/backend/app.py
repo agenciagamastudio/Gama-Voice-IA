@@ -263,8 +263,9 @@ def synthesize():
         text = data.get('text', '').strip()
         voice = data.get('voice', 'pm_alex')
         speed = float(data.get('speed', 1.0))
+        engine_preference = data.get('engine', 'auto')  # 'auto' | 'kokoro' | 'piper'
 
-        print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}")
+        print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}, engine={engine_preference}")
 
         # Validations
         if not text or len(text) > 50000:
@@ -273,30 +274,62 @@ def synthesize():
             return jsonify({'error': 'Invalid voice'}), 400
         if not (0.5 <= speed <= 2.0):
             return jsonify({'error': 'Invalid speed'}), 400
+        if engine_preference not in ('auto', 'kokoro', 'piper'):
+            return jsonify({'error': 'Invalid engine (use: auto, kokoro, piper)'}), 400
 
-        # TTS via engine abstraction — Kokoro primary, Piper fallback
+        # TTS via engine abstraction — supports forced engine or auto fallback
         wav_bytes = None
         source = None
 
-        if _kokoro_engine.is_available:
+        if engine_preference == 'kokoro':
+            # Force Kokoro — no fallback
+            if not _kokoro_engine.is_available:
+                return jsonify({'error': 'Kokoro engine not available'}), 503
             try:
-                print(f"  → Generating with Kokoro...")
+                print(f"  → Generating with Kokoro (forced)...")
                 wav_bytes = _kokoro_engine.synthesize(text, voice=voice, speed=speed)
                 source = "kokoro"
                 print(f"  ✅ Kokoro audio ready: {len(wav_bytes)} bytes")
             except Exception as e:
-                print(f"  ⚠️ Kokoro failed, trying Piper fallback: {e}")
+                print(f"  ❌ Kokoro synthesis error: {e}")
                 traceback.print_exc()
+                return jsonify({'error': f'Kokoro synthesis failed: {e}'}), 500
 
-        if wav_bytes is None and _piper_engine.is_available:
+        elif engine_preference == 'piper':
+            # Force Piper — no fallback
+            if not _piper_engine.is_available:
+                return jsonify({'error': 'Piper engine not available'}), 503
             try:
-                print(f"  → Generating with Piper (fallback)...")
+                print(f"  → Generating with Piper (forced)...")
                 wav_bytes = _piper_engine.synthesize(text, speed=speed)
                 source = "piper"
                 print(f"  ✅ Piper audio ready: {len(wav_bytes)} bytes")
             except Exception as e:
                 print(f"  ❌ Piper synthesis error: {e}")
                 traceback.print_exc()
+                return jsonify({'error': f'Piper synthesis failed: {e}'}), 500
+
+        else:
+            # Auto: Kokoro primary, Piper fallback
+            if _kokoro_engine.is_available:
+                try:
+                    print(f"  → Generating with Kokoro...")
+                    wav_bytes = _kokoro_engine.synthesize(text, voice=voice, speed=speed)
+                    source = "kokoro"
+                    print(f"  ✅ Kokoro audio ready: {len(wav_bytes)} bytes")
+                except Exception as e:
+                    print(f"  ⚠️ Kokoro failed, trying Piper fallback: {e}")
+                    traceback.print_exc()
+
+            if wav_bytes is None and _piper_engine.is_available:
+                try:
+                    print(f"  → Generating with Piper (fallback)...")
+                    wav_bytes = _piper_engine.synthesize(text, speed=speed)
+                    source = "piper"
+                    print(f"  ✅ Piper audio ready: {len(wav_bytes)} bytes")
+                except Exception as e:
+                    print(f"  ❌ Piper synthesis error: {e}")
+                    traceback.print_exc()
 
         if wav_bytes is None:
             print(f"  ❌ No TTS engine available")
@@ -380,7 +413,12 @@ def create_audiobook():
         speed = float(request.form.get('speed', 1.0))
         chunk_mode = request.form.get('chunkMode', 'auto')
 
-        print(f"📚 Audiobook Request: {len(text)} chars, voice={voice}, mode={chunk_mode}")
+        # Optional audio effects chain (JSON-encoded string in form data)
+        import json as _json
+        effects_raw = request.form.get('effects', '')
+        effects = _json.loads(effects_raw) if effects_raw else {}
+
+        print(f"📚 Audiobook Request: {len(text)} chars, voice={voice}, mode={chunk_mode}, effects={list(effects.keys())}")
 
         if not text or len(text) > 500000:
             return jsonify({'error': 'Texto inválido (máx 500k caracteres)'}), 400
@@ -392,7 +430,7 @@ def create_audiobook():
             return jsonify({'error': 'Velocidade inválida'}), 400
 
         # Criar tarefa
-        task_id = create_audiobook_task(text, voice, speed, chunk_mode)
+        task_id = create_audiobook_task(text, voice, speed, chunk_mode, effects=effects or None)
         task = AUDIOBOOK_QUEUE[task_id]
 
         print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
