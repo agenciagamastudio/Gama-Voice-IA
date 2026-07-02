@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Volume2, Mic, Settings, BookOpen, LogOut, Sliders } from 'lucide-react'
+import { Volume2, Mic, Settings, BookOpen, LogOut, Sliders, UserCircle } from 'lucide-react'
 import { Login } from './components/Login'
 import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
 import AudiobookGenerator from './components/AudiobookGenerator'
 import PostProcessingStudio from './components/PostProcessingStudio'
+import VoiceCloneStudio from './components/VoiceCloneStudio'
 import SettingsModal from './components/SettingsModal'
 import ParticleBackground from './components/ParticleBackground'
 import { useAPI } from './hooks/useAPI'
@@ -13,7 +14,7 @@ import type { Voice, TTSSettings } from './types'
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook' | 'postprocessing'>('tts')
+  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook' | 'postprocessing' | 'voiceclone'>('tts')
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
   const [settings, setSettings] = useState<TTSSettings>({
@@ -79,6 +80,7 @@ export default function App() {
     { id: 'stt' as const,           label: 'Fala para Texto', icon: <Mic className="w-5 h-5" /> },
     { id: 'audiobook' as const,     label: 'Audiobook',       icon: <BookOpen className="w-5 h-5" /> },
     { id: 'postprocessing' as const, label: 'Estúdio FX',     icon: <Sliders className="w-5 h-5" /> },
+    { id: 'voiceclone' as const,    label: 'Clone de Voz',   icon: <UserCircle className="w-5 h-5" /> },
   ]
 
   return (
@@ -240,6 +242,11 @@ export default function App() {
             {activeTab === 'postprocessing' && (
               <div className="glass-card" style={{ padding: '32px' }}>
                 <PostProcessingStudio />
+              </div>
+            )}
+            {activeTab === 'voiceclone' && (
+              <div className="glass-card" style={{ padding: '32px' }}>
+                <VoiceCloneStudio />
               </div>
             )}
           </div>
