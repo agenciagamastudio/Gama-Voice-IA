@@ -41,7 +41,7 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
       [key]: { ...prev[key], params: { ...prev[key].params, [paramKey]: val } },
     }))
   }
-  const activeEffectsCount = Object.values(effects).filter(e => e.enabled).length
+  const activeEffectsCount = (Object.values(effects) as Array<{ enabled: boolean }>).filter(e => e.enabled).length
 
   useEffect(() => {
     if (!currentTask || !['queued', 'processing', 'concatenating'].includes(status?.status || '')) return
