@@ -96,15 +96,11 @@ VOICES_PT_BR = {
 # Initialize Auth DB
 AuthDB.init_db()
 
-# Initialize Kokoro
-kokoro_model = None
-try:
-    from kokoro import KPipeline
-    kokoro_model = KPipeline(lang_code='p')  # 'p' para português
-    print("✅ Kokoro TTS loaded successfully")
-except Exception as e:
-    print(f"❌ Kokoro init failed: {e}")
-    traceback.print_exc()
+# Initialize Kokoro engine
+from tts_engines import KokoroEngine
+_kokoro_engine = KokoroEngine()
+# Keep kokoro_model as alias used by audiobook_processor (passed directly)
+kokoro_model = _kokoro_engine._pipeline
 
 
 # ============== SERVE REACT FRONTEND (MUST BE BEFORE /api/* ROUTES) ==============
@@ -141,7 +137,7 @@ def serve_static(filename):
 
 @app.route('/health', methods=['GET'])
 def health():
-    tts_status = "kokoro" if kokoro_model else "fallback"
+    tts_status = "kokoro" if _kokoro_engine.is_available else "fallback"
     return jsonify({'status': 'ok', 'service': 'GAMA Voz', 'tts': tts_status}), 200
 
 # ============== AUTHENTICATION ENDPOINTS ==============
@@ -260,48 +256,14 @@ def synthesize():
         if not (0.5 <= speed <= 2.0):
             return jsonify({'error': 'Invalid speed'}), 400
 
-        # TTS com Kokoro
-        if kokoro_model:
+        # TTS via engine abstraction
+        if _kokoro_engine.is_available:
             try:
                 print(f"  → Generating with Kokoro...")
-
-                # Preprocess: replace \n with ". " so Kokoro gets one continuous
-                # string — avoids N sequential model calls for N-line texts
-                import soundfile as sf, re
-                lines = [l.strip() for l in text.split('\n') if l.strip()]
-                joined = []
-                for line in lines:
-                    if joined and not re.search(r'[.!?:;,\-]$', joined[-1]):
-                        joined.append('. ')
-                    elif joined:
-                        joined.append(' ')
-                    joined.append(line)
-                text_normalized = ''.join(joined)
-
-                all_samples = []
-                for result in kokoro_model(text_normalized, voice=voice, speed=speed):
-                    seg = result.audio
-                    if hasattr(seg, 'numpy'):
-                        seg = seg.numpy()
-                    elif not isinstance(seg, np.ndarray):
-                        seg = np.array(seg, dtype=np.float32)
-                    all_samples.append(seg)
-
-                samples = np.concatenate(all_samples) if all_samples else np.zeros(1, dtype=np.float32)
-
-                # Kokoro sample rate is 24000 Hz
-                sample_rate = 24000
-
-                # Convert to WAV format
-                audio_buffer = io.BytesIO()
-
-                # Write WAV
-                sf.write(audio_buffer, samples, sample_rate, format='WAV')
-                audio_buffer.seek(0)
-
-                print(f"  ✅ Audio ready: {audio_buffer.getbuffer().nbytes} bytes")
+                wav_bytes = _kokoro_engine.synthesize(text, voice=voice, speed=speed)
+                audio_buffer = io.BytesIO(wav_bytes)
+                print(f"  ✅ Audio ready: {len(wav_bytes)} bytes")
                 return send_file(audio_buffer, mimetype='audio/wav'), 200
-
             except Exception as e:
                 print(f"  ❌ Kokoro synthesis error: {e}")
                 traceback.print_exc()
@@ -370,17 +332,18 @@ def create_audiobook():
 
         # Aguardar Kokoro estar carregado (máx 60 segundos)
         wait_count = 0
-        while not kokoro_model and wait_count < 60:
+        while not _kokoro_engine.is_available and wait_count < 60:
             time.sleep(1)
             wait_count += 1
 
-        if not kokoro_model:
+        if not _kokoro_engine.is_available:
             return jsonify({'error': 'Kokoro não conseguiu carregar. Tente novamente'}), 503
 
         # Iniciar processamento em thread
+        # audiobook_processor still expects the raw KPipeline object
         thread = threading.Thread(
             target=process_audiobook_queue,
-            args=(task_id, kokoro_model),
+            args=(task_id, _kokoro_engine._pipeline),
             daemon=True
         )
         thread.start()
