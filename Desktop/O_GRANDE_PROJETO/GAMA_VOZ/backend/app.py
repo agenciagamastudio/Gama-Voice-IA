@@ -32,6 +32,10 @@ import time
 from api.license import license_bp
 from models import LicenseKeyModel
 
+# Voice clone
+from api.voice_clone import voice_clone_bp
+from models import VoiceProfileModel
+
 # Try to load .env using python-dotenv, fallback to manual loading
 try:
     from dotenv import load_dotenv
@@ -66,11 +70,13 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
-# Initialize License database
+# Initialize databases
 LicenseKeyModel.init_db()
+VoiceProfileModel.init_db()
 
-# Register license blueprint
+# Register blueprints
 app.register_blueprint(license_bp)
+app.register_blueprint(voice_clone_bp)
 
 # Configure static files (React build)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -276,6 +282,38 @@ def synthesize():
         print(f"❌ Synthesize error: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/audio/process', methods=['POST'])
+@require_auth
+def process_audio_effects():
+    """Apply post-processing effects to audio (pitch, reverb, compressor, EQ)"""
+    from audio_effects import AudioEffects
+    from base64 import b64decode, b64encode
+
+    try:
+        data = request.json or {}
+        audio_base64 = data.get('audio')
+        effects = data.get('effects', {})
+
+        if not audio_base64:
+            return jsonify({'error': 'audio is required (base64 encoded WAV)'}), 400
+
+        if not isinstance(effects, dict):
+            return jsonify({'error': 'effects must be a JSON object'}), 400
+
+        wav_bytes = b64decode(audio_base64)
+        processed = AudioEffects.process(wav_bytes, effects)
+
+        return jsonify({
+            'audio': b64encode(processed).decode(),
+            'effects_applied': list(effects.keys())
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Audio effects error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/stt/transcribe', methods=['POST'])
 def transcribe():
