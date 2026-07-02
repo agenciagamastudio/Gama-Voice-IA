@@ -1,5 +1,5 @@
 """
-SQLAlchemy Models for GAMA Voz
+Models for GAMA Voz (SQLite via sqlite3)
 """
 
 import sqlite3
@@ -129,4 +129,118 @@ class LicenseKeyModel:
 
             return days_offline <= max_offline_days
         except Exception:
+            return False
+
+
+class VoiceProfileModel:
+    """Model for voice clone profile management"""
+
+    @staticmethod
+    def init_db():
+        """Initialize voice_profiles table"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS voice_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                reference_audio_path TEXT NOT NULL,
+                embedding BLOB,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        ''')
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def create(user_id: int, name: str, reference_audio_path: str) -> dict:
+        """Create a new voice profile record"""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            now = datetime.utcnow().isoformat()
+            cursor.execute('''
+                INSERT INTO voice_profiles (user_id, name, reference_audio_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, name, reference_audio_path, now, now))
+
+            conn.commit()
+            profile_id = cursor.lastrowid
+            conn.close()
+
+            return {
+                'id': profile_id,
+                'user_id': user_id,
+                'name': name,
+                'reference_audio_path': reference_audio_path,
+                'created_at': now,
+                'updated_at': now
+            }
+        except Exception as e:
+            print(f"Error creating voice profile: {e}")
+            return None
+
+    @staticmethod
+    def list_by_user(user_id: int) -> list:
+        """List all voice profiles for a user"""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute(
+                'SELECT * FROM voice_profiles WHERE user_id = ? ORDER BY created_at DESC',
+                (user_id,)
+            )
+            rows = cursor.fetchall()
+            conn.close()
+
+            return [dict(row) for row in rows]
+        except Exception as e:
+            print(f"Error listing voice profiles: {e}")
+            return []
+
+    @staticmethod
+    def get_by_id(profile_id: int, user_id: int) -> dict:
+        """Get a single voice profile by id, scoped to user"""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute(
+                'SELECT * FROM voice_profiles WHERE id = ? AND user_id = ?',
+                (profile_id, user_id)
+            )
+            row = cursor.fetchone()
+            conn.close()
+
+            return dict(row) if row else None
+        except Exception as e:
+            print(f"Error fetching voice profile: {e}")
+            return None
+
+    @staticmethod
+    def delete(profile_id: int, user_id: int) -> bool:
+        """Delete a voice profile record"""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                'DELETE FROM voice_profiles WHERE id = ? AND user_id = ?',
+                (profile_id, user_id)
+            )
+
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Error deleting voice profile: {e}")
             return False

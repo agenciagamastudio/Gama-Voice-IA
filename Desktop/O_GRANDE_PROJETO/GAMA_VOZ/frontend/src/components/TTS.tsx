@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Volume2, Copy, Download, Loader } from 'lucide-react'
 import { API_BASE_URL, getTTSEnginePreference, setTTSEnginePreference } from '../utils/config'
 import type { TTSEngine } from '../utils/config'
 import type { Voice, TTSSettings } from '../types'
 import Toast from './Toast'
+import { useAuthAPI } from '../hooks/useAuthAPI'
 
 interface Props {
   voices: Voice[]
@@ -24,6 +25,12 @@ const btn: React.CSSProperties = {
   transition: 'all 200ms',
 }
 
+interface VoiceProfile {
+  id: number
+  name: string
+  created_at: string
+}
+
 export default function TTSComponent({ voices, settings, onSettingsChange }: Props) {
   const [text, setText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -33,6 +40,20 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const [toastVisible, setToastVisible] = useState(false)
   const [enginePreference, setEnginePreference] = useState<TTSEngine>(getTTSEnginePreference)
   const [lastUsedEngine, setLastUsedEngine] = useState<string | null>(null)
+  const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfile[]>([])
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
+  const { fetchWithAuth } = useAuthAPI()
+
+  // Load voice profiles on mount (authenticated users only)
+  useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/api/voice-clone/list`)
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then((data: VoiceProfile[]) => setVoiceProfiles(data))
+      .catch(() => {
+        // Silently ignore — user may not be authenticated or has no profiles
+        setVoiceProfiles([])
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEngineChange = (value: string) => {
     const engine = value as TTSEngine
@@ -54,13 +75,36 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 600000)
+
+      const body: Record<string, unknown> = {
+        text,
+        voice: settings.voice,
+        speed: settings.speed,
+        engine: enginePreference,
+      }
+      if (selectedProfileId !== null) {
+        body.voice_profile_id = selectedProfileId
+      }
+
+      const token = localStorage.getItem('gama_voz_token')
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
       const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: settings.voice, speed: settings.speed, engine: enginePreference }),
+        headers,
+        body: JSON.stringify(body),
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
+
+      // 501 = clone engine not yet available — show informative toast, not a blocking error
+      if (response.status === 501) {
+        const data = await response.json()
+        showToast(data.error || 'Clonagem de voz ainda não disponível nesta versão')
+        return
+      }
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Falha na síntese')
@@ -272,6 +316,35 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
             </select>
           </div>
         </div>
+
+        {/* Voice profile (clone) selector — only shown when profiles exist */}
+        {voiceProfiles.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>
+              Voz clonada (opcional)
+            </label>
+            <select
+              value={selectedProfileId ?? ''}
+              onChange={(e) => setSelectedProfileId(e.target.value ? Number(e.target.value) : null)}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                color: 'var(--color-text)', fontFamily: 'var(--font-main)', fontSize: '14px',
+                outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">— sem clonagem —</option>
+              {voiceProfiles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {selectedProfileId !== null && (
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                A clonagem de voz está em desenvolvimento — você receberá uma notificação quando estiver disponível.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Preview / Reset */}
         <div style={{ display: 'flex', gap: '10px' }}>

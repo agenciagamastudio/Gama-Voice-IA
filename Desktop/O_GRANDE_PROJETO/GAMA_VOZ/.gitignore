@@ -71,3 +71,11 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# SQLite databases (local dev only)
+*.db
+*.sqlite
+*.sqlite3
+
+# Voice sample uploads (binary, not versioned)
+backend/uploads/
