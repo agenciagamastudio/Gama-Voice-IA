@@ -5,6 +5,7 @@ TTS: Kokoro (natural, humanizada)
 STT: Groq Whisper Turbo
 """
 
+import binascii
 import os
 import sys
 from flask import Flask, request, jsonify, send_file, send_from_directory
@@ -363,12 +364,20 @@ def process_audio_effects():
         if not isinstance(effects, dict):
             return jsonify({'error': 'effects must be a JSON object'}), 400
 
-        wav_bytes = b64decode(audio_base64)
-        processed = AudioEffects.process(wav_bytes, effects)
+        if len(audio_base64) > 10_000_000:  # ~7.5MB WAV
+            return jsonify({'error': 'Áudio muito grande (limite ~7.5MB)'}), 413
+
+        try:
+            wav_bytes = b64decode(audio_base64)
+        except binascii.Error:
+            return jsonify({'error': 'base64 inválido'}), 400
+
+        processed, skipped = AudioEffects.process(wav_bytes, effects)
 
         return jsonify({
             'audio': b64encode(processed).decode(),
-            'effects_applied': list(effects.keys())
+            'effects_applied': list(effects.keys()),
+            'skipped_effects': skipped,
         }), 200
 
     except Exception as e:

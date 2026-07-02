@@ -1,8 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Upload, Download, X, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import type { TTSSettings } from '../types'
+import {
+  AllEffects,
+  DEFAULT_EFFECTS,
+  buildEffectsPayload,
+  EffectsPanel,
+  EffectsSectionHeader,
+} from './effects'
 
 interface Chunk { id: number; title: string; charCount: number }
 interface AudiobookTask { taskId: string; chunks: Chunk[]; estimatedTime: number }
@@ -20,6 +27,21 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
   const [currentTask, setCurrentTask] = useState<AudiobookTask | null>(null)
   const [status, setStatus] = useState<AudiobookStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Audio effects (applied to every chapter after synthesis)
+  const [effects, setEffects] = useState<AllEffects>(DEFAULT_EFFECTS)
+  const [effectsExpanded, setEffectsExpanded] = useState(false)
+
+  const toggleEffect = (key: keyof AllEffects) => {
+    setEffects(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }))
+  }
+  const setParam = (key: keyof AllEffects, paramKey: string, val: number) => {
+    setEffects(prev => ({
+      ...prev,
+      [key]: { ...prev[key], params: { ...prev[key].params, [paramKey]: val } },
+    }))
+  }
+  const activeEffectsCount = Object.values(effects).filter(e => e.enabled).length
 
   useEffect(() => {
     if (!currentTask || !['queued', 'processing', 'concatenating'].includes(status?.status || '')) return
@@ -51,6 +73,10 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
       formData.append('voice', settings.voice)
       formData.append('speed', settings.speed.toString())
       formData.append('chunkMode', chunkMode)
+      const effectsPayload = buildEffectsPayload(effects)
+      if (Object.keys(effectsPayload).length > 0) {
+        formData.append('effects', JSON.stringify(effectsPayload))
+      }
       const token = getToken()
       const response = await fetch(`${API_BASE_URL}/api/audiobook/create`, {
         method: 'POST',
@@ -138,6 +164,32 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
           )}
         </div>
       </div>
+
+      {/* Effects Section */}
+      {!currentTask && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
+          <EffectsSectionHeader
+            activeCount={activeEffectsCount}
+            expanded={effectsExpanded}
+            onToggleExpanded={() => setEffectsExpanded(p => !p)}
+          />
+          <div
+            style={{
+              overflow: 'hidden',
+              maxHeight: effectsExpanded ? '1200px' : '0px',
+              opacity: effectsExpanded ? 1 : 0,
+              transition: 'max-height 350ms ease, opacity 250ms ease',
+              paddingTop: effectsExpanded ? '8px' : '0px',
+            }}
+          >
+            <EffectsPanel
+              effects={effects}
+              onToggle={toggleEffect}
+              onParam={setParam}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Options + Button */}
       {!currentTask && (

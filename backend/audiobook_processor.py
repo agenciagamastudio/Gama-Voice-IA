@@ -9,11 +9,12 @@ import threading
 import os
 import tempfile
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 
-# Global processing queue
+# Global processing queue + lock (lock used by app.py download endpoint)
 AUDIOBOOK_QUEUE: Dict[str, dict] = {}
+AUDIOBOOK_QUEUE_LOCK = threading.Lock()
 
 class AudiobookChunk:
     """Representa um chunk de texto para síntese"""
@@ -166,8 +167,17 @@ class AudiobookProcessor:
         return optimized
 
 
-def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str = 'auto') -> str:
+def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str = 'auto',
+                         effects: Optional[dict] = None) -> str:
     """Cria nova tarefa de audiobook
+
+    Args:
+        text: texto completo do audiobook
+        voice: voz Kokoro
+        speed: velocidade (0.5–2.0)
+        chunk_mode: 'auto' ou 'paragraph'
+        effects: dict de efeitos para aplicar em cada chunk após síntese
+                 (mesmo formato aceito por AudioEffects.process), ou None
 
     Returns: task_id
     """
@@ -193,6 +203,7 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
         'start_time': time.time(),
         'voice': voice,
         'speed': speed,
+        'effects': effects or {},  # empty dict = no effects
         'temp_dir': tempfile.mkdtemp(prefix=f'audiobook_{task_id}_'),
         'error': None,
         'estimated_time': len(chunks) * 45  # segundos (aprox)
@@ -264,6 +275,16 @@ def process_audiobook_queue(task_id: str, kokoro_model, import_soundfile=True):
                 # Salvar WAV
                 wav_file = os.path.join(task['temp_dir'], f'chunk_{idx:03d}.wav')
                 sf.write(wav_file, samples, sample_rate, format='WAV')
+
+                # Aplicar cadeia de efeitos (se configurada)
+                if task.get('effects'):
+                    from audio_effects import AudioEffects
+                    with open(wav_file, 'rb') as _f:
+                        wav_bytes = _f.read()
+                    processed_bytes = AudioEffects.process(wav_bytes, task['effects'])
+                    with open(wav_file, 'wb') as _f:
+                        _f.write(processed_bytes)
+
                 task['audio_files'].append(wav_file)
 
                 task['processed'] += 1
