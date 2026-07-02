@@ -1,26 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
-  Upload, Download, Loader, Sliders, RefreshCw,
-  Music, Zap, Wind, Activity, Layers,
+  Upload, Download, Loader, Sliders,
+  Music,
 } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import Toast from './Toast'
-
-// ─── Types ────────────────────────────────────────────────────────────────
-
-interface EffectState<T> {
-  enabled: boolean
-  params: T
-}
-
-interface AllEffects {
-  pitch_shift:   EffectState<{ n_steps: number }>
-  time_stretch:  EffectState<{ rate: number }>
-  reverb:        EffectState<{ decay: number }>
-  compressor:    EffectState<{ threshold: number; ratio: number }>
-  eq_bass_boost: EffectState<{ amount: number }>
-}
+import {
+  AllEffects,
+  DEFAULT_EFFECTS,
+  buildEffectsPayload,
+  EffectsPanel,
+} from './effects'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -78,12 +69,6 @@ async function drawWaveform(blob: Blob, canvas: HTMLCanvasElement) {
       ctx.fillRect(x, (canvas.height - h) / 2, 1, h)
     }
   }
-}
-
-// Compute slider fill percentage
-function sliderBg(val: number, min: number, max: number): string {
-  const p = ((val - min) / (max - min)) * 100
-  return `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${p}%, rgba(255,255,255,0.1) ${p}%, rgba(255,255,255,0.1) 100%)`
 }
 
 // ─── Sub-component: WaveformCanvas ────────────────────────────────────────
@@ -178,147 +163,6 @@ function WaveformCanvas({ label, color, audio, audioUrl, placeholder }: Waveform
   )
 }
 
-// ─── Sub-component: EffectCard ────────────────────────────────────────────
-
-interface EffectCardProps {
-  label: string
-  icon: React.ReactNode
-  enabled: boolean
-  onToggle: () => void
-  children: React.ReactNode
-}
-
-function EffectCard({ label, icon, enabled, onToggle, children }: EffectCardProps) {
-  return (
-    <div
-      style={{
-        background: enabled ? 'rgba(136,206,17,0.04)' : 'var(--glass-bg-2)',
-        border: `1px solid ${enabled ? 'var(--color-border-green)' : 'var(--color-border)'}`,
-        borderRadius: '12px',
-        padding: '14px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        transition: 'border-color 200ms, background 200ms',
-      }}
-    >
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: enabled ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-            transition: 'color 200ms',
-          }}
-        >
-          {icon}
-          <span style={{ fontSize: '13px', fontWeight: 700 }}>{label}</span>
-        </div>
-
-        {/* Toggle switch */}
-        <div
-          onClick={onToggle}
-          role="switch"
-          aria-checked={enabled}
-          tabIndex={0}
-          onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') onToggle() }}
-          style={{
-            width: '36px',
-            height: '20px',
-            borderRadius: '999px',
-            background: enabled ? 'var(--color-primary)' : 'rgba(255,255,255,0.12)',
-            position: 'relative',
-            cursor: 'pointer',
-            transition: 'background 200ms',
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: '3px',
-              left: enabled ? '19px' : '3px',
-              width: '14px',
-              height: '14px',
-              borderRadius: '50%',
-              background: enabled ? '#000' : 'rgba(255,255,255,0.45)',
-              transition: 'left 200ms, background 200ms',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Params — collapse when disabled */}
-      <div
-        style={{
-          overflow: 'hidden',
-          maxHeight: enabled ? '220px' : '0px',
-          opacity: enabled ? 1 : 0,
-          transition: 'max-height 280ms ease, opacity 200ms ease',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
-}
-
-// ─── Sub-component: SliderRow ─────────────────────────────────────────────
-
-interface SliderRowProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  format: (v: number) => string
-  onChange: (v: number) => void
-}
-
-function SliderRow({ label, value, min, max, step, format, onChange }: SliderRowProps) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{label}</span>
-        <span
-          style={{
-            fontSize: '12px',
-            fontWeight: 700,
-            color: 'var(--color-primary)',
-            fontVariantNumeric: 'tabular-nums',
-            minWidth: '52px',
-            textAlign: 'right',
-          }}
-        >
-          {format(value)}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
-        style={{
-          width: '100%',
-          height: '6px',
-          borderRadius: '8px',
-          appearance: 'none' as any,
-          cursor: 'pointer',
-          background: sliderBg(value, min, max),
-          transition: 'background 50ms',
-        }}
-      />
-    </div>
-  )
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────
 
 export default function PostProcessingStudio() {
@@ -334,13 +178,7 @@ export default function PostProcessingStudio() {
   const [toastMsg,       setToastMsg]       = useState('')
   const [toastVisible,   setToastVisible]   = useState(false)
 
-  const [effects, setEffects] = useState<AllEffects>({
-    pitch_shift:   { enabled: false, params: { n_steps: 0 } },
-    time_stretch:  { enabled: false, params: { rate: 1.0 } },
-    reverb:        { enabled: false, params: { decay: 0.4 } },
-    compressor:    { enabled: false, params: { threshold: -20, ratio: 4 } },
-    eq_bass_boost: { enabled: false, params: { amount: 1.5 } },
-  })
+  const [effects, setEffects] = useState<AllEffects>(DEFAULT_EFFECTS)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -394,12 +232,7 @@ export default function PostProcessingStudio() {
     try {
       const audioBase64 = await blobToBase64(originalAudio)
 
-      const effectsPayload: Record<string, unknown> = {}
-      if (effects.pitch_shift.enabled)   effectsPayload.pitch_shift   = effects.pitch_shift.params
-      if (effects.time_stretch.enabled)  effectsPayload.time_stretch  = effects.time_stretch.params
-      if (effects.reverb.enabled)        effectsPayload.reverb        = effects.reverb.params
-      if (effects.compressor.enabled)    effectsPayload.compressor    = effects.compressor.params
-      if (effects.eq_bass_boost.enabled) effectsPayload.eq_bass_boost = effects.eq_bass_boost.params
+      const effectsPayload = buildEffectsPayload(effects)
 
       const res = await fetchWithAuth(`${API_BASE_URL}/api/audio/process`, {
         method: 'POST',
@@ -543,96 +376,11 @@ export default function PostProcessingStudio() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-          {/* Pitch Shift */}
-          <EffectCard
-            label="Pitch Shift"
-            icon={<Activity style={{ width: '14px', height: '14px' }} />}
-            enabled={effects.pitch_shift.enabled}
-            onToggle={() => toggleEffect('pitch_shift')}
-          >
-            <SliderRow
-              label="Semitones"
-              value={effects.pitch_shift.params.n_steps}
-              min={-12} max={12} step={0.5}
-              format={v => `${v > 0 ? '+' : ''}${v}`}
-              onChange={v => setParam('pitch_shift', 'n_steps', v)}
-            />
-          </EffectCard>
-
-          {/* Time Stretch */}
-          <EffectCard
-            label="Time Stretch"
-            icon={<RefreshCw style={{ width: '14px', height: '14px' }} />}
-            enabled={effects.time_stretch.enabled}
-            onToggle={() => toggleEffect('time_stretch')}
-          >
-            <SliderRow
-              label="Velocidade"
-              value={effects.time_stretch.params.rate}
-              min={0.5} max={2.0} step={0.05}
-              format={v => `${v.toFixed(2)}x`}
-              onChange={v => setParam('time_stretch', 'rate', v)}
-            />
-          </EffectCard>
-
-          {/* Reverb */}
-          <EffectCard
-            label="Reverb"
-            icon={<Wind style={{ width: '14px', height: '14px' }} />}
-            enabled={effects.reverb.enabled}
-            onToggle={() => toggleEffect('reverb')}
-          >
-            <SliderRow
-              label="Decaimento"
-              value={effects.reverb.params.decay}
-              min={0.1} max={0.9} step={0.05}
-              format={v => v.toFixed(2)}
-              onChange={v => setParam('reverb', 'decay', v)}
-            />
-          </EffectCard>
-
-          {/* Compressor */}
-          <EffectCard
-            label="Compressor"
-            icon={<Layers style={{ width: '14px', height: '14px' }} />}
-            enabled={effects.compressor.enabled}
-            onToggle={() => toggleEffect('compressor')}
-          >
-            <SliderRow
-              label="Threshold"
-              value={effects.compressor.params.threshold}
-              min={-60} max={0} step={1}
-              format={v => `${v} dB`}
-              onChange={v => setParam('compressor', 'threshold', v)}
-            />
-            <SliderRow
-              label="Ratio"
-              value={effects.compressor.params.ratio}
-              min={1} max={20} step={0.5}
-              format={v => `${v.toFixed(1)}:1`}
-              onChange={v => setParam('compressor', 'ratio', v)}
-            />
-          </EffectCard>
-
-          {/* EQ Bass Boost */}
-          <EffectCard
-            label="EQ Bass Boost"
-            icon={<Zap style={{ width: '14px', height: '14px' }} />}
-            enabled={effects.eq_bass_boost.enabled}
-            onToggle={() => toggleEffect('eq_bass_boost')}
-          >
-            <SliderRow
-              label="Intensidade"
-              value={effects.eq_bass_boost.params.amount}
-              min={0.5} max={2.0} step={0.05}
-              format={v => `${v.toFixed(2)}x`}
-              onChange={v => setParam('eq_bass_boost', 'amount', v)}
-            />
-          </EffectCard>
-
-        </div>
+        <EffectsPanel
+          effects={effects}
+          onToggle={toggleEffect}
+          onParam={setParam}
+        />
       </div>
 
       {/* ── Error ────────────────────────────────────────────────────────── */}
