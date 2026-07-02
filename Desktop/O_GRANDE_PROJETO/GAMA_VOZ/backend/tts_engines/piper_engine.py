@@ -33,31 +33,27 @@ class PiperEngine(TTSEngine):
                 self._piper_voice = PiperVoice.load(model_path, config_path=config_path)
                 self.is_available = True
                 print(f"✅ Piper TTS loaded: {self._voice}")
-            else:
-                # Fallback: try subprocess (piper CLI)
-                result = subprocess.run(
-                    ["piper", "--version"],
-                    capture_output=True, timeout=5
-                )
-                if result.returncode == 0:
-                    self.is_available = True
-                    print(f"✅ Piper TTS CLI available (subprocess mode)")
-                else:
-                    print(f"⚠️ Piper TTS: model not found and CLI not available")
+                return
+            # Python package present but model not found — fall through to CLI check
         except ImportError:
-            # Try CLI-only mode
-            try:
-                result = subprocess.run(
-                    ["piper", "--version"],
-                    capture_output=True, timeout=5
-                )
-                if result.returncode == 0:
-                    self.is_available = True
-                    print(f"✅ Piper TTS CLI available")
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                print(f"⚠️ Piper TTS not available: install with 'pip install piper-tts'")
+            pass  # Python package absent — fall through to CLI check
         except Exception as e:
             print(f"⚠️ Piper TTS init failed: {e}")
+            return
+
+        # Common fallback: try CLI (covers both ImportError and missing model paths)
+        try:
+            result = subprocess.run(
+                ["piper", "--version"],
+                capture_output=True, timeout=5
+            )
+            if result.returncode == 0:
+                self.is_available = True
+                print("✅ Piper TTS CLI available")
+            else:
+                print("⚠️ Piper TTS: model not found and CLI not available")
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            print("⚠️ Piper TTS not available: install with 'pip install piper-tts'")
 
     def _resolve_model_paths(self):
         """Resolve ONNX model and config paths from common install locations."""
