@@ -104,9 +104,10 @@ VOICES_PT_BR = {
 AuthDB.init_db()
 
 # Initialize TTS engines
-from tts_engines import KokoroEngine, PiperEngine
+from tts_engines import KokoroEngine, PiperEngine, CloneEngine
 _kokoro_engine = KokoroEngine()
 _piper_engine = PiperEngine()
+_clone_engine = CloneEngine()
 # Keep kokoro_model as alias used by audiobook_processor (passed directly)
 kokoro_model = _kokoro_engine._pipeline
 
@@ -265,8 +266,9 @@ def synthesize():
         voice = data.get('voice', 'pm_alex')
         speed = float(data.get('speed', 1.0))
         engine_preference = data.get('engine', 'auto')  # 'auto' | 'kokoro' | 'piper'
+        voice_profile_id = data.get('voice_profile_id')  # optional int — triggers clone path
 
-        print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}, engine={engine_preference}")
+        print(f"🎙️ TTS Request: text='{text[:50]}...', voice={voice}, speed={speed}, engine={engine_preference}, voice_profile_id={voice_profile_id}")
 
         # Validations
         if not text or len(text) > 50000:
@@ -277,6 +279,40 @@ def synthesize():
             return jsonify({'error': 'Invalid speed'}), 400
         if engine_preference not in ('auto', 'kokoro', 'piper'):
             return jsonify({'error': 'Invalid engine (use: auto, kokoro, piper)'}), 400
+
+        # --- Voice profile / clone path ---
+        if voice_profile_id is not None:
+            # Require authentication to prevent IDOR
+            auth_header = request.headers.get('Authorization', '')
+            token = auth_header.split(' ', 1)[1] if auth_header.startswith('Bearer ') else None
+            if not token:
+                return jsonify({'error': 'Autenticação necessária para usar perfil de voz'}), 401
+
+            auth_info = AuthDB.verify_token(token)
+            if not auth_info['valid']:
+                return jsonify({'error': auth_info['error']}), 401
+
+            user_id = auth_info['user_id']
+
+            # Validate profile ownership (prevents IDOR)
+            profile = VoiceProfileModel.get_by_id(int(voice_profile_id), user_id)
+            if not profile:
+                return jsonify({'error': 'Perfil de voz não encontrado'}), 404
+
+            # Clone engine stub — returns 501 until model is installed
+            if not _clone_engine.is_available:
+                return jsonify({'error': 'Clonagem de voz ainda não disponível nesta versão'}), 501
+
+            # (Future) Once is_available is True this branch will execute:
+            wav_bytes = _clone_engine.synthesize(
+                text,
+                speed=speed,
+                reference_audio_path=profile['reference_audio_path'],
+            )
+            audio_buffer = io.BytesIO(wav_bytes)
+            response = send_file(audio_buffer, mimetype='audio/wav')
+            response.headers['X-TTS-Source'] = 'clone'
+            return response, 200
 
         # TTS via engine abstraction — supports forced engine or auto fallback
         wav_bytes = None
