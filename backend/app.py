@@ -102,9 +102,10 @@ VOICES_PT_BR = {
 # Initialize Auth DB
 AuthDB.init_db()
 
-# Initialize Kokoro engine
-from tts_engines import KokoroEngine
+# Initialize TTS engines
+from tts_engines import KokoroEngine, PiperEngine
 _kokoro_engine = KokoroEngine()
+_piper_engine = PiperEngine()
 # Keep kokoro_model as alias used by audiobook_processor (passed directly)
 kokoro_model = _kokoro_engine._pipeline
 
@@ -143,8 +144,19 @@ def serve_static(filename):
 
 @app.route('/health', methods=['GET'])
 def health():
-    tts_status = "kokoro" if _kokoro_engine.is_available else "fallback"
-    return jsonify({'status': 'ok', 'service': 'GAMA Voz', 'tts': tts_status}), 200
+    if _kokoro_engine.is_available:
+        tts_status = "kokoro"
+    elif _piper_engine.is_available:
+        tts_status = "piper"
+    else:
+        tts_status = "unavailable"
+    return jsonify({
+        'status': 'ok',
+        'service': 'GAMA Voz',
+        'tts': tts_status,
+        'kokoro': _kokoro_engine.is_available,
+        'piper': _piper_engine.is_available,
+    }), 200
 
 # ============== AUTHENTICATION ENDPOINTS ==============
 
@@ -262,21 +274,38 @@ def synthesize():
         if not (0.5 <= speed <= 2.0):
             return jsonify({'error': 'Invalid speed'}), 400
 
-        # TTS via engine abstraction
+        # TTS via engine abstraction — Kokoro primary, Piper fallback
+        wav_bytes = None
+        source = None
+
         if _kokoro_engine.is_available:
             try:
                 print(f"  → Generating with Kokoro...")
                 wav_bytes = _kokoro_engine.synthesize(text, voice=voice, speed=speed)
-                audio_buffer = io.BytesIO(wav_bytes)
-                print(f"  ✅ Audio ready: {len(wav_bytes)} bytes")
-                return send_file(audio_buffer, mimetype='audio/wav'), 200
+                source = "kokoro"
+                print(f"  ✅ Kokoro audio ready: {len(wav_bytes)} bytes")
             except Exception as e:
-                print(f"  ❌ Kokoro synthesis error: {e}")
+                print(f"  ⚠️ Kokoro failed, trying Piper fallback: {e}")
                 traceback.print_exc()
-                return jsonify({'error': f'Kokoro failed: {str(e)}'}), 500
-        else:
-            print(f"  ❌ Kokoro not loaded")
-            return jsonify({'error': 'Kokoro TTS not available'}), 503
+
+        if wav_bytes is None and _piper_engine.is_available:
+            try:
+                print(f"  → Generating with Piper (fallback)...")
+                wav_bytes = _piper_engine.synthesize(text, speed=speed)
+                source = "piper"
+                print(f"  ✅ Piper audio ready: {len(wav_bytes)} bytes")
+            except Exception as e:
+                print(f"  ❌ Piper synthesis error: {e}")
+                traceback.print_exc()
+
+        if wav_bytes is None:
+            print(f"  ❌ No TTS engine available")
+            return jsonify({'error': 'No TTS engine available'}), 503
+
+        audio_buffer = io.BytesIO(wav_bytes)
+        response = send_file(audio_buffer, mimetype='audio/wav')
+        response.headers['X-TTS-Source'] = source
+        return response, 200
 
     except Exception as e:
         print(f"❌ Synthesize error: {e}")
