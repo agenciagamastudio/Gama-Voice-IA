@@ -160,8 +160,8 @@ class VoiceProfileModel:
     @staticmethod
     def create(user_id: int, name: str, reference_audio_path: str) -> dict:
         """Create a new voice profile record"""
+        conn = sqlite3.connect(DB_PATH)
         try:
-            conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
 
             now = datetime.utcnow().isoformat()
@@ -172,7 +172,6 @@ class VoiceProfileModel:
 
             conn.commit()
             profile_id = cursor.lastrowid
-            conn.close()
 
             return {
                 'id': profile_id,
@@ -185,12 +184,14 @@ class VoiceProfileModel:
         except Exception as e:
             print(f"Error creating voice profile: {e}")
             return None
+        finally:
+            conn.close()
 
     @staticmethod
     def list_by_user(user_id: int) -> list:
         """List all voice profiles for a user"""
+        conn = sqlite3.connect(DB_PATH)
         try:
-            conn = sqlite3.connect(DB_PATH)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -199,18 +200,19 @@ class VoiceProfileModel:
                 (user_id,)
             )
             rows = cursor.fetchall()
-            conn.close()
 
             return [dict(row) for row in rows]
         except Exception as e:
             print(f"Error listing voice profiles: {e}")
             return []
+        finally:
+            conn.close()
 
     @staticmethod
     def get_by_id(profile_id: int, user_id: int) -> dict:
         """Get a single voice profile by id, scoped to user"""
+        conn = sqlite3.connect(DB_PATH)
         try:
-            conn = sqlite3.connect(DB_PATH)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -219,18 +221,19 @@ class VoiceProfileModel:
                 (profile_id, user_id)
             )
             row = cursor.fetchone()
-            conn.close()
 
             return dict(row) if row else None
         except Exception as e:
             print(f"Error fetching voice profile: {e}")
             return None
+        finally:
+            conn.close()
 
     @staticmethod
     def delete(profile_id: int, user_id: int) -> bool:
         """Delete a voice profile record"""
+        conn = sqlite3.connect(DB_PATH)
         try:
-            conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
 
             cursor.execute(
@@ -239,8 +242,9 @@ class VoiceProfileModel:
             )
 
             conn.commit()
-            conn.close()
-            return True
+            return cursor.rowcount > 0
         except Exception as e:
             print(f"Error deleting voice profile: {e}")
             return False
+        finally:
+            conn.close()

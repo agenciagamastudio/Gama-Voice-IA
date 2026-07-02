@@ -295,7 +295,11 @@ def synthesize():
             user_id = auth_info['user_id']
 
             # Validate profile ownership (prevents IDOR)
-            profile = VoiceProfileModel.get_by_id(int(voice_profile_id), user_id)
+            try:
+                voice_profile_id_int = int(voice_profile_id)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'voice_profile_id inválido'}), 400
+            profile = VoiceProfileModel.get_by_id(voice_profile_id_int, user_id)
             if not profile:
                 return jsonify({'error': 'Perfil de voz não encontrado'}), 404
 

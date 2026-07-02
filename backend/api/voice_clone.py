@@ -49,6 +49,13 @@ def upload_voice_sample():
         if not (is_wav or is_mp3):
             return jsonify({'error': 'arquivo não é WAV/MP3 válido'}), 400
 
+        # Enforce upload size limit (10 MB)
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 10 * 1024 * 1024:
+            return jsonify({'error': 'Arquivo excede o limite de 10 MB'}), 400
+
         # Enforce per-user quota
         existing = VoiceProfileModel.list_by_user(request.user_id)
         if len(existing) >= 10:
@@ -56,8 +63,10 @@ def upload_voice_sample():
 
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+        # Preserve original extension (already validated against whitelist above)
+        original_ext = file.filename.rsplit('.', 1)[1].lower()
         safe_name = secure_filename(voice_name.replace(' ', '_'))
-        filename = f"{request.user_id}_{safe_name}_{int(time.time())}.wav"
+        filename = f"{request.user_id}_{safe_name}_{int(time.time())}.{original_ext}"
         file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         file.save(file_path)
