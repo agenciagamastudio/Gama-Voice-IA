@@ -45,7 +45,9 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
 
   useEffect(() => {
     if (!currentTask || !['queued', 'processing', 'concatenating'].includes(status?.status || '')) return
-    const pollInterval = setInterval(async () => {
+    let delay = 2000
+    let timer: ReturnType<typeof setTimeout>
+    const poll = async () => {
       try {
         const token = getToken()
         const response = await fetch(`${API_BASE_URL}/api/audiobook/status/${currentTask.taskId}`, {
@@ -54,12 +56,15 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
         const statusData: AudiobookStatus = await response.json()
         setStatus(statusData)
         if (['completed', 'error', 'cancelled'].includes(statusData.status)) {
-          clearInterval(pollInterval)
           if (statusData.error) setError(statusData.error)
+          return
         }
+        delay = Math.min(delay + 1000, 5000)
       } catch { /* silent */ }
-    }, 1000)
-    return () => clearInterval(pollInterval)
+      timer = setTimeout(poll, delay)
+    }
+    timer = setTimeout(poll, delay)
+    return () => clearTimeout(timer)
   }, [currentTask, status?.status])
 
   const handleCreate = async () => {
@@ -112,7 +117,7 @@ export default function AudiobookGenerator({ settings }: { settings: Pick<TTSSet
     if (!status?.downloadUrl) return
     try {
       const token = getToken()
-      const response = await fetch(status.downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+      const response = await fetch(`${API_BASE_URL}${status.downloadUrl}`, { headers: { Authorization: `Bearer ${token}` } })
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

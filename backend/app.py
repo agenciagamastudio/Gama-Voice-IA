@@ -465,6 +465,7 @@ def transcribe():
 # ============== AUDIOBOOK ENDPOINTS ==============
 
 @app.route('/api/audiobook/create', methods=['POST'])
+@require_auth
 def create_audiobook():
     """Cria nova tarefa de audiobook"""
     try:
@@ -492,6 +493,7 @@ def create_audiobook():
         # Criar tarefa
         task_id = create_audiobook_task(text, voice, speed, chunk_mode, effects=effects or None)
         task = AUDIOBOOK_QUEUE[task_id]
+        task['user_id'] = request.user_id
 
         print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
 
@@ -526,10 +528,17 @@ def create_audiobook():
 
 
 @app.route('/api/audiobook/status/<task_id>', methods=['GET'])
+@require_auth
 def get_audiobook_status_endpoint(task_id):
     """Get status de processamento"""
-    status = get_audiobook_status(task_id)
+    with AUDIOBOOK_QUEUE_LOCK:
+        task = AUDIOBOOK_QUEUE.get(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        if task.get('user_id') != request.user_id:
+            return jsonify({'error': 'Task not found'}), 404
 
+    status = get_audiobook_status(task_id)
     if 'error' in status and status.get('error') == 'Task not found':
         return jsonify(status), 404
 
@@ -537,6 +546,7 @@ def get_audiobook_status_endpoint(task_id):
 
 
 @app.route('/api/audiobook/download/<task_id>', methods=['GET'])
+@require_auth
 def download_audiobook(task_id):
     """Download do audiobook final"""
     # Use lock para evitar race condition com background thread
@@ -545,20 +555,13 @@ def download_audiobook(task_id):
 
         if not task:
             print(f"❌ DOWNLOAD: Task {task_id} não encontrada em AUDIOBOOK_QUEUE")
-            print(f"   Keys disponíveis: {list(AUDIOBOOK_QUEUE.keys())}")
+            return jsonify({'error': 'Tarefa não encontrada'}), 404
+
+        if task.get('user_id') != request.user_id:
             return jsonify({'error': 'Tarefa não encontrada'}), 404
 
         status = task.get('status')
-        keys = list(task.keys())
-        print(f"✅ DOWNLOAD: Task encontrada. Status={status}, Keys={keys}")
-
-        # Debug to file
-        with open('/tmp/download_debug.log', 'a') as f:
-            f.write(f"DOWNLOAD {task_id}: status={status}, has_final_file={'final_file' in task}\n")
-            f.write(f"  Keys: {keys}\n")
-            if 'final_file' in task:
-                f.write(f"  final_file value: {task['final_file']}\n")
-            f.write(f"  Full task: {task}\n\n")
+        print(f"✅ DOWNLOAD: Task encontrada. Status={status}")
 
         if task['status'] != 'completed':
             return jsonify({'error': f'Audiobook ainda não está pronto (status: {task["status"]})'}), 400
@@ -596,17 +599,24 @@ def download_audiobook(task_id):
 
 
 @app.route('/api/audiobook/cancel/<task_id>', methods=['POST'])
+@require_auth
 def cancel_audiobook(task_id):
     """Cancela processamento de audiobook"""
-    task = AUDIOBOOK_QUEUE.get(task_id)
+    with AUDIOBOOK_QUEUE_LOCK:
+        task = AUDIOBOOK_QUEUE.get(task_id)
 
-    if not task:
-        return jsonify({'error': 'Tarefa não encontrada'}), 404
+        if not task:
+            return jsonify({'error': 'Tarefa não encontrada'}), 404
 
-    if task['status'] in ['completed', 'error', 'cancelled']:
-        return jsonify({'error': 'Tarefa não pode ser cancelada'}), 400
+        if task.get('user_id') != request.user_id:
+            return jsonify({'error': 'Tarefa não encontrada'}), 404
 
-    task['status'] = 'cancelled'
+        if task['status'] in ['completed', 'error', 'cancelled']:
+            return jsonify({'error': 'Tarefa não pode ser cancelada'}), 400
+
+        task['status'] = 'cancelled'
+        task['finished_at'] = time.time()
+
     return jsonify({'status': 'cancelled'}), 200
 
 
