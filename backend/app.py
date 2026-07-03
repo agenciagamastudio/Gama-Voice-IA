@@ -490,10 +490,9 @@ def create_audiobook():
         if not (0.5 <= speed <= 2.0):
             return jsonify({'error': 'Velocidade inválida'}), 400
 
-        # Criar tarefa
-        task_id = create_audiobook_task(text, voice, speed, chunk_mode, effects=effects or None)
-        task = AUDIOBOOK_QUEUE[task_id]
-        task['user_id'] = request.user_id
+        # Criar tarefa (user_id set atomically inside create_audiobook_task)
+        task_id = create_audiobook_task(text, voice, speed, chunk_mode, effects=effects or None,
+                                        user_id=request.user_id)
 
         print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
 

@@ -20,23 +20,27 @@ AUDIOBOOK_QUEUE_LOCK = threading.Lock()
 _SWEEP_MAX_AGE_SECONDS = 24 * 3600  # 24h
 
 def _sweep_terminal_jobs():
-    """Remove terminal jobs older than 24h from AUDIOBOOK_QUEUE (call inside AUDIOBOOK_QUEUE_LOCK)."""
+    """Remove terminal jobs older than 24h from AUDIOBOOK_QUEUE (call inside AUDIOBOOK_QUEUE_LOCK).
+
+    IMPORTANT: Must be called while holding AUDIOBOOK_QUEUE_LOCK.
+    I/O (shutil.rmtree) is NOT performed here; caller receives dirs to remove.
+    Returns list of temp_dirs that should be deleted outside the lock.
+    """
     terminal = ('completed', 'error', 'cancelled', 'cleaned')
     now = time.time()
     to_delete = []
+    dirs_to_remove = []
     for tid, t in AUDIOBOOK_QUEUE.items():
         if t.get('status') in terminal:
             age_ref = t.get('finished_at', t.get('start_time', 0))
             if now - age_ref >= _SWEEP_MAX_AGE_SECONDS:
                 temp_dir = t.get('temp_dir')
-                if temp_dir and os.path.exists(temp_dir):
-                    try:
-                        shutil.rmtree(temp_dir, ignore_errors=True)
-                    except Exception:
-                        pass
+                if temp_dir:
+                    dirs_to_remove.append(temp_dir)
                 to_delete.append(tid)
     for tid in to_delete:
         del AUDIOBOOK_QUEUE[tid]
+    return dirs_to_remove
 
 class AudiobookChunk:
     """Representa um chunk de texto para síntese"""
@@ -190,7 +194,7 @@ class AudiobookProcessor:
 
 
 def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str = 'auto',
-                         effects: Optional[dict] = None) -> str:
+                         effects: Optional[dict] = None, user_id: Optional[str] = None) -> str:
     """Cria nova tarefa de audiobook
 
     Args:
@@ -205,11 +209,7 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
     """
     task_id = str(uuid.uuid4())
 
-    # Sweep old terminal jobs before creating new one
-    with AUDIOBOOK_QUEUE_LOCK:
-        _sweep_terminal_jobs()
-
-    # Dividir em chunks
+    # Dividir em chunks (I/O-free, safe outside lock)
     if chunk_mode == 'auto':
         chunks = AudiobookProcessor.split_by_chapters(text)
         if len(chunks) <= 1:
@@ -220,8 +220,12 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
     # Otimizar
     chunks = AudiobookProcessor.optimize_chunks(chunks)
 
-    # Criar tarefa
+    # mkdtemp before the lock (I/O outside critical section)
+    temp_dir = tempfile.mkdtemp(prefix=f'audiobook_{task_id}_')
+
+    # Sweep old terminal jobs and create new task atomically
     with AUDIOBOOK_QUEUE_LOCK:
+        dirs_to_remove = _sweep_terminal_jobs()
         AUDIOBOOK_QUEUE[task_id] = {
             'status': 'queued',
             'chunks': chunks,
@@ -233,42 +237,57 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
             'voice': voice,
             'speed': speed,
             'effects': effects or {},  # empty dict = no effects
-            'temp_dir': tempfile.mkdtemp(prefix=f'audiobook_{task_id}_'),
+            'temp_dir': temp_dir,
             'error': None,
             'warning': None,
-            'estimated_time': len(chunks) * 45  # segundos (aprox)
+            'estimated_time': len(chunks) * 45,  # segundos (aprox)
+            'user_id': user_id,
         }
+
+    # Perform sweep I/O outside the lock
+    for d in dirs_to_remove:
+        if os.path.exists(d):
+            try:
+                shutil.rmtree(d, ignore_errors=True)
+            except Exception:
+                pass
 
     return task_id
 
 
 def get_audiobook_status(task_id: str) -> dict:
     """Get status de uma tarefa de audiobook"""
-    task = AUDIOBOOK_QUEUE.get(task_id)
-    if not task:
-        return {'error': 'Task not found'}
+    # Copy all needed fields under the lock to avoid races
+    with AUDIOBOOK_QUEUE_LOCK:
+        task = AUDIOBOOK_QUEUE.get(task_id)
+        if not task:
+            return {'error': 'Task not found'}
+        status = task['status']
+        start_time = task['start_time']
+        progress = task['processed']
+        total = len(task['chunks'])
+        estimated_time = task['estimated_time']
+        error = task['error']
+        warning = task.get('warning')
 
-    elapsed = time.time() - task['start_time']
-    progress = task['processed']
-    total = len(task['chunks'])
-
-    # Calcular ETA
+    # Compute derived values outside the lock
+    elapsed = time.time() - start_time
     if progress > 0:
         avg_time_per_chunk = elapsed / progress
         remaining_chunks = total - progress
         eta = int(avg_time_per_chunk * remaining_chunks)
     else:
-        eta = task['estimated_time']
+        eta = estimated_time
 
     return {
-        'status': task['status'],
+        'status': status,
         'progress': progress,
         'total': total,
         'elapsed': int(elapsed),
         'eta': eta,
-        'error': task['error'],
-        'warning': task.get('warning'),
-        'downloadUrl': f'/api/audiobook/download/{task_id}' if task['status'] == 'completed' else None
+        'error': error,
+        'warning': warning,
+        'downloadUrl': f'/api/audiobook/download/{task_id}' if status == 'completed' else None
     }
 
 
