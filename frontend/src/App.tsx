@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Volume2, Mic, Settings, BookOpen, LogOut, Sliders, UserCircle } from 'lucide-react'
+import { Volume2, Mic, Settings, BookOpen, LogOut, Sliders, UserCircle, Moon, Sun } from 'lucide-react'
 import { Login } from './components/Login'
 import TTSComponent from './components/TTS'
 import STTComponent from './components/STT'
@@ -24,6 +24,14 @@ export default function App() {
     analyticsEnabled: false
   })
   const [health, setHealth] = useState<any>(null)
+  const [theme, setTheme] = useState<'dark' | 'light'>(
+    () => (localStorage.getItem('gama_voz_theme') as 'dark' | 'light') || 'dark'
+  )
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('gama_voz_theme', theme)
+  }, [theme])
 
   const { fetchVoices, checkHealth } = useAPI()
 
@@ -118,6 +126,20 @@ export default function App() {
               <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
                 👤 {user?.name || user?.email}
               </span>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+                style={{
+                  padding: '8px', borderRadius: '8px', background: 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--color-text)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 200ms',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {theme === 'dark' ? <Sun style={{ width: '22px', height: '22px' }} /> : <Moon style={{ width: '22px', height: '22px' }} />}
+              </button>
               <button
                 onClick={() => setShowSettings(true)}
                 title="Configurações"
