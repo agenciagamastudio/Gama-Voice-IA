@@ -103,12 +103,15 @@ class PiperEngine(TTSEngine):
         # length_scale is inverse of speed (higher = slower)
         length_scale = 1.0 / max(0.5, min(2.0, speed))
 
+        from piper import SynthesisConfig  # piper-tts >= 1.3
+        syn_config = SynthesisConfig(length_scale=length_scale)
+
         audio_buffer = io.BytesIO()
         with wave.open(audio_buffer, "wb") as wav_file:
-            self._piper_voice.synthesize(
+            self._piper_voice.synthesize_wav(
                 text,
                 wav_file,
-                length_scale=length_scale,
+                syn_config=syn_config,
             )
         audio_buffer.seek(0)
         return audio_buffer.read()
