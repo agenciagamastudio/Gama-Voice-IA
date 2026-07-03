@@ -44,15 +44,21 @@ export default function TTSComponent({ voices, settings, onSettingsChange }: Pro
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const { fetchWithAuth } = useAuthAPI()
 
-  // Load voice profiles on mount (authenticated users only)
+  // Load voice profiles on mount and whenever VoiceCloneStudio creates/deletes
+  // one (tabs are kept alive, so mount alone would miss later changes).
   useEffect(() => {
-    fetchWithAuth(`${API_BASE_URL}/api/voice-clone/list`)
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
-      .then((data: VoiceProfile[]) => setVoiceProfiles(data))
-      .catch(() => {
-        // Silently ignore — user may not be authenticated or has no profiles
-        setVoiceProfiles([])
-      })
+    const loadProfiles = () => {
+      fetchWithAuth(`${API_BASE_URL}/api/voice-clone/list`)
+        .then(res => res.ok ? res.json() : Promise.reject(res.status))
+        .then((data: VoiceProfile[]) => setVoiceProfiles(data))
+        .catch(() => {
+          // Silently ignore — user may not be authenticated or has no profiles
+          setVoiceProfiles([])
+        })
+    }
+    loadProfiles()
+    window.addEventListener('gama:profiles-changed', loadProfiles)
+    return () => window.removeEventListener('gama:profiles-changed', loadProfiles)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEngineChange = (value: string) => {

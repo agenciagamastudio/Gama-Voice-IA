@@ -97,6 +97,8 @@ export default function VoiceCloneStudio() {
     } finally {
       setIsLoadingProfiles(false)
     }
+    // Notifica outras abas (ex.: seletor de perfil no TTS) que a lista mudou
+    window.dispatchEvent(new Event('gama:profiles-changed'))
   }
 
   /** Converte qualquer áudio (webm/ogg da gravação) em WAV PCM 16-bit,
