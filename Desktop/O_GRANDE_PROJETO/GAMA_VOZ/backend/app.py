@@ -108,6 +108,9 @@ from tts_engines import KokoroEngine, PiperEngine, CloneEngine
 _kokoro_engine = KokoroEngine()
 _piper_engine = PiperEngine()
 _clone_engine = CloneEngine()
+# Semaphore(1): only one clone synthesis at a time (XTTS-v2 ~57s on CPU).
+# Non-blocking acquire returns 503 when occupied so callers get fast feedback.
+_clone_semaphore = threading.Semaphore(1)
 # Keep kokoro_model as alias used by audiobook_processor (passed directly)
 kokoro_model = _kokoro_engine._pipeline
 
@@ -307,12 +310,20 @@ def synthesize():
             if not _clone_engine.is_available:
                 return jsonify({'error': 'Clonagem de voz ainda não disponível nesta versão'}), 501
 
-            # (Future) Once is_available is True this branch will execute:
-            wav_bytes = _clone_engine.synthesize(
-                text,
-                speed=speed,
-                reference_audio_path=profile['reference_audio_path'],
-            )
+            # Concurrency guard: XTTS-v2 synthesis takes ~57s on CPU.
+            # Only one request may synthesize at a time; others get 503.
+            if not _clone_semaphore.acquire(blocking=False):
+                return jsonify({
+                    'error': 'clonagem em andamento, tente novamente em alguns instantes'
+                }), 503
+            try:
+                wav_bytes = _clone_engine.synthesize(
+                    text,
+                    speed=speed,
+                    reference_audio_path=profile['reference_audio_path'],
+                )
+            finally:
+                _clone_semaphore.release()
             audio_buffer = io.BytesIO(wav_bytes)
             response = send_file(audio_buffer, mimetype='audio/wav')
             response.headers['X-TTS-Source'] = 'clone'
