@@ -20,12 +20,19 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import threading
 
 from .base import TTSEngine
 
 logger = logging.getLogger(__name__)
 
 _XTTS_MODEL_NAME = "tts_models/multilingual/multi-dataset/xtts_v2"
+
+# Resolved absolute path of the voice-sample uploads directory.
+# Must match UPLOAD_FOLDER in backend/api/voice_clone.py.
+_UPLOADS_BASE = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), "..", "uploads", "voice_samples")
+)
 
 
 def _check_xtts_available() -> bool:
@@ -52,6 +59,7 @@ class CloneEngine(TTSEngine):
 
     def __init__(self) -> None:
         self._tts = None
+        self._load_lock = threading.Lock()  # guards lazy model load
         self._available: bool = _check_xtts_available()
         if not self._available:
             logger.warning(
@@ -63,24 +71,30 @@ class CloneEngine(TTSEngine):
         return self._available
 
     def _load(self) -> None:
-        """Carrega XTTS-v2 na primeira chamada (lazy). No-op se já carregado."""
+        """Carrega XTTS-v2 na primeira chamada (lazy). Thread-safe via double-checked locking."""
+        # Fast path — already loaded, no lock needed
         if self._tts is not None:
             return
 
-        logger.info(
-            "CloneEngine: carregando XTTS-v2 (1ª vez pode demorar ~60-120s "
-            "para baixar o modelo de ~1.8 GB)..."
-        )
-        try:
-            from TTS.api import TTS
+        with self._load_lock:
+            # Second check inside lock: another thread may have loaded while we waited
+            if self._tts is not None:
+                return
 
-            # gpu=False: modo CPU — funciona sem CUDA
-            self._tts = TTS(_XTTS_MODEL_NAME, gpu=False)
-            logger.info("CloneEngine: XTTS-v2 carregado com sucesso.")
-        except Exception as exc:
-            logger.error("CloneEngine: falha ao carregar XTTS-v2 — %s", exc)
-            self._available = False
-            raise RuntimeError(f"XTTS-v2 não pôde ser carregado: {exc}") from exc
+            logger.info(
+                "CloneEngine: carregando XTTS-v2 (1ª vez pode demorar ~60-120s "
+                "para baixar o modelo de ~1.8 GB)..."
+            )
+            try:
+                from TTS.api import TTS
+
+                # gpu=False: modo CPU — funciona sem CUDA
+                self._tts = TTS(_XTTS_MODEL_NAME, gpu=False)
+                logger.info("CloneEngine: XTTS-v2 carregado com sucesso.")
+            except Exception as exc:
+                logger.error("CloneEngine: falha ao carregar XTTS-v2 — %s", exc)
+                self._available = False
+                raise RuntimeError(f"XTTS-v2 não pôde ser carregado: {exc}") from exc
 
     def synthesize(
         self,
@@ -121,6 +135,13 @@ class CloneEngine(TTSEngine):
         if not os.path.isfile(reference_audio_path):
             raise ValueError(
                 f"Arquivo de referência não encontrado: {reference_audio_path}"
+            )
+
+        # Path confinement: resolved path must be inside the uploads directory
+        resolved = os.path.realpath(reference_audio_path)
+        if not resolved.startswith(_UPLOADS_BASE + os.sep) and resolved != _UPLOADS_BASE:
+            raise ValueError(
+                f"Caminho de referência fora do diretório permitido: {reference_audio_path}"
             )
 
         # Normaliza: 'pt-BR' → 'pt'  (XTTS-v2 usa código de 2 letras)
