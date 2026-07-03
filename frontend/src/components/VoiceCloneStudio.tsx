@@ -99,6 +99,42 @@ export default function VoiceCloneStudio() {
     }
   }
 
+  /** Converte qualquer áudio (webm/ogg da gravação) em WAV PCM 16-bit,
+   *  formato exigido pelo backend e pelo XTTS. */
+  async function convertToWav(blob: Blob): Promise<Blob> {
+    const arrayBuffer = await blob.arrayBuffer()
+    const ctx = new AudioContext()
+    try {
+      const decoded = await ctx.decodeAudioData(arrayBuffer)
+      const numCh = Math.min(decoded.numberOfChannels, 2)
+      const sampleRate = decoded.sampleRate
+      const numFrames = decoded.length
+      const bytesPerSample = 2
+      const dataSize = numFrames * numCh * bytesPerSample
+      const buffer = new ArrayBuffer(44 + dataSize)
+      const view = new DataView(buffer)
+      const writeStr = (off: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)) }
+      writeStr(0, 'RIFF'); view.setUint32(4, 36 + dataSize, true); writeStr(8, 'WAVE')
+      writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true)
+      view.setUint16(22, numCh, true); view.setUint32(24, sampleRate, true)
+      view.setUint32(28, sampleRate * numCh * bytesPerSample, true)
+      view.setUint16(32, numCh * bytesPerSample, true); view.setUint16(34, 16, true)
+      writeStr(36, 'data'); view.setUint32(40, dataSize, true)
+      let offset = 44
+      const channels = Array.from({ length: numCh }, (_, c) => decoded.getChannelData(c))
+      for (let i = 0; i < numFrames; i++) {
+        for (let c = 0; c < numCh; c++) {
+          const s = Math.max(-1, Math.min(1, channels[c][i]))
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+          offset += 2
+        }
+      }
+      return new Blob([buffer], { type: 'audio/wav' })
+    } finally {
+      ctx.close()
+    }
+  }
+
   async function handleStartRecording() {
     setError(null)
     setAudioBlob(null)
@@ -161,8 +197,12 @@ export default function VoiceCloneStudio() {
     setError(null)
     try {
       const formData = new FormData()
-      const ext = audioBlob.type.includes('webm') ? 'webm' : 'wav'
-      formData.append('file', audioBlob, `sample.${ext}`)
+      // Gravações do navegador saem em webm/ogg — o backend só aceita WAV/MP3,
+      // então convertemos para WAV PCM antes de enviar.
+      const isAccepted = audioBlob.type.includes('wav') || audioBlob.type.includes('mpeg') || audioBlob.type.includes('mp3')
+      const toSend = isAccepted ? audioBlob : await convertToWav(audioBlob)
+      const ext = toSend.type.includes('wav') ? 'wav' : 'mp3'
+      formData.append('file', toSend, `sample.${ext}`)
       formData.append('name', profileName.trim())
       const res = await fetchWithAuth(`${API_BASE_URL}/api/voice-clone/upload`, {
         method: 'POST',
