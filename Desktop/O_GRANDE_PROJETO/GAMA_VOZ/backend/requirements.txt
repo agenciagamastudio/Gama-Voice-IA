@@ -12,6 +12,12 @@ scipy>=1.11.0
 librosa>=0.10.0
 soundfile>=0.12.0
 
+# Voice cloning — zero-shot via Coqui XTTS-v2
+# Requires torch>=2.1 (CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu)
+# Model (~1.8 GB) is auto-downloaded to %APPDATA%\tts on first synthesize() call
+TTS==0.21.1
+transformers>=4.20.0,<4.33.0
+
 # STT & Voice APIs
 groq>=0.4.2
 
