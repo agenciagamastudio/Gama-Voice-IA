@@ -9,12 +9,34 @@ import threading
 import os
 import tempfile
 import re
+import shutil
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 
 # Global processing queue + lock (lock used by app.py download endpoint)
 AUDIOBOOK_QUEUE: Dict[str, dict] = {}
 AUDIOBOOK_QUEUE_LOCK = threading.Lock()
+
+_SWEEP_MAX_AGE_SECONDS = 24 * 3600  # 24h
+
+def _sweep_terminal_jobs():
+    """Remove terminal jobs older than 24h from AUDIOBOOK_QUEUE (call inside AUDIOBOOK_QUEUE_LOCK)."""
+    terminal = ('completed', 'error', 'cancelled', 'cleaned')
+    now = time.time()
+    to_delete = []
+    for tid, t in AUDIOBOOK_QUEUE.items():
+        if t.get('status') in terminal:
+            age_ref = t.get('finished_at', t.get('start_time', 0))
+            if now - age_ref >= _SWEEP_MAX_AGE_SECONDS:
+                temp_dir = t.get('temp_dir')
+                if temp_dir and os.path.exists(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir, ignore_errors=True)
+                    except Exception:
+                        pass
+                to_delete.append(tid)
+    for tid in to_delete:
+        del AUDIOBOOK_QUEUE[tid]
 
 class AudiobookChunk:
     """Representa um chunk de texto para síntese"""
@@ -183,6 +205,10 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
     """
     task_id = str(uuid.uuid4())
 
+    # Sweep old terminal jobs before creating new one
+    with AUDIOBOOK_QUEUE_LOCK:
+        _sweep_terminal_jobs()
+
     # Dividir em chunks
     if chunk_mode == 'auto':
         chunks = AudiobookProcessor.split_by_chapters(text)
@@ -195,19 +221,23 @@ def create_audiobook_task(text: str, voice: str, speed: float, chunk_mode: str =
     chunks = AudiobookProcessor.optimize_chunks(chunks)
 
     # Criar tarefa
-    AUDIOBOOK_QUEUE[task_id] = {
-        'status': 'queued',
-        'chunks': chunks,
-        'processed': 0,
-        'audio_files': [],
-        'start_time': time.time(),
-        'voice': voice,
-        'speed': speed,
-        'effects': effects or {},  # empty dict = no effects
-        'temp_dir': tempfile.mkdtemp(prefix=f'audiobook_{task_id}_'),
-        'error': None,
-        'estimated_time': len(chunks) * 45  # segundos (aprox)
-    }
+    with AUDIOBOOK_QUEUE_LOCK:
+        AUDIOBOOK_QUEUE[task_id] = {
+            'status': 'queued',
+            'chunks': chunks,
+            'processed': 0,
+            'audio_files': [],
+            'failed_chunks': [],
+            'start_time': time.time(),
+            'finished_at': None,
+            'voice': voice,
+            'speed': speed,
+            'effects': effects or {},  # empty dict = no effects
+            'temp_dir': tempfile.mkdtemp(prefix=f'audiobook_{task_id}_'),
+            'error': None,
+            'warning': None,
+            'estimated_time': len(chunks) * 45  # segundos (aprox)
+        }
 
     return task_id
 
@@ -237,6 +267,7 @@ def get_audiobook_status(task_id: str) -> dict:
         'elapsed': int(elapsed),
         'eta': eta,
         'error': task['error'],
+        'warning': task.get('warning'),
         'downloadUrl': f'/api/audiobook/download/{task_id}' if task['status'] == 'completed' else None
     }
 
@@ -248,66 +279,110 @@ def process_audiobook_queue(task_id: str, kokoro_model, import_soundfile=True):
     import io
 
     task = AUDIOBOOK_QUEUE[task_id]
-    task['status'] = 'processing'
+    with AUDIOBOOK_QUEUE_LOCK:
+        task['status'] = 'processing'
 
     try:
         for idx, chunk in enumerate(task['chunks']):
-            try:
+            # Check cancellation before each chunk (under lock)
+            with AUDIOBOOK_QUEUE_LOCK:
+                if task.get('status') == 'cancelled':
+                    break
                 task['status'] = f'processing_chunk_{idx+1}'
                 task['current_chunk'] = idx + 1
 
-                # Gerar áudio com Kokoro
-                result_gen = kokoro_model(
-                    chunk.text,
-                    voice=task['voice'],
-                    speed=task['speed']
-                )
-                result = next(result_gen)
-                samples = result.audio
-                sample_rate = 24000
+            # Retry logic: attempt each chunk up to 2 times
+            chunk_success = False
+            for attempt in range(2):
+                try:
+                    # Gerar áudio com Kokoro (no lock held during synthesis)
+                    result_gen = kokoro_model(
+                        chunk.text,
+                        voice=task['voice'],
+                        speed=task['speed']
+                    )
+                    result = next(result_gen)
+                    samples = result.audio
+                    sample_rate = 24000
 
-                # Converter tensor pra numpy
-                if hasattr(samples, 'numpy'):
-                    samples = samples.numpy()
-                elif not isinstance(samples, np.ndarray):
-                    samples = np.array(samples, dtype=np.float32)
+                    # Converter tensor pra numpy
+                    if hasattr(samples, 'numpy'):
+                        samples = samples.numpy()
+                    elif not isinstance(samples, np.ndarray):
+                        samples = np.array(samples, dtype=np.float32)
 
-                # Salvar WAV
-                wav_file = os.path.join(task['temp_dir'], f'chunk_{idx:03d}.wav')
-                sf.write(wav_file, samples, sample_rate, format='WAV')
+                    # Salvar WAV
+                    wav_file = os.path.join(task['temp_dir'], f'chunk_{idx:03d}.wav')
+                    sf.write(wav_file, samples, sample_rate, format='WAV')
 
-                # Aplicar cadeia de efeitos (se configurada)
-                if task.get('effects'):
-                    from audio_effects import AudioEffects
-                    with open(wav_file, 'rb') as _f:
-                        wav_bytes = _f.read()
-                    processed_bytes = AudioEffects.process(wav_bytes, task['effects'])
-                    with open(wav_file, 'wb') as _f:
-                        _f.write(processed_bytes)
+                    # Aplicar cadeia de efeitos (se configurada)
+                    if task.get('effects'):
+                        from audio_effects import AudioEffects
+                        with open(wav_file, 'rb') as _f:
+                            wav_bytes = _f.read()
+                        processed_bytes, _skipped = AudioEffects.process(wav_bytes, task['effects'])
+                        with open(wav_file, 'wb') as _f:
+                            _f.write(processed_bytes)
 
-                task['audio_files'].append(wav_file)
+                    with AUDIOBOOK_QUEUE_LOCK:
+                        task['audio_files'].append(wav_file)
+                        task['processed'] += 1
 
-                task['processed'] += 1
+                    chunk_success = True
+                    break  # success, stop retrying
 
-            except Exception as e:
-                task['status'] = 'error'
-                task['error'] = f'Chunk {idx+1}: {str(e)}'
+                except Exception as e:
+                    if attempt == 1:
+                        # Second failure: record and skip this chunk
+                        print(f"⚠️ Chunk {idx+1} falhou 2x: {e}")
+                        with AUDIOBOOK_QUEUE_LOCK:
+                            task['failed_chunks'].append(idx + 1)
+
+        # After loop: check if cancelled first
+        with AUDIOBOOK_QUEUE_LOCK:
+            if task.get('status') == 'cancelled':
+                shutil.rmtree(task.get('temp_dir', ''), ignore_errors=True)
+                task['finished_at'] = time.time()
                 return
 
-        # Todos chunks prontos → concatenar
-        task['status'] = 'concatenating'
+            total_chunks = len(task['chunks'])
+            failed = task.get('failed_chunks', [])
+
+            if len(failed) == total_chunks:
+                # All chunks failed
+                task['status'] = 'error'
+                task['error'] = 'Todos os chunks falharam durante a síntese'
+                task['finished_at'] = time.time()
+                return
+
+            if not task['audio_files']:
+                task['status'] = 'error'
+                task['error'] = 'Nenhum chunk processado com sucesso'
+                task['finished_at'] = time.time()
+                return
+
+            if failed:
+                task['warning'] = f'{len(failed)} chunk(s) ignorado(s) por erro: {failed}'
+
+            task['status'] = 'concatenating'
+
+        # Concatenar (no lock held during I/O)
         final_file = concatenate_audiobook(task['audio_files'], task_id)
 
-        if final_file:
-            task['status'] = 'completed'
-            task['final_file'] = final_file
-        else:
-            task['status'] = 'error'
-            task['error'] = 'Falha na concatenação'
+        with AUDIOBOOK_QUEUE_LOCK:
+            if final_file:
+                task['status'] = 'completed'
+                task['final_file'] = final_file
+            else:
+                task['status'] = 'error'
+                task['error'] = 'Falha na concatenação'
+            task['finished_at'] = time.time()
 
     except Exception as e:
-        task['status'] = 'error'
-        task['error'] = str(e)
+        with AUDIOBOOK_QUEUE_LOCK:
+            task['status'] = 'error'
+            task['error'] = str(e)
+            task['finished_at'] = time.time()
 
 
 def concatenate_audiobook(audio_files: List[str], task_id: str) -> str:
