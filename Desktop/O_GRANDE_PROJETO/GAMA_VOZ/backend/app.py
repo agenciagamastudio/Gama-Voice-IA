@@ -415,6 +415,13 @@ def process_audio_effects():
         if not isinstance(effects, dict):
             return jsonify({'error': 'effects must be a JSON object'}), 400
 
+        invalid_vals = {k: type(v).__name__ for k, v in effects.items() if not isinstance(v, dict)}
+        if invalid_vals:
+            return jsonify({
+                'error': f'Valores de efeitos inválidos (devem ser objetos JSON): {invalid_vals}. '
+                         f'Chaves válidas: pitch_shift, time_stretch, reverb, compressor, eq_bass_boost'
+            }), 400
+
         if len(audio_base64) > 10_000_000:  # ~7.5MB WAV
             return jsonify({'error': 'Áudio muito grande (limite ~7.5MB)'}), 413
 
@@ -479,7 +486,17 @@ def create_audiobook():
         effects_raw = request.form.get('effects', '')
         effects = _json.loads(effects_raw) if effects_raw else {}
 
-        print(f"📚 Audiobook Request: {len(text)} chars, voice={voice}, mode={chunk_mode}, effects={list(effects.keys())}")
+        if not isinstance(effects, dict):
+            return jsonify({'error': 'effects deve ser um objeto JSON'}), 400
+
+        invalid_vals = {k: type(v).__name__ for k, v in effects.items() if not isinstance(v, dict)}
+        if invalid_vals:
+            return jsonify({
+                'error': f'Valores de efeitos inválidos (devem ser objetos JSON): {invalid_vals}. '
+                         f'Chaves válidas: pitch_shift, time_stretch, reverb, compressor, eq_bass_boost'
+            }), 400
+
+        print(f"📚 Audiobook Request: {len(text)} chars, voice={voice}, mode={chunk_mode}, effects={list(effects.keys())})")
 
         if not text or len(text) > 500000:
             return jsonify({'error': 'Texto inválido (máx 500k caracteres)'}), 400
@@ -494,7 +511,9 @@ def create_audiobook():
         task_id = create_audiobook_task(text, voice, speed, chunk_mode, effects=effects or None,
                                         user_id=request.user_id)
 
-        print(f"  → Task {task_id}: {len(task['chunks'])} chunks")
+        with AUDIOBOOK_QUEUE_LOCK:
+            _n_chunks = len(AUDIOBOOK_QUEUE[task_id]['chunks'])
+        print(f"  → Task {task_id}: {_n_chunks} chunks")
 
         # Aguardar Kokoro estar carregado (máx 60 segundos)
         wait_count = 0
