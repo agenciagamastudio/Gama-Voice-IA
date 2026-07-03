@@ -133,6 +133,9 @@ class AudioEffects:
 
         skipped = []
         for effect_name, params in effects.items():
+            if not isinstance(params, dict):
+                skipped.append(effect_name)
+                continue
             if effect_name == 'pitch_shift':
                 y = AudioEffects.pitch_shift(y, sr, **params)
             elif effect_name == 'time_stretch':
