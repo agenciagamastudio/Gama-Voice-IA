@@ -244,34 +244,28 @@ export default function App() {
             })}
           </div>
 
-          {/* Tab Content */}
-          <div key={activeTab} style={{ animation: 'tabEnter 220ms ease both' }}>
-            {activeTab === 'tts' && (
+          {/* Tab Content — todas as abas ficam montadas para preservar estado
+              (áudios gerados, textos, processamentos em andamento) ao trocar de aba.
+              A aba inativa é apenas escondida via display:none. */}
+          {([
+            ['tts', <TTSComponent voices={voices} settings={settings} onSettingsChange={handleSettingChange} />],
+            ['stt', <STTComponent />],
+            ['audiobook', <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />],
+            ['postprocessing', <PostProcessingStudio />],
+            ['voiceclone', <VoiceCloneStudio />],
+          ] as const).map(([id, component]) => (
+            <div
+              key={id}
+              style={{
+                display: activeTab === id ? 'block' : 'none',
+                animation: activeTab === id ? 'tabEnter 220ms ease both' : undefined,
+              }}
+            >
               <div className="glass-card" style={{ padding: '32px' }}>
-                <TTSComponent voices={voices} settings={settings} onSettingsChange={handleSettingChange} />
+                {component}
               </div>
-            )}
-            {activeTab === 'stt' && (
-              <div className="glass-card" style={{ padding: '32px' }}>
-                <STTComponent />
-              </div>
-            )}
-            {activeTab === 'audiobook' && (
-              <div className="glass-card" style={{ padding: '32px' }}>
-                <AudiobookGenerator settings={{ voice: settings.voice, speed: settings.speed }} />
-              </div>
-            )}
-            {activeTab === 'postprocessing' && (
-              <div className="glass-card" style={{ padding: '32px' }}>
-                <PostProcessingStudio />
-              </div>
-            )}
-            {activeTab === 'voiceclone' && (
-              <div className="glass-card" style={{ padding: '32px' }}>
-                <VoiceCloneStudio />
-              </div>
-            )}
-          </div>
+            </div>
+          ))}
           <style>{`
             @keyframes tabEnter {
               from { opacity: 0; transform: translateY(10px); }
