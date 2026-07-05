@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMA · Copa Center 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0d0d0d;--void-2:#111;--panel:#161616;--panel-2:#1c1c1c;--line:#2a2a2a;--line-2:#333;
+    --ink:#f2f2f2;--ink-dim:#a0a0a0;--ink-faint:#6a6a6a;
+    --lime:#88CE11;--lime-dim:rgba(136,206,17,.14);--lime-line:rgba(136,206,17,.35);
+    --red:#e0563b;--red-dim:rgba(224,86,59,.12);--amber:#e0a83b;
+    --display:'Archivo',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--void);color:var(--ink);font-family:var(--display);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background-image:linear-gradient(rgba(136,206,17,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(136,206,17,.02) 1px,transparent 1px);
+    background-size:64px 64px;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--lime);display:inline-flex;align-items:center;gap:9px}
+  .eyebrow::before{content:"";width:20px;height:1px;background:var(--lime)}
+  h1,h2,h3{font-weight:800;letter-spacing:-.02em;line-height:1.08}
+
+  /* header / sync bar */
+  .top{border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;background:rgba(13,13,13,.94);backdrop-filter:blur(8px)}
+  .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;flex-wrap:wrap}
+  .brand{font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--ink)}
+  .brand b{color:var(--lime)}
+  .syncbox{display:flex;align-items:center;gap:12px}
+  .synced{font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;color:var(--ink-faint);display:flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto}
+  .dot.live{background:var(--lime);animation:pulse 1.4s infinite}
+  .dot.fail{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .btn-sync{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;background:var(--lime);color:var(--void);border:none;border-radius:2px;padding:9px 16px;font-weight:700;cursor:pointer;transition:filter .15s;display:inline-flex;align-items:center;gap:8px}
+  .btn-sync:hover{filter:brightness(1.08)}
+  .btn-sync:disabled{opacity:.6;cursor:default}
+  .spin{width:11px;height:11px;border:2px solid rgba(13,13,13,.35);border-top-color:var(--void);border-radius:50%;animation:rot .7s linear infinite;display:none}
+  .btn-sync.loading .spin{display:inline-block}
+
+  /* intro */
+  .intro{padding:38px 0 8px}
+  .intro h1{font-size:clamp(30px,6vw,52px);font-weight:900;letter-spacing:-.035em;margin:16px 0 10px}
+  .intro h1 em{font-style:normal;color:var(--lime)}
+  .intro p{color:var(--ink-dim);font-weight:400;font-size:15px;max-width:56ch}
+
+  section{padding:34px 0}
+  .slabel{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .slabel::after{content:"";flex:1;height:1px;background:var(--line)}
+  .slabel b{color:var(--lime)}
+
+  /* HERO match */
+  .hero{background:linear-gradient(160deg,var(--panel) 0%,var(--void-2) 100%);border:1px solid var(--lime-line);border-radius:5px;overflow:hidden;position:relative}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 120%,rgba(136,206,17,.10),transparent 60%);pointer-events:none}
+  .hero .hpad{padding:26px 28px;position:relative}
+  .hero .htop{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+  .hero .htag{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lime)}
+  .statuspill{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;padding:5px 10px;border-radius:2px;display:inline-flex;align-items:center;gap:7px}
+  .statuspill.ao_vivo{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,86,59,.4)}
+  .statuspill.ao_vivo .dot{background:var(--red);animation:pulse 1.2s infinite}
+  .statuspill.agendado{background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line-2)}
+  .statuspill.encerrado{background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-line)}
+  .matchrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px}
+  .team{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .badge{width:70px;height:70px;border-radius:50%;background:var(--void-2);border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:19px;color:var(--ink)}
+  .team.br .badge{border-color:var(--lime);color:var(--lime);box-shadow:0 0 0 4px var(--lime-dim)}
+  .team .tn{font-weight:700;font-size:15px}
+  .team .tsub{font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--ink-faint)}
+  .score{font-family:var(--display);font-weight:900;font-size:clamp(30px,7vw,46px);letter-spacing:-.03em;text-align:center;min-width:90px}
+  .score .x{color:var(--ink-faint);font-size:22px;font-weight:500}
+  .score .min{display:block;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--red);margin-top:2px}
+  .hmeta{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim)}
+  .hmeta span b{color:var(--lime)}
+  .hnarr{margin-top:16px;color:var(--ink-dim);font-size:13.5px;font-weight:400;line-height:1.6}
+  .hnarr b{color:var(--ink)}
+  .watch{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+  .btn-watch{font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;background:var(--lime);color:var(--void);border:none;border-radius:3px;padding:14px 22px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:9px;transition:filter .15s}
+  .btn-watch:hover{filter:brightness(1.08)}
+  .btn-watch .yt{font-size:14px}
+  .btn-watch.ghost{background:none;color:var(--ink-dim);border:1px solid var(--line-2)}
+  .btn-watch.ghost:hover{color:var(--ink);border-color:var(--ink-faint);filter:none}
+
+  /* today / list cards */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mcard{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px 18px;transition:border-color .15s}
+  .mcard:hover{border-color:var(--line-2)}
+  .mcard.br{border-color:var(--lime-line)}
+  .mcard .mc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .mc-stage{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint)}
+  .mc-teams{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .mc-side{display:flex;align-items:center;gap:9px;flex:1}
+  .mc-side.away{flex-direction:row-reverse;text-align:right}
+  .mc-badge{width:30px;height:30px;border-radius:50%;background:var(--void-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink);flex:0 0 auto}
+  .mc-badge.brc{border-color:var(--lime);color:var(--lime)}
+  .mc-name{font-weight:600;font-size:13px}
+  .mc-sc{font-family:var(--mono);font-weight:700;font-size:16px;color:var(--ink);padding:0 6px}
+  .mc-sc.pend{color:var(--ink-faint);font-size:12px}
+  .mc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .mc-time{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);letter-spacing:.3px}
+  .mc-caze{font-family:var(--mono);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--lime);text-decoration:none;border:1px solid var(--lime-line);border-radius:2px;padding:4px 8px;display:inline-flex;align-items:center;gap:5px;transition:background .15s}
+  .mc-caze:hover{background:var(--lime-dim)}
+  .mc-caze.done{color:var(--ink-faint);border-color:var(--line-2)}
+
+  /* bracket */
+  .board{width:100%;max-width:680px;margin:0 auto}
+  .board svg{width:100%;height:auto;display:block}
+  .orbit{fill:none;stroke:var(--line);stroke-width:1;opacity:.4}
+  .conn{fill:none;stroke:var(--line);stroke-width:1.3;stroke-linecap:round}
+  .conn.br{stroke:var(--lime);stroke-width:2;stroke-dasharray:4 4;opacity:.85}
+  .nd circle{fill:var(--panel);stroke:var(--line-2);stroke-width:1.3}
+  .nd text{fill:var(--ink-dim);font-family:var(--mono);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none;letter-spacing:.3px}
+  .nd:hover circle{stroke:var(--lime)}
+  .nd.tbd circle{fill:none;stroke:var(--line-2);stroke-dasharray:3 3}
+  .nd.tbd text{fill:var(--ink-faint)}
+  .nd.br circle{fill:var(--void-2);stroke:var(--lime);stroke-width:2}
+  .nd.br text{fill:var(--lime)}
+  .nd.brtbd circle{fill:none;stroke:var(--lime);stroke-width:1.6;stroke-dasharray:3 3}
+  .nd.brtbd text{fill:var(--lime);opacity:.7}
+  .champ circle{fill:var(--lime);stroke:none}
+  .champ .tro path,.champ .tro rect{fill:var(--void)}
+  .blegend{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .blegend span{font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;color:var(--ink-faint);display:flex;align-items:center;gap:7px}
+  .blegend i{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+  .blegend i.br{background:var(--lime)}
+  .blegend i.tb{border:1px dashed var(--line-2)}
+
+  /* ai note */
+  .ainote{background:var(--void-2);border:1px solid var(--line);border-left:2px solid var(--lime);border-radius:3px;padding:18px 20px;color:var(--ink-dim);font-size:13px;font-weight:400;line-height:1.6}
+  .ainote b{color:var(--lime)}
+  .ainote code{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--panel);padding:2px 6px;border-radius:2px}
+
+  footer{padding:30px 0 50px;text-align:center}
+  footer .fm{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--ink-faint)}
+  footer .fm b{color:var(--lime)}
+
+  @media(max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .badge{width:56px;height:56px;font-size:16px}
+    .hero .hpad{padding:20px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <div style="display:flex;align-items:center;gap:24px;flex:1">
+      <div class="brand"><b>GAMA</b> · Copa Center</div>
+      <div class="live-clock">
+        <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;color:var(--ink-faint);margin-bottom:3px">⏰ Hora ao vivo</div>
+        <div id="clockDisplay" style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--lime);letter-spacing:.5px">00:00:00</div>
+      </div>
+    </div>
+    <div class="syncbox">
+      <span class="synced"><span class="dot" id="statusdot"></span><span id="synctxt">iniciando…</span></span>
+      <button class="btn-sync" id="btnSync" onclick="aiRefresh(false)"><span class="spin"></span><span id="btnLabel">Atualizar</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="intro">
+  <div class="wrap">
+    <span class="eyebrow">Copa do Mundo 2026 · ao vivo</span>
+    <h1>O caminho do <em>Brasil</em> até o hexa</h1>
+    <p>Oitavas de final em andamento. Placares e status se atualizam sozinhos, buscando informação real na web via IA. Jogos com transmissão da CazéTV.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="slabel"><b>Destaque</b> · o jogo do Brasil</div>
+    <div id="heroSlot"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="slabel">Jogos de hoje</div>
+    <div class="grid" id="todaySlot"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="slabel">Chaveamento · das oitavas à final</div>
+    <div class="board"><div id="boardSlot"></div></div>
+    <div class="blegend">
+      <span><i class="br"></i> Caminho do Brasil</span>
+      <span><i class="tb"></i> A definir</span>
+      <span><i style="background:var(--panel);border:1px solid var(--line-2)"></i> Classificado</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="slabel">Todas as oitavas · 4 a 7 de julho</div>
+    <div class="grid" id="allSlot"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="ainote" id="aiNote">
+      <b>Como a IA atualiza:</b> ao abrir e a cada 2 minutos, a plataforma pergunta pro Claude os placares reais da rodada (com busca na web) e se atualiza sozinha. Se o ambiente bloquear a chamada, ela mantém o último dado real conhecido — nesse caso, use o botão <code>Atualizar</code> ou veja o jogo direto na CazéTV.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><div class="fm">GAMA · <b>construtora</b>, não pedreiro</div></div>
+</footer>
+
+<script>
+  var CAZE_LIVE='https://www.youtube.com/@CazeTV/live';
+  var CAZE_CH='https://www.youtube.com/@CazeTV';
+  function cazeSearch(a,b){return 'https://www.youtube.com/results?search_query=cazetv+'+encodeURIComponent(NAMES[a]+' '+NAMES[b]);}
+
+  var NAMES={BRA:'Brasil',NOR:'Noruega',MEX:'México',ENG:'Inglaterra',ARG:'Argentina',EGI:'Egito',
+    SUI:'Suíça',COL:'Colômbia',MAR:'Marrocos',CAN:'Canadá',FRA:'França',PAR:'Paraguai',
+    POR:'Portugal',ESP:'Espanha',USA:'Estados Unidos',BEL:'Bélgica'};
+
+  // matches: ko in UTC; hs/as baked only for finished games; others computed/AI-filled
+  var MATCHES=[
+    {home:'MAR',away:'CAN',ko:'2026-07-04T17:00:00Z',venue:'Houston',hs:3,as:0,fixed:'encerrado'},
+    {home:'FRA',away:'PAR',ko:'2026-07-04T21:00:00Z',venue:'Filadélfia',hs:1,as:0,fixed:'encerrado'},
+    {home:'BRA',away:'NOR',ko:'2026-07-05T20:00:00Z',venue:'MetLife · Nova Jersey',hs:null,as:null,feat:true},
+    {home:'MEX',away:'ENG',ko:'2026-07-06T00:00:00Z',venue:'Azteca · Cidade do México',hs:null,as:null},
+    {home:'POR',away:'ESP',ko:'2026-07-06T19:00:00Z',venue:'Dallas',hs:null,as:null},
+    {home:'USA',away:'BEL',ko:'2026-07-07T00:00:00Z',venue:'Seattle',hs:null,as:null},
+    {home:'ARG',away:'EGI',ko:'2026-07-07T16:00:00Z',venue:'Atlanta',hs:null,as:null},
+    {home:'SUI',away:'COL',ko:'2026-07-07T20:00:00Z',venue:'Vancouver',hs:null,as:null}
+  ];
+  // bracket outer order -> pairs map to these match indexes
+  var PAIR2MATCH=[2,3,6,7,0,1,4,5]; // ring1[j] winner comes from MATCHES[PAIR2MATCH[j]]
+  var OUTER=['BRA','NOR','MEX','ENG','ARG','EGI','SUI','COL','MAR','CAN','FRA','PAR','POR','ESP','USA','BEL'];
+
+  function statusOf(m){
+    if(m.aiStatus) return m.aiStatus;
+    if(m.fixed) return m.fixed;
+    var ko=new Date(m.ko).getTime(), now=Date.now();
+    if(now < ko) return 'agendado';
+    if(now < ko + 130*60000) return 'ao_vivo';
+    return 'encerrado';
+  }
+  function fmtTime(m){
+    var d=new Date(m.ko);
+    // BRT = UTC-3
+    var b=new Date(d.getTime()-3*3600000);
+    var dd=String(b.getUTCDate()).padStart(2,'0'), mm=String(b.getUTCMonth()+1).padStart(2,'0');
+    var hh=String(b.getUTCHours()).padStart(2,'0'), mi=String(b.getUTCMinutes()).padStart(2,'0');
+    return dd+'/'+mm+' · '+hh+'h'+(mi!=='00'?mi:'');
+  }
+  function stLabel(s){return s==='ao_vivo'?'Ao vivo':s==='encerrado'?'Encerrado':'Agendado';}
+
+  // ---------- HERO ----------
+  function renderHero(){
+    var m=MATCHES.find(function(x){return x.feat});
+    var st=statusOf(m);
+    var hasScore=(m.hs!==null&&m.as!==null);
+    var scoreHtml = (st==='agendado'||!hasScore&&st!=='encerrado')
+      ? '<div class="score"><span class="x">'+ (st==='agendado'? 'vs' : '·') +'</span>'+(st==='ao_vivo'?'<span class="min">buscando…</span>':'')+'</div>'
+      : '<div class="score">'+(m.hs===null?'–':m.hs)+' <span class="x">×</span> '+(m.as===null?'–':m.as)+(st==='ao_vivo'&&m.minute?'<span class="min">'+m.minute+"'</span>":'')+'</div>';
+
+    var html=''+
+    '<div class="hero"><div class="hpad">'+
+      '<div class="htop"><span class="htag">Oitavas de final · vaga nas quartas</span>'+
+        '<span class="statuspill '+st+'"><span class="dot"></span>'+(st==='agendado'?fmtTime(m):stLabel(st))+'</span></div>'+
+      '<div class="matchrow">'+
+        '<div class="team br"><div class="badge">BRA</div><div class="tn">Brasil</div><div class="tsub">Ancelotti · Vini Jr</div></div>'+
+        scoreHtml+
+        '<div class="team"><div class="badge">NOR</div><div class="tn">Noruega</div><div class="tsub">Haaland · Ødegaard</div></div>'+
+      '</div>'+
+      '<div class="hmeta"><span><b>Hoje</b> 17h (Brasília)</span><span><b id="gameTimer">⏱️ ·</b> MetLife · Nova Jersey</span><span>Vencedor → <b>Quartas 11/07</b> vs México/Inglaterra</span></div>'+
+      '<div class="hnarr">Tabu de quase <b>40 anos</b>: o Brasil nunca venceu a Noruega em Copas. E não elimina europeu no mata-mata desde <b>2002</b>. Só a vitória mantém vivo o sonho do hexa.</div>'+
+      '<div class="watch">'+
+        '<a class="btn-watch" href="'+CAZE_LIVE+'" target="_blank" rel="noopener"><span class="yt">▶</span> Assistir na CazéTV</a>'+
+        '<a class="btn-watch ghost" href="'+cazeSearch('BRA','NOR')+'" target="_blank" rel="noopener">Buscar transmissão</a>'+
+      '</div>'+
+    '</div></div>';
+    document.getElementById('heroSlot').innerHTML=html;
+  }
+
+  // ---------- MATCH CARD ----------
+  function matchCard(m){
+    var st=statusOf(m);
+    var isBr=(m.home==='BRA'||m.away==='BRA');
+    var scoreCell = st==='agendado'
+      ? '<div class="mc-sc pend">'+fmtTime(m).split('·')[1].trim()+'</div>'
+      : '<div class="mc-sc">'+(m.hs===null?'–':m.hs)+'<span style="color:var(--ink-faint)">:</span>'+(m.as===null?'–':m.as)+'</div>';
+    var cazeCls = st==='encerrado' ? 'mc-caze done' : 'mc-caze';
+    var cazeHref = st==='ao_vivo' ? CAZE_LIVE : cazeSearch(m.home,m.away);
+    var cazeTxt = st==='ao_vivo' ? '▶ Ao vivo' : (st==='encerrado'?'Reprise':'CazéTV');
+    return ''+
+    '<div class="mcard'+(isBr?' br':'')+'">'+
+      '<div class="mc-top"><span class="mc-stage">Oitavas · '+m.venue+'</span>'+
+        '<span class="statuspill '+st+'" style="font-size:9px;padding:3px 7px"><span class="dot"></span>'+stLabel(st)+'</span></div>'+
+      '<div class="mc-teams">'+
+        '<div class="mc-side"><div class="mc-badge'+(m.home==='BRA'?' brc':'')+'">'+m.home+'</div><div class="mc-name">'+NAMES[m.home]+'</div></div>'+
+        scoreCell+
+        '<div class="mc-side away"><div class="mc-badge'+(m.away==='BRA'?' brc':'')+'">'+m.away+'</div><div class="mc-name">'+NAMES[m.away]+'</div></div>'+
+      '</div>'+
+      '<div class="mc-foot"><span class="mc-time">'+fmtTime(m)+'</span>'+
+        '<a class="'+cazeCls+'" href="'+cazeHref+'" target="_blank" rel="noopener">'+cazeTxt+'</a></div>'+
+    '</div>';
+  }
+  function renderToday(){
+    // "today" = matches on the same UTC calendar day as now, else the featured + next
+    var today=MATCHES.filter(function(m){return m.feat||m.home==='MEX'});
+    document.getElementById('todaySlot').innerHTML=today.map(matchCard).join('');
+  }
+  function renderAll(){
+    document.getElementById('allSlot').innerHTML=MATCHES.map(matchCard).join('');
+  }
+
+  // ---------- BRACKET ----------
+  var CX=360,CY=360;
+  var RINGS=[
+    {n:16,r:310,off:0,     nr:24,fs:11},
+    {n:8, r:225,off:11.25, nr:26,fs:12},
+    {n:4, r:145,off:33.75, nr:28,fs:12},
+    {n:2, r:80, off:78.75, nr:30,fs:13}
+  ];
+  function pt(r,deg){var a=(deg-90)*Math.PI/180;return [(CX+r*Math.cos(a)).toFixed(2),(CY+r*Math.sin(a)).toFixed(2)];}
+  function ang(k,i){return RINGS[k].off + i*(360/RINGS[k].n);}
+  function elbow(Rc,Rp,a0,a1){
+    var Ra=Rp+(Rc-Rp)*0.5, ap=(a0+a1)/2;
+    var c0=pt(Rc,a0),c1=pt(Rc,a1),e0=pt(Ra,a0),e1=pt(Ra,a1),em=pt(Ra,ap),pp=pt(Rp,ap);
+    return 'M'+c0[0]+' '+c0[1]+'L'+e0[0]+' '+e0[1]+'A'+Ra+' '+Ra+' 0 0 1 '+e1[0]+' '+e1[1]+
+           'M'+c1[0]+' '+c1[1]+'L'+e1[0]+' '+e1[1]+'M'+em[0]+' '+em[1]+'L'+pp[0]+' '+pp[1];
+  }
+  function ringLabels(){
+    // ring0 given; ring1 derived from finished matches; ring2/3 TBD
+    var r0=OUTER.slice();
+    var r1=[];
+    for(var j=0;j<8;j++){
+      var m=MATCHES[PAIR2MATCH[j]];
+      if(statusOf(m)==='encerrado' && m.hs!==null && m.as!==null && m.hs!==m.as){
+        r1.push(m.hs>m.as?m.home:m.away);
+      } else r1.push(null);
+    }
+    return [r0,r1,[null,null,null,null],[null,null]];
+  }
+  function renderBracket(){
+    var L=ringLabels();
+    var connB=[],connBr=[],nodes=[],orbits=[];
+    for(var k=0;k<RINGS.length;k++) orbits.push('<circle class="orbit" cx="'+CX+'" cy="'+CY+'" r="'+RINGS[k].r+'"/>');
+    // connectors parent ring k(1..3) -> children ring k-1
+    for(var k=1;k<RINGS.length;k++){
+      for(var p=0;p<RINGS[k].n;p++){
+        var d=elbow(RINGS[k-1].r,RINGS[k].r,ang(k-1,2*p),ang(k-1,2*p+1));
+        if(p===0) connBr.push('<path class="conn br" d="'+d+'"/>'); else connB.push('<path class="conn" d="'+d+'"/>');
+      }
+    }
+    // final -> champion spokes
+    var f0=pt(RINGS[3].r,ang(3,0)),f1=pt(RINGS[3].r,ang(3,1));
+    connBr.push('<path class="conn br" d="M'+f0[0]+' '+f0[1]+'L'+CX+' '+CY+'"/>');
+    connB.push('<path class="conn" d="M'+f1[0]+' '+f1[1]+'L'+CX+' '+CY+'"/>');
+    // nodes
+    for(var k=0;k<RINGS.length;k++){
+      for(var i=0;i<RINGS[k].n;i++){
+        var pos=pt(RINGS[k].r,ang(k,i));
+        var code=L[k][i];
+        var onBr=(i===0); // brazil path lineage
+        var cls,label,title;
+        if(code){ cls=(code==='BRA')?'nd br':(onBr?'nd br':'nd'); label=code; title=NAMES[code]; }
+        else { cls=onBr?'nd brtbd':'nd tbd'; label='?'; title='A definir'; }
+        nodes.push('<g class="'+cls+'"><title>'+title+'</title><circle cx="'+pos[0]+'" cy="'+pos[1]+'" r="'+RINGS[k].nr+'"/><text x="'+pos[0]+'" y="'+pos[1]+'" font-size="'+RINGS[k].fs+'">'+label+'</text></g>');
+      }
+    }
+    var trophy='<g class="champ"><title>Campeão (a definir)</title><circle cx="'+CX+'" cy="'+CY+'" r="42"/>'+
+      '<g class="tro" transform="translate('+CX+','+CY+')">'+
+        '<path d="M-12,-15 L12,-15 C12,-3 6,4 0,4 C-6,4 -12,-3 -12,-15 Z"/>'+
+        '<path d="M-12,-13 C-20,-13 -20,-1 -11,-4" fill="none" stroke="#0d0d0d" stroke-width="2.4"/>'+
+        '<path d="M12,-13 C20,-13 20,-1 11,-4" fill="none" stroke="#0d0d0d" stroke-width="2.4"/>'+
+        '<rect x="-2" y="4" width="4" height="6"/>'+
+        '<path d="M-8,15 L8,15 L6,9 L-6,9 Z"/><rect x="-10" y="15.5" width="20" height="2.4"/>'+
+      '</g></g>';
+    var svg='<svg viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chaveamento da Copa">'+
+      '<circle cx="'+CX+'" cy="'+CY+'" r="330" fill="url(#g)"/>'+
+      '<defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#88CE11" stop-opacity="0.11"/><stop offset="60%" stop-color="#88CE11" stop-opacity="0.02"/><stop offset="100%" stop-color="#88CE11" stop-opacity="0"/></radialGradient></defs>'+
+      orbits.join('')+'<g>'+connB.join('')+'</g><g>'+connBr.join('')+'</g><g>'+nodes.join('')+'</g>'+trophy+'</svg>';
+    document.getElementById('boardSlot').innerHTML=svg;
+  }
+
+  function renderAllViews(){ renderHero(); renderToday(); renderAll(); renderBracket(); updateGameTimer(); }
+
+  // ---------- CLOCK & TIMER ----------
+  function updateLiveClock(){
+    var now=new Date();
+    var h=String(now.getHours()).padStart(2,'0');
+    var m=String(now.getMinutes()).padStart(2,'0');
+    var s=String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clockDisplay').textContent=h+':'+m+':'+s;
+  }
+  function updateGameTimer(){
+    var m=MATCHES.find(function(x){return x.feat});
+    var st=statusOf(m);
+    var timerElem=document.getElementById('gameTimer');
+    if(!timerElem) return;
+
+    if(st==='agendado') timerElem.textContent='⏱️ agendado';
+    else if(st==='encerrado') timerElem.textContent='⏱️ encerrado';
+    else if(st==='ao_vivo'&&m.minute){
+      var mm=Math.floor(m.minute), ss=Math.floor((m.minute-mm)*60);
+      timerElem.textContent='⏱️ '+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    } else timerElem.textContent='⏱️ ·';
+  }
+
+  // ---------- AI REFRESH (Claude + web_search) ----------
+  var failCount=0, timer=null;
+  function setSync(state){
+    var dot=document.getElementById('statusdot'), txt=document.getElementById('synctxt');
+    dot.className='dot'+(state==='live'?' live':state==='fail'?' fail':state==='ok'?' live':'');
+    if(state==='syncing') txt.textContent='sincronizando…';
+    else if(state==='ok') txt.textContent='atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    else if(state==='fail') txt.textContent='dados do último boletim';
+  }
+  function extractJSON(t){
+    if(!t) return null;
+    t=t.replace(/```json/gi,'').replace(/```/g,'').trim();
+    var s=t.indexOf('{'), e=t.lastIndexOf('}');
+    if(s<0||e<0) return null;
+    try{ return JSON.parse(t.slice(s,e+1)); }catch(err){ return null; }
+  }
+  function mergeMatches(arr){
+    arr.forEach(function(x){
+      var m=MATCHES.find(function(mm){return mm.home===x.home&&mm.away===x.away;});
+      if(!m) return;
+      if(typeof x.hs==='number') m.hs=x.hs;
+      if(typeof x.as==='number') m.as=x.as;
+      if(x.status) m.aiStatus=x.status;
+      if(x.minute) m.minute=x.minute;
+    });
+  }
+  var PROMPT='Você é um feed de dados da Copa do Mundo FIFA 2026. Busque na web e retorne o placar e status ATUAL dos 8 jogos das oitavas de final. Responda SOMENTE JSON válido, sem texto e sem markdown, no formato exato: {"matches":[{"home":"BRA","away":"NOR","hs":<inteiro ou null>,"as":<inteiro ou null>,"status":"agendado|ao_vivo|encerrado","minute":<inteiro ou null>}]}. Use estes códigos de 3 letras: BRA,NOR,MEX,ENG,ARG,EGI(Egito),SUI(Suíça),COL,MAR(Marrocos),CAN,FRA,PAR(Paraguai),POR,ESP,USA,BEL. Inclua os 8 confrontos. Foque especialmente em Brasil x Noruega.';
+
+  async function aiRefresh(auto){
+    var btn=document.getElementById('btnSync');
+    btn.classList.add('loading'); btn.disabled=true; setSync('syncing');
+    try{
+      var res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+          messages:[{role:'user',content:PROMPT}],
+          tools:[{type:'web_search_20250305',name:'web_search'}]})
+      });
+      if(!res.ok) throw new Error('http '+res.status);
+      var data=await res.json();
+      var txt=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+      var json=extractJSON(txt);
+      if(!json||!json.matches) throw new Error('no json');
+      mergeMatches(json.matches); renderAllViews(); setSync('ok'); failCount=0;
+    }catch(e){
+      failCount++; setSync('fail');
+      if(failCount>=2 && timer){ clearInterval(timer); timer=null; }
+    }finally{
+      btn.classList.remove('loading'); btn.disabled=false;
+    }
+  }
+
+  // init
+  updateLiveClock();
+  renderAllViews();
+  aiRefresh(true);
+  timer=setInterval(function(){ aiRefresh(true); }, 120000);
+  // refresh clock-based statuses every 30s even without AI
+  setInterval(renderAllViews, 30000);
+  // live clock update every second
+  setInterval(updateLiveClock, 1000);
+</script>
+</body>
+</html>
