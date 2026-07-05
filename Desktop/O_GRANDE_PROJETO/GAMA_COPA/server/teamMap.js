@@ -1,5 +1,6 @@
 // Mapeamento ESPN → códigos internos GAMA (3 letras)
 // Captura aliases comuns: nomes completos, abreviações, variações
+// IMPORTANTE: ESPN usa titlecase (Brazil, Norway, etc) — normalizeTeamName() faz toLowerCase()
 
 export const espnToGama = {
   // América do Sul
@@ -174,5 +175,9 @@ export function normalizeTeamName(name) {
 
 export function getGameCode(espnName) {
   const norm = normalizeTeamName(espnName);
-  return espnToGama[norm] || null;
+  const code = espnToGama[norm];
+  if (!code) {
+    console.warn(`Team not found: "${espnName}" (normalized: "${norm}")`);
+  }
+  return code || null;
 }

@@ -34,21 +34,23 @@ const GAMANAMES = {
 };
 
 // Mapear status ESPN para status GAMA
-function getStatus(match) {
-  if (!match.status) return 'agendado';
+function getStatus(comp) {
+  if (!comp.status) return 'agendado';
 
-  const status = match.status.toLowerCase();
-  if (status.includes('live') || status.includes('in progress')) return 'ao_vivo';
-  if (status.includes('final') || status.includes('completed') || status.includes('closed')) return 'encerrado';
-  if (status.includes('scheduled') || status.includes('upcoming')) return 'agendado';
+  const statusType = comp.status.type?.name || '';
+  const displayClock = comp.status.displayClock || '';
+
+  if (statusType.includes('LIVE')) return 'ao_vivo';
+  if (statusType.includes('FINAL') || statusType.includes('COMPLETED')) return 'encerrado';
+  if (statusType.includes('SCHEDULED') || statusType.includes('PRE')) return 'agendado';
 
   return 'agendado';
 }
 
 // Extrair minuto do match
-function getMinute(match) {
-  if (match.status && match.status.toLowerCase().includes('in progress')) {
-    const timeStr = match.status.match(/(\d+)\s*'/);
+function getMinute(comp) {
+  if (comp.status?.type?.name?.includes('LIVE')) {
+    const timeStr = comp.status.displayClock?.match(/(\d+)\'/);
     return timeStr ? parseInt(timeStr[1]) : null;
   }
   return null;
@@ -63,20 +65,33 @@ async function fetchEspnScoreboard() {
     const data = await response.json();
     const events = data.events || [];
 
+    console.log(`ESPN: ${events.length} eventos encontrados`);
+
     // Normalizar para nosso formato
-    const matches = events.slice(0, 8).map(event => {
-      const homeTeam = event.competitions[0]?.competitors?.find(c => c.homeAway === 'home');
-      const awayTeam = event.competitions[0]?.competitors?.find(c => c.homeAway === 'away');
+    const matches = events.map(event => {
+      const comp = event.competitions?.[0];
+      if (!comp) return null;
 
-      const homeCode = homeTeam ? getGameCode(homeTeam.team.name) : null;
-      const awayCode = awayTeam ? getGameCode(awayTeam.team.name) : null;
+      const homeTeam = comp.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = comp.competitors?.find(c => c.homeAway === 'away');
 
-      const homeScore = homeTeam?.score ? parseInt(homeTeam.score) : null;
-      const awayScore = awayTeam?.score ? parseInt(awayTeam.score) : null;
+      if (!homeTeam || !awayTeam) return null;
 
-      const venue = event.competitions[0]?.venue?.fullName || 'Não definido';
-      const status = getStatus(event.competitions[0]);
-      const minute = getMinute(event.competitions[0]);
+      const homeCode = getGameCode(homeTeam.team.name);
+      const awayCode = getGameCode(awayTeam.team.name);
+
+      // Se algum código não foi encontrado, loga e pula
+      if (!homeCode || !awayCode) {
+        console.log(`Skipping: ${homeTeam.team.name} vs ${awayTeam.team.name}`);
+        return null;
+      }
+
+      const homeScore = homeTeam.score !== undefined ? parseInt(homeTeam.score) : null;
+      const awayScore = awayTeam.score !== undefined ? parseInt(awayTeam.score) : null;
+
+      const venue = comp.venue?.fullName || 'Não definido';
+      const status = getStatus(comp);
+      const minute = getMinute(comp);
 
       return {
         home: homeCode,
@@ -88,9 +103,10 @@ async function fetchEspnScoreboard() {
         venue,
         ko: event.date
       };
-    }).filter(m => m.home && m.away); // Filtra matches com códigos válidos
+    }).filter(Boolean);
 
-    return matches;
+    console.log(`ESPN: ${matches.length} matches normalizados`);
+    return matches.length > 0 ? matches : null;
   } catch (error) {
     console.error('Erro ao buscar ESPN:', error.message);
     return null;
