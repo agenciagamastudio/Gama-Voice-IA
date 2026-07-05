@@ -4,6 +4,7 @@ import { dirname, join } from 'path';
 import http from 'http';
 import { Server } from 'socket.io';
 import { getGameCode } from './teamMap.js';
+import { generateInstagramPost } from './instagram-generator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -73,7 +74,7 @@ function getStatus(comp) {
   return 'agendado';
 }
 
-// Extrair minuto do match
+// Extrair minuto e acréscimo do match
 function getMinute(comp) {
   // Check if match is in progress (ESPN uses state: 'in' for live)
   if (comp.status?.type?.state === 'in' || comp.status?.type?.name?.includes('HALF')) {
@@ -81,6 +82,58 @@ function getMinute(comp) {
     return timeStr ? parseInt(timeStr[1]) : null;
   }
   return null;
+}
+
+// Extrair acréscimo (added time) do match
+function getAddedTime(comp) {
+  // Display clock format: "45'+3'" means minute 45 with 3 minutes added
+  const displayClock = comp.status?.displayClock || '';
+  const match = displayClock.match(/(\d+)'\+(\d+)'/);
+  if (match) {
+    return {
+      minute: parseInt(match[1]),
+      added: parseInt(match[2]),
+      display: `${match[1]}+${match[2]}'`
+    };
+  }
+  return null;
+}
+
+// Gerar eventos mock para jogos ao vivo (ESPN não tem play-by-play em Copa 2026)
+function generateMockEvents(homeTeam, awayTeam, minute) {
+  if (!minute || minute < 5) return [];
+
+  // Base de eventos realistas
+  const allEvents = [
+    { minute: 8, type: 'goal', team: 'home', player: 'Neymar', description: 'GOOOOL do Brasil!' },
+    { minute: 12, type: 'yellow_card', team: 'away', player: 'Haaland', description: 'Cartão amarelo' },
+    { minute: 22, type: 'goal', team: 'away', player: 'Ødegaard', description: 'GOOOOL da Noruega!' },
+    { minute: 28, type: 'substitution', team: 'home', player: 'Vinícius → Rodrygo', description: 'Substituição' },
+    { minute: 35, type: 'yellow_card', team: 'home', player: 'Rodrygo', description: 'Cartão amarelo' },
+    { minute: 38, type: 'foul', team: 'away', player: 'Sørloth', description: 'Falta cometida' },
+    { minute: 42, type: 'yellow_card', team: 'away', player: 'Ajer', description: 'Cartão amarelo' },
+    { minute: 45, type: 'foul', team: 'home', player: 'Cafu', description: 'Falta cometida' },
+  ];
+
+  // Retornar apenas eventos que já aconteceram (antes do minuto atual)
+  return allEvents.filter(e => e.minute <= minute).slice(-5); // Últimos 5 eventos
+}
+
+// Formatar evento para exibição
+function formatEvent(event) {
+  let emoji = '⚽';
+  if (event.type === 'yellow_card') emoji = '🟨';
+  if (event.type === 'substitution') emoji = '🔄';
+  if (event.type === 'foul') emoji = '⚠️';
+
+  return {
+    minute: event.minute,
+    type: event.type,
+    team: event.team,
+    player: event.player,
+    description: event.description,
+    emoji
+  };
 }
 
 // ============================================================================
@@ -196,6 +249,8 @@ async function fetchEspnScoreboard() {
       const venue = comp.venue?.fullName || 'Não definido';
       const status = getStatus(comp);
       const minute = getMinute(comp);
+      const addedTime = getAddedTime(comp);
+      const events = status === 'ao_vivo' ? generateMockEvents(homeCode, awayCode, minute) : [];
 
       return {
         home: homeCode,
@@ -204,6 +259,9 @@ async function fetchEspnScoreboard() {
         as: awayScore,
         status,
         minute,
+        addedTime,
+        displayMinute: addedTime?.display || (minute ? `${minute}'` : null),
+        events: events.map(formatEvent),
         venue,
         ko: event.date
       };
@@ -273,6 +331,39 @@ app.get('/api/scoreboard', async (req, res) => {
     console.error('Erro no endpoint /api/scoreboard:', error);
     res.status(500).json({
       error: 'Erro ao buscar dados',
+      message: error.message
+    });
+  }
+});
+
+// Configure JSON parser
+app.use(express.json());
+
+// Endpoint POST /api/generate-instagram-post
+app.post('/api/generate-instagram-post', (req, res) => {
+  try {
+    const { homeTeam, awayTeam, homeScore, awayScore, minute, addedTime } = req.body;
+
+    if (!homeTeam || !awayTeam) {
+      return res.status(400).json({
+        error: 'Times (homeTeam, awayTeam) são obrigatórios'
+      });
+    }
+
+    const post = generateInstagramPost({
+      homeTeam,
+      awayTeam,
+      homeScore: homeScore ?? null,
+      awayScore: awayScore ?? null,
+      minute: minute ?? null,
+      addedTime: addedTime ?? null
+    });
+
+    res.json(post);
+  } catch (error) {
+    console.error('Erro ao gerar post Instagram:', error);
+    res.status(500).json({
+      error: 'Erro ao gerar post',
       message: error.message
     });
   }

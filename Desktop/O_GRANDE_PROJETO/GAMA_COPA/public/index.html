@@ -85,6 +85,11 @@
   .btn-watch.ghost{background:none;color:var(--ink-dim);border:1px solid var(--line-2)}
   .btn-watch.ghost:hover{color:var(--ink);border-color:var(--ink-faint);filter:none}
 
+  /* Instagram button */
+  .btn-instagram{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;background:rgba(136,206,17,.15);color:var(--lime);border:1px solid rgba(136,206,17,.35);border-radius:3px;padding:10px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s}
+  .btn-instagram:hover{background:rgba(136,206,17,.25);border-color:var(--lime)}
+  .btn-instagram:active{transform:scale(0.98)}
+
   /* today / list cards */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .mcard{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px 18px;transition:border-color .15s}
@@ -128,6 +133,19 @@
   .blegend i{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
   .blegend i.br{background:var(--lime)}
   .blegend i.tb{border:1px dashed var(--line-2)}
+
+  /* timeline events */
+  .timeline{margin-top:20px;padding:16px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px}
+  .tlabel{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lime);margin-bottom:12px;display:block}
+  .tevent{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:12px;color:var(--ink-dim)}
+  .tevent:first-child{border-top:none;padding-top:0}
+  .tevent .tmin{font-family:var(--mono);font-weight:700;color:var(--ink);min-width:32px;text-align:right}
+  .tevent .temoji{font-size:14px;flex:0 0 auto}
+  .tevent .tteam{font-family:var(--mono);font-weight:600;color:var(--lime);min-width:32px}
+  .tevent .ttext{flex:1;color:var(--ink-dim)}
+  .tevent.goal .temoji{color:var(--red);filter:drop-shadow(0 0 4px rgba(224,86,59,.5))}
+  .tevent.yellow_card .temoji{color:#f4d35e}
+  .tevent.substitution .temoji{color:var(--lime)}
 
   /* ai note */
   .ainote{background:var(--void-2);border:1px solid var(--line);border-left:2px solid var(--lime);border-radius:3px;padding:18px 20px;color:var(--ink-dim);font-size:13px;font-weight:400;line-height:1.6}
@@ -214,6 +232,7 @@
 <!-- Socket.IO and WebSocket client libraries -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="js/websocket-client.js"></script>
+<script src="js/instagram-modal.js"></script>
 <script src="js/scoreboard-sync.js"></script>
 
 <script>
@@ -260,13 +279,39 @@
   }
   function stLabel(s){return s==='ao_vivo'?'Ao vivo':s==='encerrado'?'Encerrado':'Agendado';}
 
+  function renderTimelineEvents(m) {
+    if (!m.events || m.events.length === 0) return '';
+
+    var html = '<div class="timeline"><span class="tlabel">Eventos do tempo</span>';
+    m.events.forEach(function(evt) {
+      var teamBadge = evt.team === 'home' ? 'BRA' : 'NOR';
+      html += '<div class="tevent '+evt.type+'">'+
+        '<span class="tmin">'+evt.minute+"'</span>"+
+        '<span class="temoji">'+evt.emoji+'</span>'+
+        '<span class="tteam">'+teamBadge+'</span>'+
+        '<span class="ttext">'+evt.player+' · '+evt.description+'</span>'+
+      '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
   function renderHero(){
     var m=MATCHES.find(function(x){return x.feat});
     var st=statusOf(m);
     var hasScore=(m.hs!==null&&m.as!==null);
+
+    // Format minute with added time
+    var minDisplay = null;
+    if(st==='ao_vivo' && m.minute) {
+      minDisplay = m.displayMinute || (m.addedTime ? m.addedTime.display : m.minute+"'");
+    }
+
     var scoreHtml = (st==='agendado'||!hasScore&&st!=='encerrado')
       ? '<div class="score"><span class="x">'+ (st==='agendado'? 'vs' : '·') +'</span>'+(st==='ao_vivo'?'<span class="min">buscando…</span>':'')+'</div>'
-      : '<div class="score">'+(m.hs===null?'–':m.hs)+' <span class="x">×</span> '+(m.as===null?'–':m.as)+(st==='ao_vivo'&&m.minute?'<span class="min">'+m.minute+"'</span>":'')+'</div>';
+      : '<div class="score">'+(m.hs===null?'–':m.hs)+' <span class="x">×</span> '+(m.as===null?'–':m.as)+(minDisplay?'<span class="min">'+minDisplay+"</span>":'')+'</div>';
+
+    var timelineHtml = renderTimelineEvents(m);
 
     var html=''+
     '<div class="hero"><div class="hpad">'+
@@ -277,6 +322,7 @@
         scoreHtml+
         '<div class="team"><div class="badge">NOR</div><div class="tn">Noruega</div><div class="tsub">Haaland · Ødegaard</div></div>'+
       '</div>'+
+      (timelineHtml ? timelineHtml : '')+
       '<div class="hmeta"><span><b>Hoje</b> 17h (Brasília)</span><span>MetLife · Nova Jersey</span><span>Vencedor → <b>Quartas 11/07</b> vs México/Inglaterra</span></div>'+
       '<div class="hnarr">Tabu de quase <b>40 anos</b>: o Brasil nunca venceu a Noruega em Copas. E não elimina europeu no mata-mata desde <b>2002</b>. Só a vitória mantém vivo o sonho do hexa.</div>'+
       '<div class="watch">'+
@@ -296,6 +342,7 @@
     var cazeCls = st==='encerrado' ? 'mc-caze done' : 'mc-caze';
     var cazeHref = st==='ao_vivo' ? CAZE_LIVE : cazeSearch(m.home,m.away);
     var cazeTxt = st==='ao_vivo' ? '▶ Ao vivo' : (st==='encerrado'?'Reprise':'CazéTV');
+    var instaBtn = isBr ? '<button class="btn-instagram" onclick="openInstagramPostModal({home:\'' + m.home + '\', away:\'' + m.away + '\', hs:' + (m.hs === null ? 'null' : m.hs) + ', as:' + (m.as === null ? 'null' : m.as) + ', minute:' + (m.minute === null || m.minute === undefined ? 'null' : m.minute) + ', addedTime:' + (m.addedTime === null || m.addedTime === undefined ? 'null' : '\'' + m.addedTime + '\'') + '})">📸 Insta</button>' : '';
     return ''+
     '<div class="mcard'+(isBr?' br':'')+'">'+
       '<div class="mc-top"><span class="mc-stage">Oitavas · '+m.venue+'</span>'+
@@ -306,7 +353,8 @@
         '<div class="mc-side away"><div class="mc-badge'+(m.away==='BRA'?' brc':'')+'">'+m.away+'</div><div class="mc-name">'+NAMES[m.away]+'</div></div>'+
       '</div>'+
       '<div class="mc-foot"><span class="mc-time">'+fmtTime(m)+'</span>'+
-        '<a class="'+cazeCls+'" href="'+cazeHref+'" target="_blank" rel="noopener">'+cazeTxt+'</a></div>'+
+        '<div style="display:flex;gap:8px">'+instaBtn+
+        '<a class="'+cazeCls+'" href="'+cazeHref+'" target="_blank" rel="noopener">'+cazeTxt+'</a></div></div>'+
     '</div>';
   }
   function renderToday(){
@@ -474,6 +522,18 @@
   // The WebSocket client will use HTTP polling as fallback automatically
   // But keep this timer for manual refresh button
   timer = null;
+
+  /**
+   * Função para abrir modal de Instagram post
+   * Chamada do botão de card de jogo
+   */
+  function openInstagramPostModal(match) {
+    if (typeof openInstagramModal === 'function') {
+      openInstagramModal(match);
+    } else {
+      console.error('Instagram modal não carregado');
+    }
+  }
 </script>
 </body>
 </html>
