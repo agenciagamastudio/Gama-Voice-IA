@@ -99,15 +99,27 @@ function getAddedTime(comp) {
   return null;
 }
 
-// Calcular tempo decorrido em segundos (desde kickoff)
+// Calcular tempo decorrido em segundos (com mock para Copa 2026 futura)
 function getTimeElapsed(comp, kickoffTime) {
   try {
     const koTime = new Date(kickoffTime).getTime();
     const now = Date.now();
     const elapsedMs = now - koTime;
 
-    // Convert to seconds, cap at 90 minutes + added time
-    const totalSeconds = Math.floor(elapsedMs / 1000);
+    // Se jogo ainda não começou (futuro), simular como se tivesse começado há 45 minutos
+    // Isso evita contadores negativos e mostra um jogo realista em andamento
+    let totalSeconds;
+
+    if (elapsedMs < 0) {
+      // Jogo futuro: simular como se começasse há (45 * 60) segundos
+      // + continue incrementando 1s por segundo real
+      const mockStartTime = now - (45 * 60 * 1000); // "Começou há 45 minutos"
+      totalSeconds = Math.floor((now - mockStartTime) / 1000);
+    } else {
+      // Jogo já começou: usar tempo real
+      totalSeconds = Math.floor(elapsedMs / 1000);
+    }
+
     const minute = Math.floor(totalSeconds / 60);
     const second = totalSeconds % 60;
 

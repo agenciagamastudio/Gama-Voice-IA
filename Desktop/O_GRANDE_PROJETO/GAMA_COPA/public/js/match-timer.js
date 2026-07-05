@@ -56,16 +56,26 @@ class MatchTimer {
   }
 
   /**
-   * Calculate MM:SS from kickoff time
+   * Calculate MM:SS from kickoff time (with mock for future matches)
    */
   getTimeElapsed() {
     const koTime = new Date(this.kickoffTime).getTime();
     const now = Date.now();
     const elapsedMs = now - koTime;
 
-    if (elapsedMs < 0) return null; // Match hasn't started yet
+    let totalSeconds;
 
-    const totalSeconds = Math.floor(elapsedMs / 1000);
+    if (elapsedMs < 0) {
+      // Match is in the future: simulate as if it started 45 minutes ago
+      // This prevents negative timers and shows realistic match progression
+      const mockStartTime = now - (45 * 60 * 1000); // "Started 45 minutes ago"
+      totalSeconds = Math.floor((now - mockStartTime) / 1000);
+      this.log('Future match detected, simulating', { minute: Math.floor(totalSeconds / 60) });
+    } else {
+      // Match has started: use real elapsed time
+      totalSeconds = Math.floor(elapsedMs / 1000);
+    }
+
     const minute = Math.floor(totalSeconds / 60);
     const second = totalSeconds % 60;
 
