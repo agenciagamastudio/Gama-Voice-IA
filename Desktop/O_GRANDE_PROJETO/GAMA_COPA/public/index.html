@@ -211,7 +211,16 @@
   <div class="wrap"><div class="fm">GAMA · <b>construtora</b>, não pedreiro</div></div>
 </footer>
 
+<!-- Socket.IO and WebSocket client libraries -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/websocket-client.js"></script>
+<script src="js/scoreboard-sync.js"></script>
+
 <script>
+  // ============================================================================
+  // EXISTING RENDERING CODE (UNCHANGED)
+  // ============================================================================
+
   var CAZE_LIVE='https://www.youtube.com/@CazeTV/live';
   var CAZE_CH='https://www.youtube.com/@CazeTV';
   function cazeSearch(a,b){return 'https://www.youtube.com/results?search_query=cazetv+'+encodeURIComponent(NAMES[a]+' '+NAMES[b]);}
@@ -398,31 +407,73 @@
 
   async function refreshScoreboard(auto){
     var btn=document.getElementById('btnSync');
-    btn.classList.add('loading'); btn.disabled=true; setSync('syncing');
+    btn.classList.add('loading');
+    btn.disabled=true;
+
     try{
-      var res=await fetch('/api/scoreboard');
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      var data=await res.json();
-      if(!data.matches) throw new Error('sem matches');
-      mergeMatches(data.matches);
-      renderAllViews();
-      setSync('ok');
+      // Manually poll for update (WebSocket will also provide updates)
+      if(scoreboardSync) {
+        await scoreboardSync.refresh();
+      } else {
+        // Fallback if WebSocket not initialized
+        var res=await fetch('/api/scoreboard');
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        var data=await res.json();
+        if(!data.matches) throw new Error('sem matches');
+        mergeMatches(data.matches);
+        renderAllViews();
+      }
       failCount=0;
     }catch(e){
       console.error('Erro ao buscar scoreboard:', e);
       failCount++;
       setSync('fail');
-      if(failCount>=2 && timer){ clearInterval(timer); timer=null; }
     }finally{
       btn.classList.remove('loading');
       btn.disabled=false;
     }
   }
 
+  // ============================================================================
+  // WEBSOCKET SETUP & INITIALIZATION
+  // ============================================================================
+
+  var wsClient = null;
+  var scoreboardSync = null;
+
+  function initWebSocket() {
+    wsClient = new CopaWebSocketClient({
+      serverUrl: window.location.origin,
+      maxReconnectAttempts: 3,
+      reconnectDelay: 1000,
+      fallbackPollInterval: 120000, // 2 minutes
+      debug: true
+    });
+
+    scoreboardSync = new ScoreboardSync(wsClient, function() {
+      renderAllViews();
+    });
+
+    // Initialize WebSocket connection
+    wsClient.connect();
+
+    // Update sync status display periodically
+    scoreboardSync.startStatusUpdater();
+
+    console.log('WebSocket client initialized');
+  }
+
+  // Initialize views and WebSocket
   renderAllViews();
-  refreshScoreboard(true);
-  timer=setInterval(function(){ refreshScoreboard(true); }, 120000);
+  initWebSocket();
+
+  // Keep rendering views periodically (every 30s) for animations and time updates
   setInterval(renderAllViews, 30000);
+
+  // Keep old polling as fallback (in case WebSocket fails)
+  // The WebSocket client will use HTTP polling as fallback automatically
+  // But keep this timer for manual refresh button
+  timer = null;
 </script>
 </body>
 </html>
