@@ -246,37 +246,11 @@
 
 <section>
   <div class="wrap">
-    <div class="slabel">Chaveamento · histórico completo</div>
+    <div class="slabel">Chaveamento · visualização circular interativa</div>
 
-    <!-- Bracket Tabs -->
-    <div id="bracketTabs" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px">
-      <button class="bracket-tab active" onclick="switchBracketPhase('groups')" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:none;background:none;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s">Grupos</button>
-      <button class="bracket-tab" onclick="switchBracketPhase('round16')" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:none;background:none;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s">Oitavas</button>
-      <button class="bracket-tab" onclick="switchBracketPhase('quarters')" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:none;background:none;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s">Quartas</button>
-      <button class="bracket-tab" onclick="switchBracketPhase('semis')" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:none;background:none;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s">Semis</button>
-      <button class="bracket-tab" onclick="switchBracketPhase('final')" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:none;background:none;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s">Final</button>
-    </div>
-
-    <!-- Groups Phase -->
-    <div id="bracketPhase-groups" class="bracket-phase" style="display:block">
-      <div id="groupsSlot" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px"></div>
-    </div>
-
-    <!-- Knockout Phases -->
-    <div id="bracketPhase-round16" class="bracket-phase" style="display:none">
-      <div class="board"><div id="boardSlot-r16"></div></div>
-    </div>
-
-    <div id="bracketPhase-quarters" class="bracket-phase" style="display:none">
-      <div id="quarterslot"></div>
-    </div>
-
-    <div id="bracketPhase-semis" class="bracket-phase" style="display:none">
-      <div id="semisslot"></div>
-    </div>
-
-    <div id="bracketPhase-final" class="bracket-phase" style="display:none">
-      <div id="finalslot"></div>
+    <!-- Circular Interactive Bracket -->
+    <div style="display:flex;justify-content:center;margin:20px 0">
+      <div id="bracketCircularSlot" style="width:100%;max-width:800px"></div>
     </div>
 
     <div class="blegend" style="margin-top:20px">
@@ -284,6 +258,7 @@
       <span><i class="tb"></i> A definir</span>
       <span><i style="background:var(--panel);border:1px solid var(--line-2)"></i> Classificado</span>
       <span><i style="background:rgba(224,86,59,.12);border:1px solid rgba(224,86,59,.4)"></i> Eliminado</span>
+      <span style="color:var(--ink-faint);font-size:11px">💡 Hover para detalhes · Click para mais info</span>
     </div>
   </div>
 </section>
@@ -695,6 +670,9 @@
 
 <!-- Bracket Full Tournament (loaded after NAMES is defined) -->
 <script src="js/bracket-full-tournament.js"></script>
+
+<!-- Circular Interactive Bracket (new visualization) -->
+<script src="js/bracket-circular-interactive.js"></script>
 
 </body>
 </html>
