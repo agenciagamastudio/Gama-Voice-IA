@@ -144,6 +144,11 @@ class ScoreboardSync {
       // New matches would be added by the server, but typically not needed
       // since we're only updating scores of matches that exist in MATCHES
     });
+
+    // Update bracket with live data if function exists
+    if (typeof updateBracketWithLiveData === 'function') {
+      updateBracketWithLiveData(newMatches);
+    }
   }
 
   /**

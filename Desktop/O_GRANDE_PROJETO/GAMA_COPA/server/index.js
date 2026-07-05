@@ -316,6 +316,87 @@ async function fetchEspnScoreboard() {
   }
 }
 
+// ============================================================================
+// BRACKET DATA (Grupos + Fases)
+// ============================================================================
+
+// Estrutura completa do torneio (Copa 2026 formato 12 grupos)
+const TOURNAMENT_DATA = {
+  groups: [
+    {
+      id: 'A',
+      name: 'Grupo A',
+      teams: ['BRA', 'NOR', 'MEX', 'CAN'],
+      matches: [
+        { home: 'BRA', away: 'NOR', hs: 1, as: 2, status: 'encerrado', ko: '2026-07-05T20:00:00Z' },
+        { home: 'MEX', away: 'CAN', hs: 3, as: 0, status: 'encerrado', ko: '2026-07-05T22:00:00Z' },
+        { home: 'BRA', away: 'MEX', hs: null, as: null, status: 'agendado', ko: '2026-07-10T20:00:00Z' },
+        { home: 'NOR', away: 'CAN', hs: null, as: null, status: 'agendado', ko: '2026-07-10T22:00:00Z' },
+        { home: 'NOR', away: 'MEX', hs: null, as: null, status: 'agendado', ko: '2026-07-15T20:00:00Z' },
+        { home: 'CAN', away: 'BRA', hs: null, as: null, status: 'agendado', ko: '2026-07-15T22:00:00Z' }
+      ],
+      classified: ['NOR', 'MEX'] // Noruega e México avançam (para demo)
+    },
+    {
+      id: 'B',
+      name: 'Grupo B',
+      teams: ['ARG', 'EGI', 'SUI', 'PAR'],
+      matches: [
+        { home: 'ARG', away: 'EGI', hs: 2, as: 1, status: 'encerrado', ko: '2026-07-07T16:00:00Z' },
+        { home: 'SUI', away: 'PAR', hs: 0, as: 0, status: 'encerrado', ko: '2026-07-07T18:00:00Z' },
+        { home: 'ARG', away: 'SUI', hs: null, as: null, status: 'agendado', ko: '2026-07-12T16:00:00Z' },
+        { home: 'EGI', away: 'PAR', hs: null, as: null, status: 'agendado', ko: '2026-07-12T18:00:00Z' },
+        { home: 'EGI', away: 'SUI', hs: null, as: null, status: 'agendado', ko: '2026-07-17T16:00:00Z' },
+        { home: 'PAR', away: 'ARG', hs: null, as: null, status: 'agendado', ko: '2026-07-17T18:00:00Z' }
+      ],
+      classified: ['ARG', 'SUI'] // Argentina e Suíça avançam (para demo)
+    }
+    // Nota: Simplificado a 2 grupos para demo. Copa 2026 tem 12 grupos de 4 times
+  ],
+  knockout: {
+    round16: [
+      // Slots serão preenchidos conforme times classificam
+      { id: 'r16-1', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-2', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-3', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-4', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-5', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-6', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-7', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'r16-8', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null }
+    ],
+    quarterfinals: [
+      { id: 'qf-1', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'qf-2', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'qf-3', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'qf-4', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null }
+    ],
+    semifinals: [
+      { id: 'sf-1', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null },
+      { id: 'sf-2', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null }
+    ],
+    final: [
+      { id: 'final-1', home: null, away: null, hs: null, as: null, status: 'agendado', winner: null }
+    ]
+  }
+};
+
+// Endpoint /api/bracket
+app.get('/api/bracket', async (req, res) => {
+  try {
+    res.json({
+      tournament: TOURNAMENT_DATA,
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error('Erro ao retornar bracket:', error);
+    res.status(500).json({
+      error: 'Erro ao retornar dados do torneio',
+      message: error.message
+    });
+  }
+});
+
 // Endpoint /api/scoreboard
 app.get('/api/scoreboard', async (req, res) => {
   try {
