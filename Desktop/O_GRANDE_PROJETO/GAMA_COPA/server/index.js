@@ -300,7 +300,8 @@ async function fetchEspnScoreboard() {
         timeElapsed, // { minute, second, total_seconds, display: "MM:SS" }
         events: events.map(formatEvent),
         venue,
-        ko: event.date
+        ko: event.date,
+        currentTime: new Date().toISOString() // Add current server time for clock sync
       };
     }).filter(Boolean);
 

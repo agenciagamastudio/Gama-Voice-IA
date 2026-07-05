@@ -9,6 +9,7 @@ class ScoreboardSync {
     this.renderCallback = renderCallback;
     this.failCount = 0;
     this.statusUpdateInterval = null;
+    this.liveClock = null; // LiveClock instance for syncing
 
     // Bind listeners
     this.ws.on('connection', this.onConnection.bind(this));
@@ -17,6 +18,13 @@ class ScoreboardSync {
     this.ws.on('connection:status', this.onConnectionStatus.bind(this));
     this.ws.on('server:error', this.onServerError.bind(this));
     this.ws.on('polling:error', this.onPollingError.bind(this));
+  }
+
+  /**
+   * Set LiveClock instance to sync time
+   */
+  setLiveClock(liveClock) {
+    this.liveClock = liveClock;
   }
 
   /**
@@ -126,6 +134,12 @@ class ScoreboardSync {
         if (newMatch.addedTime) existing.addedTime = newMatch.addedTime;
         if (newMatch.displayMinute) existing.displayMinute = newMatch.displayMinute;
         if (newMatch.venue) existing.venue = newMatch.venue;
+        if (newMatch.currentTime) existing.currentTime = newMatch.currentTime;
+
+        // Sync LiveClock with server time (take first match's server time)
+        if (this.liveClock && newMatch.currentTime) {
+          this.liveClock.sync(newMatch.currentTime);
+        }
       }
       // New matches would be added by the server, but typically not needed
       // since we're only updating scores of matches that exist in MATCHES

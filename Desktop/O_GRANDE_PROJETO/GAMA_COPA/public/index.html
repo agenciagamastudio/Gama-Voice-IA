@@ -173,7 +173,7 @@
 
 <div class="top">
   <div class="wrap">
-    <div class="brand"><b>GAMA</b> · Copa Center</div>
+    <div class="brand"><b>GAMA</b> · Copa Center · <span id="liveClockDisplay" style="font-family:var(--mono);color:var(--lime);font-weight:700">--:--:--</span></div>
     <div class="syncbox">
       <span class="synced"><span class="dot" id="statusdot"></span><span id="synctxt">iniciando…</span></span>
       <button class="btn-sync" id="btnSync" onclick="refreshScoreboard(false)"><span class="spin"></span><span id="btnLabel">Atualizar</span></button>
@@ -238,6 +238,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="js/websocket-client.js"></script>
 <script src="js/match-timer.js"></script>
+<script src="js/live-clock.js"></script>
 <script src="js/instagram-modal.js"></script>
 <script src="js/scoreboard-sync.js"></script>
 
@@ -556,6 +557,7 @@
 
   var wsClient = null;
   var scoreboardSync = null;
+  var liveClock = null;
 
   function initWebSocket() {
     wsClient = new CopaWebSocketClient({
@@ -569,6 +571,10 @@
     scoreboardSync = new ScoreboardSync(wsClient, function() {
       renderAllViews();
     });
+
+    // Initialize LiveClock for real-time display (HH:MM:SS)
+    liveClock = new LiveClock('liveClockDisplay');
+    scoreboardSync.setLiveClock(liveClock);
 
     // Initialize WebSocket connection
     wsClient.connect();
