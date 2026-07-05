@@ -8,76 +8,44 @@ class CircularBracket {
     this.container = document.getElementById(containerId);
     this.svgNS = 'http://www.w3.org/2000/svg';
     this.selectedMatch = null;
+
+    // Parâmetros visuais (estrutura do SVG antigo bonito)
+    this.CX = 360;
+    this.CY = 360;
+    this.RINGS = [
+      { n: 16, r: 310, off: 0,     nr: 24, fs: 11 },  // Anel 0: Grupos (16 times)
+      { n: 8,  r: 225, off: 11.25, nr: 26, fs: 12 },  // Anel 1: R16 vencedores (8)
+      { n: 4,  r: 145, off: 33.75, nr: 28, fs: 12 },  // Anel 2: QF vencedores (4)
+      { n: 2,  r: 80,  off: 78.75, nr: 30, fs: 13 }   // Anel 3: Final (2 semifinalistas)
+    ];
   }
 
   /**
-   * Renderizar bracket circular completo
+   * Renderizar usando o visual ANTIGO BONITO (RINGS + SVG ternário)
+   * com dados NOVOS (grupos + knockouts da API)
    */
   async render(bracketData) {
     if (!bracketData) return;
 
-    const svg = this.createSVG(1000, 1000);
-
-    // Layers
-    const bgLayer = this.createGroup(svg, 'bg-layer');
-    const connectionLayer = this.createGroup(svg, 'conn-layer');
-    const teamLayer = this.createGroup(svg, 'team-layer');
-    const interactionLayer = this.createGroup(svg, 'interaction-layer');
-
-    // Background
-    this.drawBackground(bgLayer, 500, 500);
-
-    // Render groups em anel externo
-    this.drawGroupsRing(teamLayer, connectionLayer, bracketData.groups, 500, 500, 420);
-
-    // Render knockout phases (inward)
-    if (bracketData.knockout) {
-      this.drawKnockoutRings(teamLayer, connectionLayer, bracketData.knockout, 500, 500);
-    }
-
-    // Add SVG ao container
+    const svg = this.renderBracketSVG(bracketData);
     this.container.innerHTML = '';
     this.container.appendChild(svg);
   }
 
   /**
-   * Criar elemento SVG
+   * Renderizar SVG no estilo antigo (visual BONITO ternário em RINGS)
    */
-  createSVG(width, height) {
+  renderBracketSVG(bracketData) {
     const svg = document.createElementNS(this.svgNS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', 'auto');
-    return svg;
-  }
+    svg.setAttribute('viewBox', '0 0 720 720');
+    svg.setAttribute('xmlns', this.svgNS);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Chaveamento da Copa');
 
-  /**
-   * Criar grupo SVG
-   */
-  createGroup(parent, id) {
-    const group = document.createElementNS(this.svgNS, 'g');
-    group.setAttribute('id', id);
-    parent.appendChild(group);
-    return group;
-  }
-
-  /**
-   * Desenhar fundo com gradiente
-   */
-  drawBackground(layer, cx, cy) {
-    // Círculo de fundo
-    const bg = document.createElementNS(this.svgNS, 'circle');
-    bg.setAttribute('cx', cx);
-    bg.setAttribute('cy', cy);
-    bg.setAttribute('r', 450);
-    bg.setAttribute('fill', 'url(#bracketGradient)');
-    bg.setAttribute('opacity', '0.3');
-    layer.appendChild(bg);
-
-    // Definir gradiente
+    // Defs com gradiente radial
     const defs = document.createElementNS(this.svgNS, 'defs');
     const gradient = document.createElementNS(this.svgNS, 'radialGradient');
-    gradient.setAttribute('id', 'bracketGradient');
+    gradient.setAttribute('id', 'g');
     gradient.setAttribute('cx', '50%');
     gradient.setAttribute('cy', '50%');
     gradient.setAttribute('r', '50%');
@@ -85,220 +53,315 @@ class CircularBracket {
     const stop1 = document.createElementNS(this.svgNS, 'stop');
     stop1.setAttribute('offset', '0%');
     stop1.setAttribute('stop-color', '#88CE11');
-    stop1.setAttribute('stop-opacity', '0.2');
+    stop1.setAttribute('stop-opacity', '0.11');
     gradient.appendChild(stop1);
 
     const stop2 = document.createElementNS(this.svgNS, 'stop');
-    stop2.setAttribute('offset', '100%');
+    stop2.setAttribute('offset', '60%');
     stop2.setAttribute('stop-color', '#88CE11');
-    stop2.setAttribute('stop-opacity', '0');
+    stop2.setAttribute('stop-opacity', '0.02');
     gradient.appendChild(stop2);
 
+    const stop3 = document.createElementNS(this.svgNS, 'stop');
+    stop3.setAttribute('offset', '100%');
+    stop3.setAttribute('stop-color', '#88CE11');
+    stop3.setAttribute('stop-opacity', '0');
+    gradient.appendChild(stop3);
+
     defs.appendChild(gradient);
-    layer.parentNode.insertBefore(defs, layer.parentNode.firstChild);
-  }
+    svg.appendChild(defs);
 
-  /**
-   * Desenhar anel de grupos (anel externo)
-   */
-  drawGroupsRing(teamLayer, connLayer, groups, cx, cy, radius) {
-    const teamsPerGroup = 4;
-    const totalTeams = groups.length * teamsPerGroup;
-    const anglePerTeam = 360 / totalTeams;
+    // Círculo de fundo gradiente
+    const bgCircle = document.createElementNS(this.svgNS, 'circle');
+    bgCircle.setAttribute('cx', this.CX);
+    bgCircle.setAttribute('cy', this.CY);
+    bgCircle.setAttribute('r', '330');
+    bgCircle.setAttribute('fill', 'url(#g)');
+    svg.appendChild(bgCircle);
 
-    let teamIndex = 0;
-    groups.forEach((group, groupIdx) => {
-      // Cor para cada grupo
-      const groupColor = ['#88CE11', '#e0a83b', '#e0563b', '#6c5ce7'][groupIdx % 4];
+    // Extrair labels dos times de cada anel
+    const ringLabels = this.extractRingLabels(bracketData);
 
-      group.teams.forEach((team, teamIdx) => {
-        const angle = teamIndex * anglePerTeam;
-        const rad = (angle * Math.PI) / 180;
-
-        const x = cx + radius * Math.cos(rad);
-        const y = cy + radius * Math.sin(rad);
-
-        // Encontrar match deste time
-        const match = group.matches.find(m => m.home === team || m.away === team);
-
-        // Desenhar nó do time
-        this.drawTeamNode(teamLayer, team, x, y, 24, match, groupColor, group);
-
-        teamIndex++;
-      });
+    // Órbitas de guia
+    this.RINGS.forEach(ring => {
+      const orbit = document.createElementNS(this.svgNS, 'circle');
+      orbit.setAttribute('class', 'orbit');
+      orbit.setAttribute('cx', this.CX);
+      orbit.setAttribute('cy', this.CY);
+      orbit.setAttribute('r', ring.r);
+      svg.appendChild(orbit);
     });
+
+    // Conexões entre anéis (sem Brasil)
+    const connGroup = document.createElementNS(this.svgNS, 'g');
+    // Conexões de Brasil
+    const connBrGroup = document.createElementNS(this.svgNS, 'g');
+
+    this.drawConnections(connGroup, connBrGroup, ringLabels);
+    svg.appendChild(connGroup);
+    svg.appendChild(connBrGroup);
+
+    // Nós (times)
+    const nodeGroup = document.createElementNS(this.svgNS, 'g');
+    this.drawNodes(nodeGroup, ringLabels);
+    svg.appendChild(nodeGroup);
+
+    // Taça no centro
+    this.drawTrophy(svg);
+
+    return svg;
   }
 
   /**
-   * Desenhar nó de time (círculo com badge)
+   * Extrair labels dos times por anel
+   * Anel 0: 16 times dos grupos
+   * Anel 1: 8 vencedores de R16
+   * Anel 2: 4 vencedores de QF
+   * Anel 3: 2 finalistas
    */
-  drawTeamNode(layer, team, x, y, radius, match, color, group) {
-    const g = this.createGroup(layer, `team-${team}-${x}-${y}`);
+  extractRingLabels(bracketData) {
+    const labels = [[], [], [], []];
 
-    // Determinar cor baseado em status
-    let fillColor = 'var(--panel)';
-    let borderColor = 'var(--line-2)';
-    let opacity = 1;
-
-    if (group && group.classified && group.classified.includes(team)) {
-      fillColor = color;
-      borderColor = color;
-    } else if (match && match.status === 'encerrado' && match.hs !== null && match.as !== null) {
-      // Time eliminado ou ganhou
-      opacity = 0.5;
-      borderColor = 'var(--line)';
+    // Anel 0: 16 times (grupos)
+    if (bracketData.groups) {
+      bracketData.groups.forEach(group => {
+        group.teams.forEach(team => {
+          labels[0].push(team);
+        });
+      });
     }
 
-    // Círculo background
-    const circle = document.createElementNS(this.svgNS, 'circle');
-    circle.setAttribute('cx', x);
-    circle.setAttribute('cy', y);
-    circle.setAttribute('r', radius);
-    circle.setAttribute('fill', fillColor === 'var(--panel)' ? '#161616' : fillColor);
-    circle.setAttribute('stroke', borderColor === 'var(--lime)' ? '#88CE11' : borderColor);
-    circle.setAttribute('stroke-width', '2');
-    circle.setAttribute('opacity', opacity);
-    circle.setAttribute('class', 'bracket-node');
-    circle.style.cursor = 'pointer';
-    circle.style.transition = 'all 0.3s ease';
-    g.appendChild(circle);
-
-    // Texto (código do time)
-    const text = document.createElementNS(this.svgNS, 'text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y);
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('dominant-baseline', 'central');
-    text.setAttribute('font-size', '12');
-    text.setAttribute('font-weight', '700');
-    text.setAttribute('font-family', "'JetBrains Mono'");
-    text.setAttribute('fill', fillColor === 'var(--panel)' ? '#a0a0a0' : '#0d0d0d');
-    text.textContent = team;
-    text.style.pointerEvents = 'none';
-    g.appendChild(text);
-
-    // Interação
-    circle.addEventListener('mouseenter', () => {
-      circle.setAttribute('r', radius * 1.3);
-      circle.setAttribute('stroke-width', '3');
-      this.showTeamTooltip(x, y, team, match, group);
-    });
-
-    circle.addEventListener('mouseleave', () => {
-      circle.setAttribute('r', radius);
-      circle.setAttribute('stroke-width', '2');
-      this.hideTooltip();
-    });
-
-    circle.addEventListener('click', () => {
-      this.showMatchModal(team, match, group);
-    });
-  }
-
-  /**
-   * Desenhar anéis de knockout (16 → 8 → 4 → 2 → 1)
-   */
-  drawKnockoutRings(teamLayer, connLayer, knockout, cx, cy) {
-    const rings = [
-      { data: knockout.round16, radius: 310, label: 'R16' },
-      { data: knockout.quarterfinals, radius: 240, label: 'QF' },
-      { data: knockout.semifinals, radius: 170, label: 'SF' },
-      { data: knockout.final, radius: 100, label: 'Final' }
-    ];
-
-    rings.forEach(ring => {
-      const anglePerMatch = 360 / ring.data.length;
-
-      ring.data.forEach((match, idx) => {
-        const angle = idx * anglePerMatch + anglePerMatch / 2;
-        const rad = (angle * Math.PI) / 180;
-
-        const x = cx + ring.radius * Math.cos(rad);
-        const y = cy + ring.radius * Math.sin(rad);
-
-        // Desenhar nó de match
-        this.drawMatchNode(teamLayer, match, x, y, 20, ring.label);
-      });
-    });
-  }
-
-  /**
-   * Desenhar nó de match (knockout)
-   */
-  drawMatchNode(layer, match, x, y, radius, label) {
-    const g = this.createGroup(layer, `match-${match.id}`);
-
-    // Determinar status
-    let fillColor = '#161616';
-    let strokeColor = 'var(--line-2)';
-    let pattern = 'none';
-
-    if (match.home && match.away) {
-      if (match.status === 'encerrado' && match.hs !== null && match.as !== null) {
-        // Match completado
-        if (match.hs > match.as) {
-          fillColor = match.home === 'BRA' ? '#88CE11' : '#0d0d0d';
-          strokeColor = '#88CE11';
-        } else if (match.as > match.hs) {
-          fillColor = match.away === 'BRA' ? '#88CE11' : '#0d0d0d';
-          strokeColor = '#88CE11';
-        }
-      } else if (match.status === 'ao_vivo') {
-        strokeColor = '#e0563b';
+    // Anel 1: 8 vencedores de R16
+    if (bracketData.knockout?.round16) {
+      for (let i = 0; i < 8; i++) {
+        const match = bracketData.knockout.round16[i];
+        labels[1].push(
+          (match && match.hs !== null && match.as !== null)
+            ? (match.hs > match.as ? match.home : match.away)
+            : null
+        );
       }
-    } else {
-      // A definir
-      pattern = 'dashed';
-      strokeColor = 'var(--lime)';
     }
 
-    // Círculo
+    // Anel 2: 4 vencedores de QF
+    if (bracketData.knockout?.quarterfinals) {
+      for (let i = 0; i < 4; i++) {
+        const match = bracketData.knockout.quarterfinals[i];
+        labels[2].push(
+          (match && match.hs !== null && match.as !== null)
+            ? (match.hs > match.as ? match.home : match.away)
+            : null
+        );
+      }
+    }
+
+    // Anel 3: 2 finalistas
+    if (bracketData.knockout?.semifina ls?.[0]) {
+      const sf1 = bracketData.knockout.semifinals[0];
+      labels[3].push(
+        (sf1 && sf1.hs !== null && sf1.as !== null)
+          ? (sf1.hs > sf1.as ? sf1.home : sf1.away)
+          : null
+      );
+    }
+    if (bracketData.knockout?.semifinals?.[1]) {
+      const sf2 = bracketData.knockout.semifinals[1];
+      labels[3].push(
+        (sf2 && sf2.hs !== null && sf2.as !== null)
+          ? (sf2.hs > sf2.as ? sf2.home : sf2.away)
+          : null
+      );
+    }
+
+    return labels;
+  }
+
+  /**
+   * Calcular ponto em um anel
+   */
+  pt(r, deg) {
+    const a = (deg - 90) * Math.PI / 180;
+    return [
+      (this.CX + r * Math.cos(a)).toFixed(2),
+      (this.CY + r * Math.sin(a)).toFixed(2)
+    ];
+  }
+
+  /**
+   * Calcular ângulo de um item em um anel
+   */
+  ang(ringIdx, itemIdx) {
+    return this.RINGS[ringIdx].off + itemIdx * (360 / this.RINGS[ringIdx].n);
+  }
+
+  /**
+   * Desenhar conexões em arco entre anéis
+   */
+  drawConnections(connGroup, connBrGroup, labels) {
+    // Conexões entre anéis k-1 e k
+    for (let k = 1; k < this.RINGS.length; k++) {
+      for (let p = 0; p < this.RINGS[k].n; p++) {
+        const ang0 = this.ang(k - 1, 2 * p);
+        const ang1 = this.ang(k - 1, 2 * p + 1);
+        const path = this.elbowPath(
+          this.RINGS[k - 1].r,
+          this.RINGS[k].r,
+          ang0,
+          ang1
+        );
+
+        const line = document.createElementNS(this.svgNS, 'path');
+        line.setAttribute('d', path);
+
+        // Item 0 é sempre Brasil
+        if (p === 0) {
+          line.setAttribute('class', 'conn br');
+          connBrGroup.appendChild(line);
+        } else {
+          line.setAttribute('class', 'conn');
+          connGroup.appendChild(line);
+        }
+      }
+    }
+
+    // Conexão final para a taça
+    const f0 = this.pt(this.RINGS[3].r, this.ang(3, 0));
+    const f1 = this.pt(this.RINGS[3].r, this.ang(3, 1));
+
+    const lineFinal1 = document.createElementNS(this.svgNS, 'path');
+    lineFinal1.setAttribute('class', 'conn br');
+    lineFinal1.setAttribute('d', `M${f0[0]} ${f0[1]}L${this.CX} ${this.CY}`);
+    connBrGroup.appendChild(lineFinal1);
+
+    const lineFinal2 = document.createElementNS(this.svgNS, 'path');
+    lineFinal2.setAttribute('class', 'conn');
+    lineFinal2.setAttribute('d', `M${f1[0]} ${f1[1]}L${this.CX} ${this.CY}`);
+    connGroup.appendChild(lineFinal2);
+  }
+
+  /**
+   * Calcular path elbow (arco + linhas)
+   */
+  elbowPath(Rc, Rp, a0, a1) {
+    const Ra = Rp + (Rc - Rp) * 0.5;
+    const ap = (a0 + a1) / 2;
+
+    const c0 = this.pt(Rc, a0);
+    const c1 = this.pt(Rc, a1);
+    const e0 = this.pt(Ra, a0);
+    const e1 = this.pt(Ra, a1);
+    const em = this.pt(Ra, ap);
+    const pp = this.pt(Rp, ap);
+
+    return `M${c0[0]} ${c0[1]}L${e0[0]} ${e0[1]}A${Ra} ${Ra} 0 0 1 ${e1[0]} ${e1[1]}` +
+           `M${c1[0]} ${c1[1]}L${e1[0]} ${e1[1]}M${em[0]} ${em[1]}L${pp[0]} ${pp[1]}`;
+  }
+
+  /**
+   * Desenhar nós (círculos com times)
+   */
+  drawNodes(nodeGroup, labels) {
+    for (let k = 0; k < this.RINGS.length; k++) {
+      for (let i = 0; i < this.RINGS[k].n; i++) {
+        const pos = this.pt(this.RINGS[k].r, this.ang(k, i));
+        const code = labels[k][i];
+        const onBr = (i === 0);
+
+        let cls, label, title;
+        if (code) {
+          cls = (code === 'BRA') ? 'nd br' : (onBr ? 'nd br' : 'nd');
+          label = code;
+          title = NAMES[code] || code;
+        } else {
+          cls = onBr ? 'nd brtbd' : 'nd tbd';
+          label = '?';
+          title = 'A definir';
+        }
+
+        const g = document.createElementNS(this.svgNS, 'g');
+        g.setAttribute('class', cls);
+
+        const titleEl = document.createElementNS(this.svgNS, 'title');
+        titleEl.textContent = title;
+        g.appendChild(titleEl);
+
+        const circle = document.createElementNS(this.svgNS, 'circle');
+        circle.setAttribute('cx', pos[0]);
+        circle.setAttribute('cy', pos[1]);
+        circle.setAttribute('r', this.RINGS[k].nr);
+        g.appendChild(circle);
+
+        const text = document.createElementNS(this.svgNS, 'text');
+        text.setAttribute('x', pos[0]);
+        text.setAttribute('y', pos[1]);
+        text.setAttribute('font-size', this.RINGS[k].fs);
+        text.textContent = label;
+        g.appendChild(text);
+
+        nodeGroup.appendChild(g);
+      }
+    }
+  }
+
+  /**
+   * Desenhar taça no centro
+   */
+  drawTrophy(svg) {
+    const g = document.createElementNS(this.svgNS, 'g');
+    g.setAttribute('class', 'champ');
+
+    const title = document.createElementNS(this.svgNS, 'title');
+    title.textContent = 'Campeão (a definir)';
+    g.appendChild(title);
+
     const circle = document.createElementNS(this.svgNS, 'circle');
-    circle.setAttribute('cx', x);
-    circle.setAttribute('cy', y);
-    circle.setAttribute('r', radius);
-    circle.setAttribute('fill', fillColor);
-    circle.setAttribute('stroke', strokeColor === 'var(--line-2)' ? '#333' : strokeColor === 'var(--lime)' ? '#88CE11' : strokeColor);
-    circle.setAttribute('stroke-width', '1.5');
-    circle.setAttribute('stroke-dasharray', pattern === 'dashed' ? '3,3' : 'none');
-    circle.style.cursor = 'pointer';
-    circle.style.transition = 'all 0.3s ease';
+    circle.setAttribute('cx', this.CX);
+    circle.setAttribute('cy', this.CY);
+    circle.setAttribute('r', '42');
     g.appendChild(circle);
 
-    // Score ou "?"
-    const text = document.createElementNS(this.svgNS, 'text');
-    text.setAttribute('x', x);
-    text.setAttribute('y', y);
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('dominant-baseline', 'central');
-    text.setAttribute('font-size', '10');
-    text.setAttribute('font-weight', '700');
-    text.setAttribute('font-family', "'JetBrains Mono'");
-    text.setAttribute('fill', '#a0a0a0');
+    const tro = document.createElementNS(this.svgNS, 'g');
+    tro.setAttribute('class', 'tro');
+    tro.setAttribute('transform', `translate(${this.CX},${this.CY})`);
 
-    if (match.home && match.away && match.hs !== null && match.as !== null) {
-      text.textContent = `${match.hs}–${match.as}`;
-    } else {
-      text.textContent = '?';
-    }
+    const path1 = document.createElementNS(this.svgNS, 'path');
+    path1.setAttribute('d', 'M-12,-15 L12,-15 C12,-3 6,4 0,4 C-6,4 -12,-3 -12,-15 Z');
+    tro.appendChild(path1);
 
-    text.style.pointerEvents = 'none';
-    g.appendChild(text);
+    const path2 = document.createElementNS(this.svgNS, 'path');
+    path2.setAttribute('d', 'M-12,-13 C-20,-13 -20,-1 -11,-4');
+    path2.setAttribute('fill', 'none');
+    path2.setAttribute('stroke', '#0d0d0d');
+    path2.setAttribute('stroke-width', '2.4');
+    tro.appendChild(path2);
 
-    // Interação
-    circle.addEventListener('mouseenter', () => {
-      circle.setAttribute('r', radius * 1.4);
-      this.showMatchTooltip(x, y, match, label);
-    });
+    const path3 = document.createElementNS(this.svgNS, 'path');
+    path3.setAttribute('d', 'M12,-13 C20,-13 20,-1 11,-4');
+    path3.setAttribute('fill', 'none');
+    path3.setAttribute('stroke', '#0d0d0d');
+    path3.setAttribute('stroke-width', '2.4');
+    tro.appendChild(path3);
 
-    circle.addEventListener('mouseleave', () => {
-      circle.setAttribute('r', radius);
-      this.hideTooltip();
-    });
+    const rect1 = document.createElementNS(this.svgNS, 'rect');
+    rect1.setAttribute('x', '-2');
+    rect1.setAttribute('y', '4');
+    rect1.setAttribute('width', '4');
+    rect1.setAttribute('height', '6');
+    tro.appendChild(rect1);
 
-    circle.addEventListener('click', () => {
-      this.showMatchModal(null, match, null, label);
-    });
+    const path4 = document.createElementNS(this.svgNS, 'path');
+    path4.setAttribute('d', 'M-8,15 L8,15 L6,9 L-6,9 Z');
+    tro.appendChild(path4);
+
+    const rect2 = document.createElementNS(this.svgNS, 'rect');
+    rect2.setAttribute('x', '-10');
+    rect2.setAttribute('y', '15.5');
+    rect2.setAttribute('width', '20');
+    rect2.setAttribute('height', '2.4');
+    tro.appendChild(rect2);
+
+    g.appendChild(tro);
+    svg.appendChild(g);
   }
 
   /**
