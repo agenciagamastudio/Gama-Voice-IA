@@ -18,6 +18,9 @@ const io = new Server(server, {
 
 const PORT = 3000;
 
+// Configure JSON parser IMMEDIATELY (must be before endpoints)
+app.use(express.json());
+
 // Cache em memória (30s)
 let cache = { data: null, timestamp: 0 };
 const CACHE_TTL = 30000;
@@ -48,6 +51,13 @@ const GAMANAMES = {
   USA: 'Estados Unidos',
   BEL: 'Bélgica'
 };
+
+// Lista válida de times (16 da Copa 2026)
+const VALID_TEAMS = Object.keys(GAMANAMES);
+
+// Sessão de usuário em memória (teamCode selecionado)
+// Em produção, usar sessões com cookie/JWT
+let currentSelectedTeam = null;
 
 // Mapear status ESPN para status GAMA
 function getStatus(comp) {
@@ -171,6 +181,45 @@ function formatEvent(event) {
     description: event.description,
     emoji
   };
+}
+
+// Validar teamCode (16 times válidos)
+function isValidTeamCode(teamCode) {
+  return VALID_TEAMS.includes(teamCode?.toUpperCase());
+}
+
+// Filtrar jogos de um time (home ou away)
+function filterMatchesByTeam(matches, teamCode) {
+  if (!teamCode) return matches;
+  return matches.filter(m => m.home === teamCode || m.away === teamCode);
+}
+
+// Adicionar flag de seleção ao bracket
+function addTeamHighlightToBracket(tournament, teamCode) {
+  if (!teamCode) return tournament;
+
+  const highlighted = JSON.parse(JSON.stringify(tournament)); // Deep copy
+
+  // Highlight nos grupos
+  highlighted.groups = highlighted.groups.map(group => ({
+    ...group,
+    teams: group.teams.map(team => ({
+      code: team,
+      name: GAMANAMES[team],
+      isSelected: team === teamCode
+    }))
+  }));
+
+  // Highlight nas fases knockout
+  Object.keys(highlighted.knockout).forEach(phase => {
+    highlighted.knockout[phase] = highlighted.knockout[phase].map(match => ({
+      ...match,
+      homeIsSelected: match.home === teamCode,
+      awayIsSelected: match.away === teamCode
+    }));
+  });
+
+  return highlighted;
 }
 
 // ============================================================================
@@ -381,11 +430,84 @@ const TOURNAMENT_DATA = {
   }
 };
 
+// Endpoint POST /api/select-team
+// Corpo: { teamCode: "BRA" }
+// Retorna: dados iniciais do time (próximos jogos, status)
+app.post('/api/select-team', async (req, res) => {
+  try {
+    const { teamCode } = req.body;
+
+    // Validar teamCode
+    if (!teamCode) {
+      return res.status(400).json({
+        error: 'Campo "teamCode" é obrigatório',
+        validTeams: VALID_TEAMS
+      });
+    }
+
+    const upperCode = teamCode.toUpperCase();
+
+    if (!isValidTeamCode(upperCode)) {
+      return res.status(400).json({
+        error: `Time "${teamCode}" inválido`,
+        message: 'Use um dos 16 times da Copa 2026',
+        validTeams: VALID_TEAMS,
+        example: 'BRA, NOR, MEX, ENG, ARG, EGI, SUI, COL, MAR, CAN, FRA, PAR, POR, ESP, USA, BEL'
+      });
+    }
+
+    // Salvar seleção em memória
+    currentSelectedTeam = upperCode;
+
+    // Retornar dados iniciais
+    const initialData = {
+      selectedTeam: upperCode,
+      teamName: GAMANAMES[upperCode],
+      timestamp: new Date().toISOString(),
+      message: `Time ${GAMANAMES[upperCode]} selecionado com sucesso`
+    };
+
+    // Tentar buscar scores atuais para o time
+    const allMatches = await fetchEspnScoreboard();
+    if (allMatches) {
+      const teamMatches = filterMatchesByTeam(allMatches, upperCode);
+      initialData.upcomingMatches = teamMatches.slice(0, 3); // Próximos 3 jogos
+      initialData.totalMatches = teamMatches.length;
+    }
+
+    res.status(200).json(initialData);
+  } catch (error) {
+    console.error('Erro em /api/select-team:', error);
+    res.status(500).json({
+      error: 'Erro ao selecionar time',
+      message: error.message
+    });
+  }
+});
+
 // Endpoint /api/bracket
 app.get('/api/bracket', async (req, res) => {
   try {
+    const { team } = req.query;
+    const upperTeam = team?.toUpperCase();
+
+    // Validar teamCode se fornecido
+    if (team && !isValidTeamCode(upperTeam)) {
+      return res.status(400).json({
+        error: `Time "${team}" inválido`,
+        validTeams: VALID_TEAMS
+      });
+    }
+
+    // Adicionar highlight se time foi selecionado
+    const highlightedTournament = upperTeam
+      ? addTeamHighlightToBracket(TOURNAMENT_DATA, upperTeam)
+      : TOURNAMENT_DATA;
+
     res.json({
-      tournament: TOURNAMENT_DATA,
+      tournament: highlightedTournament,
+      selectedTeam: upperTeam || null,
+      teamName: upperTeam ? GAMANAMES[upperTeam] : null,
       timestamp: Date.now()
     });
   } catch (error) {
@@ -401,12 +523,30 @@ app.get('/api/bracket', async (req, res) => {
 app.get('/api/scoreboard', async (req, res) => {
   try {
     const now = Date.now();
+    const { team } = req.query;
+    const upperTeam = team?.toUpperCase();
+
+    // Validar teamCode se fornecido
+    if (team && !isValidTeamCode(upperTeam)) {
+      return res.status(400).json({
+        error: `Time "${team}" inválido`,
+        validTeams: VALID_TEAMS,
+        example: 'GET /api/scoreboard?team=BRA'
+      });
+    }
 
     // Retorna do cache se válido
     if (cache.data && now - cache.timestamp < CACHE_TTL) {
+      const filtered = upperTeam
+        ? filterMatchesByTeam(cache.data, upperTeam)
+        : cache.data;
+
       return res.json({
-        matches: cache.data,
+        matches: filtered,
         cached: true,
+        selectedTeam: upperTeam || null,
+        teamName: upperTeam ? GAMANAMES[upperTeam] : null,
+        totalMatches: filtered.length,
         timestamp: cache.timestamp
       });
     }
@@ -421,9 +561,16 @@ app.get('/api/scoreboard', async (req, res) => {
       // Broadcast to WebSocket clients
       broadcastScoreUpdate(matches);
 
+      const filtered = upperTeam
+        ? filterMatchesByTeam(matches, upperTeam)
+        : matches;
+
       return res.json({
-        matches,
+        matches: filtered,
         cached: false,
+        selectedTeam: upperTeam || null,
+        teamName: upperTeam ? GAMANAMES[upperTeam] : null,
+        totalMatches: filtered.length,
         timestamp: now
       });
     }
@@ -435,10 +582,17 @@ app.get('/api/scoreboard', async (req, res) => {
 
     // Se ESPN falhar e temos cache expirado, retorna cache mesmo assim
     if (cache.data) {
+      const filtered = upperTeam
+        ? filterMatchesByTeam(cache.data, upperTeam)
+        : cache.data;
+
       return res.json({
-        matches: cache.data,
+        matches: filtered,
         cached: true,
         stale: true,
+        selectedTeam: upperTeam || null,
+        teamName: upperTeam ? GAMANAMES[upperTeam] : null,
+        totalMatches: filtered.length,
         timestamp: cache.timestamp,
         error: 'ESPN indisponível, usando último dado conhecido'
       });
@@ -447,6 +601,8 @@ app.get('/api/scoreboard', async (req, res) => {
     // Sem cache e sem dados — retorna array vazio
     res.json({
       matches: [],
+      selectedTeam: upperTeam || null,
+      teamName: upperTeam ? GAMANAMES[upperTeam] : null,
       error: 'Sem dados disponíveis'
     });
   } catch (error) {
@@ -457,9 +613,6 @@ app.get('/api/scoreboard', async (req, res) => {
     });
   }
 });
-
-// Configure JSON parser
-app.use(express.json());
 
 // Endpoint POST /api/generate-instagram-post
 app.post('/api/generate-instagram-post', (req, res) => {
@@ -501,7 +654,23 @@ app.get('*', (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`🟢 GAMA Copa Center rodando em http://localhost:${PORT}`);
-  console.log(`📊 API: GET http://localhost:${PORT}/api/scoreboard`);
+  console.log(`\n📊 API ENDPOINTS:\n`);
+  console.log(`  1️⃣ SELECT TEAM (POST)`);
+  console.log(`     curl -X POST http://localhost:${PORT}/api/select-team \\`);
+  console.log(`       -H "Content-Type: application/json" \\`);
+  console.log(`       -d '{"teamCode":"BRA"}'`);
+  console.log(`     → Retorna dados iniciais do time (próximos jogos, status)\n`);
+  console.log(`  2️⃣ SCOREBOARD (GET)`);
+  console.log(`     curl http://localhost:${PORT}/api/scoreboard                  (todos jogos)`);
+  console.log(`     curl http://localhost:${PORT}/api/scoreboard?team=BRA        (jogos do Brasil)\n`);
+  console.log(`  3️⃣ BRACKET (GET)`);
+  console.log(`     curl http://localhost:${PORT}/api/bracket                    (sem highlight)`);
+  console.log(`     curl http://localhost:${PORT}/api/bracket?team=BRA          (com highlight Brasil)\n`);
+  console.log(`  4️⃣ INSTAGRAM POST (POST)`);
+  console.log(`     curl -X POST http://localhost:${PORT}/api/generate-instagram-post \\`);
+  console.log(`       -H "Content-Type: application/json" \\`);
+  console.log(`       -d '{"homeTeam":"BRA","awayTeam":"NOR","homeScore":1,"awayScore":2}'\n`);
   console.log(`🔗 WebSocket: ws://localhost:${PORT} (Socket.IO)`);
-  console.log(`📡 Real-time scores via WebSocket with HTTP polling fallback`);
+  console.log(`📡 Real-time scores via WebSocket with HTTP polling fallback\n`);
+  console.log(`✅ TIMES VÁLIDOS: ${VALID_TEAMS.join(', ')}\n`);
 });
