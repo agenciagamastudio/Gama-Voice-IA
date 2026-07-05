@@ -25,6 +25,10 @@ const CACHE_TTL = 30000;
 // Track WebSocket connections
 let connectedClients = 0;
 
+// Mock game start time (fixo para toda a sessão - evita recálculos)
+// Simula jogo que começou 45 minutos atrás
+const MOCK_GAME_START = Date.now() - (45 * 60 * 1000);
+
 // Código de 3 letras → nome interno
 const GAMANAMES = {
   BRA: 'Brasil',
@@ -106,15 +110,13 @@ function getTimeElapsed(comp, kickoffTime) {
     const now = Date.now();
     const elapsedMs = now - koTime;
 
-    // Se jogo ainda não começou (futuro), simular como se tivesse começado há 45 minutos
-    // Isso evita contadores negativos e mostra um jogo realista em andamento
+    // Se jogo ainda não começou (futuro), usar MOCK_GAME_START fixo
+    // Isso garante que o contador seja consistente e incremente 1s por segundo real
     let totalSeconds;
 
     if (elapsedMs < 0) {
-      // Jogo futuro: simular como se começasse há (45 * 60) segundos
-      // + continue incrementando 1s por segundo real
-      const mockStartTime = now - (45 * 60 * 1000); // "Começou há 45 minutos"
-      totalSeconds = Math.floor((now - mockStartTime) / 1000);
+      // Jogo futuro: usar MOCK_GAME_START fixo (definido na inicialização do servidor)
+      totalSeconds = Math.floor((now - MOCK_GAME_START) / 1000);
     } else {
       // Jogo já começou: usar tempo real
       totalSeconds = Math.floor(elapsedMs / 1000);
