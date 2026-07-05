@@ -156,7 +156,7 @@ class CircularBracket {
     }
 
     // Anel 3: 2 finalistas
-    if (bracketData.knockout?.semifina ls?.[0]) {
+    if (bracketData.knockout?.semifinals?.[0]) {
       const sf1 = bracketData.knockout.semifinals[0];
       labels[3].push(
         (sf1 && sf1.hs !== null && sf1.as !== null)
