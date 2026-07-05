@@ -494,6 +494,67 @@ class CircularBracket {
 
 // Instância global
 let circularBracket = null;
+let BRACKET_DATA = null;
+
+/**
+ * Buscar dados do bracket da API
+ */
+async function loadBracketData() {
+  try {
+    const res = await fetch('/api/bracket');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    BRACKET_DATA = data.tournament;
+    console.log('📊 Dados do torneio carregados:', BRACKET_DATA);
+    return BRACKET_DATA;
+  } catch (error) {
+    console.error('Erro ao carregar dados do torneio:', error);
+    return null;
+  }
+}
+
+/**
+ * Sincronizar bracket com dados ao vivo
+ */
+function mergeBracketWithLiveData(liveMatches) {
+  if (!liveMatches || !BRACKET_DATA) return;
+
+  liveMatches.forEach(liveMatch => {
+    // Procurar nos grupos
+    if (BRACKET_DATA.groups) {
+      BRACKET_DATA.groups.forEach(group => {
+        group.matches.forEach(match => {
+          if (match.home === liveMatch.home && match.away === liveMatch.away) {
+            match.hs = liveMatch.hs;
+            match.as = liveMatch.as;
+            match.status = liveMatch.status;
+            match.minute = liveMatch.minute;
+            match.timeElapsed = liveMatch.timeElapsed;
+            match.addedTime = liveMatch.addedTime;
+          }
+        });
+      });
+    }
+
+    // Procurar nos knockouts
+    if (BRACKET_DATA.knockout) {
+      Object.keys(BRACKET_DATA.knockout).forEach(round => {
+        BRACKET_DATA.knockout[round].forEach(match => {
+          if (match.home === liveMatch.home && match.away === liveMatch.away) {
+            match.hs = liveMatch.hs;
+            match.as = liveMatch.as;
+            match.status = liveMatch.status;
+          }
+        });
+      });
+    }
+  });
+
+  // Re-renderizar bracket
+  if (circularBracket && BRACKET_DATA) {
+    circularBracket.render(BRACKET_DATA);
+  }
+}
 
 /**
  * Inicializar bracket circular
@@ -505,8 +566,13 @@ async function initCircularBracket() {
 
   circularBracket = new CircularBracket('bracketCircularSlot');
   circularBracket.render(BRACKET_DATA);
-  console.log('✅ Circular bracket renderizado');
+  console.log('✅ Circular bracket renderizado com dados de ' + (BRACKET_DATA.groups?.length || 0) + ' grupos');
 }
+
+// Hook para atualizar bracket quando dados ao vivo chegam
+window.updateBracketWithLiveData = function(liveMatches) {
+  mergeBracketWithLiveData(liveMatches);
+};
 
 // Iniciar ao carregar
 document.addEventListener('DOMContentLoaded', () => {
