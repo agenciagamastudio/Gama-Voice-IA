@@ -468,6 +468,7 @@
         heroTimer = new MatchTimer({
           kickoffTime: m.ko,
           timeElapsed: m.timeElapsed,
+          addedTime: m.addedTime,
           onTick: function(elapsed) {
             updateHeroTimerDisplay(elapsed);
           }
@@ -481,6 +482,11 @@
       // Sync with server data if available
       if (m.timeElapsed) {
         heroTimer.sync(m.timeElapsed);
+      }
+
+      // Update addedTime if it changed
+      if (m.addedTime) {
+        heroTimer.addedTime = m.addedTime;
       }
     }
   }

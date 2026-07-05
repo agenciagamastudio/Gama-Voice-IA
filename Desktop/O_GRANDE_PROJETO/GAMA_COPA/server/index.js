@@ -299,6 +299,7 @@ async function fetchEspnScoreboard() {
         minute,
         addedTime,
         displayMinute: addedTime?.display || (minute ? `${minute}'` : null),
+        displayTimeWithSeconds: (addedTime && timeElapsed) ? `${addedTime.display}:${String(timeElapsed.second).padStart(2, '0')}` : (timeElapsed?.display || null),
         timeElapsed, // { minute, second, total_seconds, display: "MM:SS" }
         events: events.map(formatEvent),
         venue,

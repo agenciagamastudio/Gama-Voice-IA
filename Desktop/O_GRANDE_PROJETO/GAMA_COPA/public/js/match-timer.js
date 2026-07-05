@@ -7,6 +7,7 @@ class MatchTimer {
   constructor(options = {}) {
     this.kickoffTime = options.kickoffTime || null;
     this.serverTimeElapsed = options.timeElapsed || null; // { minute, second, total_seconds }
+    this.addedTime = options.addedTime || null; // { minute, added, display: "90+7'" }
     this.updateCallback = options.onTick || (() => {});
     this.timerInterval = null;
     this.lastSecond = -1;
@@ -57,6 +58,7 @@ class MatchTimer {
 
   /**
    * Calculate MM:SS from kickoff time (with mock for future matches)
+   * If addedTime is present, format as "90+7':23" instead of "90:23"
    */
   getTimeElapsed() {
     const koTime = new Date(this.kickoffTime).getTime();
@@ -79,11 +81,21 @@ class MatchTimer {
     const minute = Math.floor(totalSeconds / 60);
     const second = totalSeconds % 60;
 
+    // If we have added time info, format with the added time display
+    let display;
+    if (this.addedTime && this.addedTime.display) {
+      // Format: "90+7':23"
+      display = `${this.addedTime.display}:${String(second).padStart(2, '0')}`;
+    } else {
+      // Standard format: "90:23"
+      display = `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+    }
+
     return {
       minute,
       second,
       total_seconds: totalSeconds,
-      display: `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+      display
     };
   }
 
