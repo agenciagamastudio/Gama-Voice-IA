@@ -99,6 +99,29 @@ function getAddedTime(comp) {
   return null;
 }
 
+// Calcular tempo decorrido em segundos (desde kickoff)
+function getTimeElapsed(comp, kickoffTime) {
+  try {
+    const koTime = new Date(kickoffTime).getTime();
+    const now = Date.now();
+    const elapsedMs = now - koTime;
+
+    // Convert to seconds, cap at 90 minutes + added time
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const minute = Math.floor(totalSeconds / 60);
+    const second = totalSeconds % 60;
+
+    return {
+      minute,
+      second,
+      total_seconds: totalSeconds,
+      display: `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
 // Gerar eventos mock para jogos ao vivo (ESPN não tem play-by-play em Copa 2026)
 function generateMockEvents(homeTeam, awayTeam, minute) {
   if (!minute || minute < 5) return [];
@@ -250,6 +273,7 @@ async function fetchEspnScoreboard() {
       const status = getStatus(comp);
       const minute = getMinute(comp);
       const addedTime = getAddedTime(comp);
+      const timeElapsed = status === 'ao_vivo' ? getTimeElapsed(comp, event.date) : null;
       const events = status === 'ao_vivo' ? generateMockEvents(homeCode, awayCode, minute) : [];
 
       return {
@@ -261,6 +285,7 @@ async function fetchEspnScoreboard() {
         minute,
         addedTime,
         displayMinute: addedTime?.display || (minute ? `${minute}'` : null),
+        timeElapsed, // { minute, second, total_seconds, display: "MM:SS" }
         events: events.map(formatEvent),
         venue,
         ko: event.date

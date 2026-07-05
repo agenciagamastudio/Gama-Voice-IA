@@ -122,6 +122,9 @@ class ScoreboardSync {
         if (typeof newMatch.as === 'number') existing.as = newMatch.as;
         if (newMatch.status) existing.aiStatus = newMatch.status;
         if (newMatch.minute) existing.minute = newMatch.minute;
+        if (newMatch.timeElapsed) existing.timeElapsed = newMatch.timeElapsed;
+        if (newMatch.addedTime) existing.addedTime = newMatch.addedTime;
+        if (newMatch.displayMinute) existing.displayMinute = newMatch.displayMinute;
         if (newMatch.venue) existing.venue = newMatch.venue;
       }
       // New matches would be added by the server, but typically not needed

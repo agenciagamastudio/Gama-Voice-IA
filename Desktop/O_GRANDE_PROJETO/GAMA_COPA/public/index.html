@@ -74,6 +74,11 @@
   .score{font-family:var(--display);font-weight:900;font-size:clamp(30px,7vw,46px);letter-spacing:-.03em;text-align:center;min-width:90px}
   .score .x{color:var(--ink-faint);font-size:22px;font-weight:500}
   .score .min{display:block;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--red);margin-top:2px}
+  .score .timer{display:block;font-family:var(--mono);font-size:12px;letter-spacing:1px;font-weight:700;margin-top:4px;padding:4px 8px;border-radius:3px;background:rgba(136,206,17,.15);transition:all .3s ease}
+  .score .timer.timer-green{color:#88CE11;background:rgba(136,206,17,.15)}
+  .score .timer.timer-yellow{color:#e0a83b;background:rgba(224,168,59,.15)}
+  .score .timer.timer-red{color:#e0563b;background:rgba(224,86,59,.12)}
+  .score .timer.timer-dark{color:#a0a0a0;background:rgba(160,160,160,.08)}
   .hmeta{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim)}
   .hmeta span b{color:var(--lime)}
   .hnarr{margin-top:16px;color:var(--ink-dim);font-size:13.5px;font-weight:400;line-height:1.6}
@@ -232,6 +237,7 @@
 <!-- Socket.IO and WebSocket client libraries -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="js/websocket-client.js"></script>
+<script src="js/match-timer.js"></script>
 <script src="js/instagram-modal.js"></script>
 <script src="js/scoreboard-sync.js"></script>
 
@@ -296,6 +302,8 @@
     return html;
   }
 
+  var heroTimer = null; // Global timer instance for hero match
+
   function renderHero(){
     var m=MATCHES.find(function(x){return x.feat});
     var st=statusOf(m);
@@ -307,9 +315,14 @@
       minDisplay = m.displayMinute || (m.addedTime ? m.addedTime.display : m.minute+"'");
     }
 
-    var scoreHtml = (st==='agendado'||!hasScore&&st!=='encerrado')
-      ? '<div class="score"><span class="x">'+ (st==='agendado'? 'vs' : '·') +'</span>'+(st==='ao_vivo'?'<span class="min">buscando…</span>':'')+'</div>'
-      : '<div class="score">'+(m.hs===null?'–':m.hs)+' <span class="x">×</span> '+(m.as===null?'–':m.as)+(minDisplay?'<span class="min">'+minDisplay+"</span>":'')+'</div>';
+    // Build score HTML with timer element
+    var scoreHtml;
+    if(st==='agendado'||!hasScore&&st!=='encerrado'){
+      scoreHtml = '<div class="score"><span class="x">'+ (st==='agendado'? 'vs' : '·') +'</span>'+(st==='ao_vivo'?'<span class="min">buscando…</span>':'')+'</div>';
+    } else {
+      var timerSpan = (st==='ao_vivo' ? '<span class="timer timer-green" id="heroTimer">00:00</span>' : (minDisplay?'<span class="min">'+minDisplay+"</span>":''));
+      scoreHtml = '<div class="score">'+(m.hs===null?'–':m.hs)+' <span class="x">×</span> '+(m.as===null?'–':m.as)+timerSpan+'</div>';
+    }
 
     var timelineHtml = renderTimelineEvents(m);
 
@@ -431,7 +444,59 @@
     document.getElementById('boardSlot').innerHTML=svg;
   }
 
-  function renderAllViews(){ renderHero(); renderToday(); renderAll(); renderBracket(); }
+  function renderAllViews(){ renderHero(); renderToday(); renderAll(); renderBracket(); updateHeroTimer(); }
+
+  /**
+   * Manage hero timer lifecycle
+   */
+  function updateHeroTimer() {
+    var m = MATCHES.find(function(x) { return x.feat; });
+    var st = statusOf(m);
+
+    // Stop timer if match is not live
+    if (st !== 'ao_vivo') {
+      if (heroTimer && heroTimer.running()) {
+        heroTimer.stop();
+      }
+      return;
+    }
+
+    // Start timer if match is live and timer not running
+    if (st === 'ao_vivo' && m.ko) {
+      if (!heroTimer) {
+        heroTimer = new MatchTimer({
+          kickoffTime: m.ko,
+          timeElapsed: m.timeElapsed,
+          onTick: function(elapsed) {
+            updateHeroTimerDisplay(elapsed);
+          }
+        });
+      }
+
+      if (!heroTimer.running()) {
+        heroTimer.start(m.ko);
+      }
+
+      // Sync with server data if available
+      if (m.timeElapsed) {
+        heroTimer.sync(m.timeElapsed);
+      }
+    }
+  }
+
+  /**
+   * Update the timer display in the DOM
+   */
+  function updateHeroTimerDisplay(elapsed) {
+    var timerEl = document.getElementById('heroTimer');
+    if (!timerEl) return;
+
+    timerEl.textContent = elapsed.display;
+
+    // Update color class
+    var colorClass = heroTimer.getColorClass(elapsed.total_seconds);
+    timerEl.className = 'timer ' + colorClass;
+  }
 
   /* REFRESH - chama /api/scoreboard do backend */
   var failCount=0, timer=null;
@@ -450,6 +515,9 @@
       if(typeof x.as==='number') m.as=x.as;
       if(x.status) m.aiStatus=x.status;
       if(x.minute) m.minute=x.minute;
+      if(x.timeElapsed) m.timeElapsed=x.timeElapsed;
+      if(x.addedTime) m.addedTime=x.addedTime;
+      if(x.displayMinute) m.displayMinute=x.displayMinute;
     });
   }
 
