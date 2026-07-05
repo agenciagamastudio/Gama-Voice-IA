@@ -28,7 +28,7 @@ const INSTAGRAM_MODAL_HTML = `
 
           <div class="preview-copy">
             <label>Copy (editável):</label>
-            <textarea id="postCopy" readonly style="width: 100%; height: 140px; padding: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink); font-family: var(--mono); font-size: 12px; resize: vertical;"></textarea>
+            <textarea id="postCopy" style="width: 100%; height: 140px; padding: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink); font-family: var(--mono); font-size: 12px; resize: vertical;"></textarea>
             <div class="copy-stats">
               <span id="charCount">0</span> / 2.200 caracteres
               <span id="canPostStatus"></span>
@@ -343,7 +343,7 @@ const INSTAGRAM_MODAL_STYLES = `
 /**
  * Inicializar modal (inserir no DOM)
  */
-export function initInstagramModal() {
+function initInstagramModal() {
   // Criar modal container se não existir
   if (!document.getElementById('instagramModal')) {
     const container = document.createElement('div');
@@ -354,6 +354,14 @@ export function initInstagramModal() {
     const style = document.createElement('style');
     style.textContent = INSTAGRAM_MODAL_STYLES;
     document.head.appendChild(style);
+
+    // Event listener para fechar ao clicar fora
+    const modal = document.getElementById('instagramModal');
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeInstagramModal();
+      }
+    });
   }
 }
 
@@ -361,7 +369,7 @@ export function initInstagramModal() {
  * Abrir modal de criação de post
  * @param {Object} match - {home, away, hs, as, minute, addedTime}
  */
-export async function openInstagramModal(match) {
+async function openInstagramModal(match) {
   const modal = document.getElementById('instagramModal');
   const loading = document.getElementById('modalLoading');
   const content = document.getElementById('modalContent');
@@ -457,15 +465,15 @@ function updateCharCount(text) {
 /**
  * Fechar modal
  */
-window.closeInstagramModal = function() {
+function closeInstagramModal() {
   const modal = document.getElementById('instagramModal');
   modal.style.display = 'none';
-};
+}
 
 /**
  * Copiar post para clipboard
  */
-window.copyPostToClipboard = async function() {
+async function copyPostToClipboard() {
   const copy = document.getElementById('postCopy').value;
   try {
     await navigator.clipboard.writeText(copy);
@@ -480,31 +488,18 @@ window.copyPostToClipboard = async function() {
   } catch (err) {
     alert('Erro ao copiar: ' + err.message);
   }
-};
+}
 
 /**
  * Abrir Instagram composer
  */
-window.openInstagramComposer = function() {
+function openInstagramComposer() {
   if (window.currentInstagramPost) {
     const url = window.currentInstagramPost.instagramUrl;
     window.open(url, '_blank');
   }
-};
-
-/**
- * Adicionar listener para fechar modal ao clicar fora
- */
-document.addEventListener('DOMContentLoaded', () => {
-  const modal = document.getElementById('instagramModal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        closeInstagramModal();
-      }
-    });
-  }
-});
+}
 
 // Auto-inicializar quando o script carregar
+document.addEventListener('DOMContentLoaded', initInstagramModal);
 initInstagramModal();
