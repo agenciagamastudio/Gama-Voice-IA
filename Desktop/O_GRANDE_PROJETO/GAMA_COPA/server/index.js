@@ -1,17 +1,28 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import http from 'http';
+import { Server } from 'socket.io';
 import { getGameCode } from './teamMap.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  transports: ['websocket', 'polling']
+});
+
 const PORT = 3000;
 
 // Cache em memória (30s)
 let cache = { data: null, timestamp: 0 };
 const CACHE_TTL = 30000;
+
+// Track WebSocket connections
+let connectedClients = 0;
 
 // Código de 3 letras → nome interno
 const GAMANAMES = {
@@ -38,22 +49,115 @@ function getStatus(comp) {
   if (!comp.status) return 'agendado';
 
   const statusType = comp.status.type?.name || '';
-  const displayClock = comp.status.displayClock || '';
+  const statusState = comp.status.type?.state || '';
+  const completed = comp.status.type?.completed || false;
 
-  if (statusType.includes('LIVE')) return 'ao_vivo';
-  if (statusType.includes('FINAL') || statusType.includes('COMPLETED')) return 'encerrado';
-  if (statusType.includes('SCHEDULED') || statusType.includes('PRE')) return 'agendado';
+  // ESPN uses status.type.state: 'in' for live matches
+  if (statusState === 'in') return 'ao_vivo';
+
+  // Fallback: check status name patterns (if ESPN format changes)
+  if (statusType.includes('LIVE') || statusType.includes('FIRST_HALF') || statusType.includes('SECOND_HALF') || statusType.includes('HALFTIME')) {
+    if (statusState !== 'post') return 'ao_vivo';
+  }
+
+  // Check for completed/final status
+  if (completed || statusType.includes('FINAL') || statusType.includes('COMPLETED') || statusState === 'post') {
+    return 'encerrado';
+  }
+
+  // Check for scheduled/pre status
+  if (statusType.includes('SCHEDULED') || statusType.includes('PRE') || statusState === 'pre') {
+    return 'agendado';
+  }
 
   return 'agendado';
 }
 
 // Extrair minuto do match
 function getMinute(comp) {
-  if (comp.status?.type?.name?.includes('LIVE')) {
+  // Check if match is in progress (ESPN uses state: 'in' for live)
+  if (comp.status?.type?.state === 'in' || comp.status?.type?.name?.includes('HALF')) {
     const timeStr = comp.status.displayClock?.match(/(\d+)\'/);
     return timeStr ? parseInt(timeStr[1]) : null;
   }
   return null;
+}
+
+// ============================================================================
+// WEBSOCKET SETUP
+// ============================================================================
+
+io.on('connection', (socket) => {
+  connectedClients++;
+  console.log(`🔗 WebSocket client connected (total: ${connectedClients})`);
+
+  // Send current data immediately on connect
+  if (cache.data) {
+    socket.emit('score:initial', {
+      matches: cache.data,
+      timestamp: cache.timestamp,
+      cached: true,
+      source: 'websocket'
+    });
+  }
+
+  // Broadcast connection status
+  io.emit('connection:status', {
+    clients: connectedClients,
+    status: 'connected',
+    timestamp: Date.now()
+  });
+
+  // Handle client disconnect
+  socket.on('disconnect', () => {
+    connectedClients--;
+    console.log(`🔌 WebSocket client disconnected (total: ${connectedClients})`);
+
+    io.emit('connection:status', {
+      clients: connectedClients,
+      status: 'disconnected',
+      timestamp: Date.now()
+    });
+  });
+
+  // Ping for latency measurement (optional)
+  socket.on('ping', (data) => {
+    socket.emit('pong', {
+      timestamp: Date.now(),
+      clientTimestamp: data.timestamp,
+      latency: Date.now() - data.timestamp
+    });
+  });
+});
+
+/**
+ * Broadcast score update to all connected WebSocket clients
+ */
+function broadcastScoreUpdate(matches) {
+  if (!matches || matches.length === 0) return;
+
+  io.emit('score:update', {
+    matches,
+    timestamp: Date.now(),
+    source: 'websocket',
+    clientCount: connectedClients
+  });
+
+  console.log(`📡 Broadcasted update to ${connectedClients} clients`);
+}
+
+/**
+ * Broadcast connection error to all connected clients
+ */
+function broadcastConnectionError(errorMessage) {
+  io.emit('connection:error', {
+    error: errorMessage,
+    timestamp: Date.now(),
+    clientCount: connectedClients,
+    fallbackMode: 'polling'
+  });
+
+  console.log(`⚠️ Broadcasted error to ${connectedClients} clients`);
 }
 
 // Buscar e normalizar dados da ESPN
@@ -133,11 +237,20 @@ app.get('/api/scoreboard', async (req, res) => {
     if (matches && matches.length > 0) {
       cache.data = matches;
       cache.timestamp = now;
+
+      // Broadcast to WebSocket clients
+      broadcastScoreUpdate(matches);
+
       return res.json({
         matches,
         cached: false,
         timestamp: now
       });
+    }
+
+    // Se ESPN falhar
+    if (!matches) {
+      broadcastConnectionError('ESPN API indisponível');
     }
 
     // Se ESPN falhar e temos cache expirado, retorna cache mesmo assim
@@ -173,7 +286,9 @@ app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../public/index.html'));
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🟢 GAMA Copa Center rodando em http://localhost:${PORT}`);
   console.log(`📊 API: GET http://localhost:${PORT}/api/scoreboard`);
+  console.log(`🔗 WebSocket: ws://localhost:${PORT} (Socket.IO)`);
+  console.log(`📡 Real-time scores via WebSocket with HTTP polling fallback`);
 });
