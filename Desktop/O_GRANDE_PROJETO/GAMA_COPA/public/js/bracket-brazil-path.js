@@ -405,7 +405,7 @@ window.initBrazilPathVisualizer = function(selectedTeam = 'BRA') {
   if (!circularBracket || !BRACKET_DATA) return;
 
   brazilPathVisualizer = new BrazilPathVisualizer(circularBracket);
-  brazilPathVisualizer.selectedTeam = selectedTeam;
+  brazilPathVisualizer.selectedTeam = selectedTeam || 'BRA';
 
   // Renderizar path card ACIMA do bracket
   const pathCard = brazilPathVisualizer.renderBrazilPathCard(BRACKET_DATA);
