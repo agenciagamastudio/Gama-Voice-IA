@@ -613,22 +613,25 @@ function mergeBracketWithLiveData(liveMatches) {
     }
   });
 
-  // Re-renderizar bracket
+  // Re-renderizar bracket com time selecionado
   if (circularBracket && BRACKET_DATA) {
-    circularBracket.render(BRACKET_DATA);
+    const selectedTeam = (typeof brazilPathVisualizer !== 'undefined' && brazilPathVisualizer)
+      ? brazilPathVisualizer.selectedTeam
+      : 'BRA';
+    circularBracket.render(BRACKET_DATA, selectedTeam);
   }
 }
 
 /**
  * Inicializar bracket circular
  */
-async function initCircularBracket() {
+async function initCircularBracket(selectedTeam = 'BRA') {
   if (!BRACKET_DATA) {
     await loadBracketData();
   }
 
   circularBracket = new CircularBracket('bracketCircularSlot');
-  circularBracket.render(BRACKET_DATA);
+  circularBracket.render(BRACKET_DATA, selectedTeam);
   console.log('✅ Circular bracket renderizado com dados de ' + (BRACKET_DATA.groups?.length || 0) + ' grupos');
 }
 
