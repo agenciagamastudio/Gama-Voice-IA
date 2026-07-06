@@ -208,6 +208,77 @@
     .hero .hpad{padding:20px}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* Team Selection Modal */
+  .btn-team-selector{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;background:rgba(136,206,17,.15);color:var(--lime);border:1px solid rgba(136,206,17,.35);border-radius:2px;padding:9px 14px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+  .btn-team-selector:hover{background:rgba(136,206,17,.25);border-color:var(--lime)}
+  .btn-team-selector:active{transform:scale(0.98)}
+
+  .team-selection-modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+  .team-selection-overlay{position:absolute;inset:0;background:rgba(13,13,13,.92);backdrop-filter:blur(4px);cursor:pointer;pointer-events:all}
+  .team-selection-content{position:relative;z-index:101;background:var(--panel);border:1px solid var(--lime-line);border-radius:6px;width:90%;max-width:600px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+
+  .team-selection-header{padding:28px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--panel-2) 0%,var(--panel) 100%)}
+  .team-selection-header h2{font-size:20px;margin-bottom:8px;color:var(--ink)}
+  .team-selection-header p{font-size:13px;color:var(--ink-dim);margin-bottom:16px}
+
+  .team-selection-search{position:relative}
+  .team-search-input{width:100%;padding:12px 16px;background:var(--void-2);border:1px solid var(--line);border-radius:4px;color:var(--ink);font-family:var(--display);font-size:13px;outline:none;transition:border-color .2s}
+  .team-search-input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(136,206,17,.15)}
+  .team-search-input::placeholder{color:var(--ink-faint)}
+
+  .team-selection-list{flex:1;overflow-y:auto;padding:16px 28px}
+  .team-group{margin-bottom:24px}
+  .team-group:last-child{margin-bottom:0}
+  .group-label{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lime);font-weight:700;margin-bottom:10px;display:block}
+
+  .team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+  .team-item{background:var(--void-2);border:1px solid var(--line-2);border-radius:4px;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;font-family:var(--display);color:var(--ink);text-align:center;position:relative;overflow:hidden}
+  .team-item:hover{border-color:var(--line);background:var(--panel-2)}
+  .team-item.selected{border-color:var(--lime);background:rgba(136,206,17,.12);box-shadow:0 0 0 2px rgba(136,206,17,.25)}
+  .team-item.selected::after{content:"✓";position:absolute;top:4px;right:6px;color:var(--lime);font-weight:700;font-size:12px}
+
+  .team-flag{font-size:28px;line-height:1}
+  .team-name{font-size:11px;font-weight:600;color:var(--ink)}
+  .team-code{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.5px}
+
+  .no-results{text-align:center;padding:40px 20px;color:var(--ink-faint);font-size:13px}
+
+  .team-selection-footer{padding:20px 28px;border-top:1px solid var(--line);background:var(--void-2);display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn-continue-without,.btn-clear-selection,.btn-close{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;border-radius:3px;padding:10px 16px;font-weight:700;cursor:pointer;transition:all .15s;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+
+  .btn-continue-without{background:none;color:var(--ink-dim);border-color:var(--line-2)}
+  .btn-continue-without:hover{color:var(--ink);border-color:var(--ink-faint)}
+
+  .btn-clear-selection{background:rgba(224,86,59,.12);color:var(--red);border-color:rgba(224,86,59,.4)}
+  .btn-clear-selection:hover{background:rgba(224,86,59,.2)}
+
+  .btn-close{background:var(--lime);color:var(--void);border-color:var(--lime)}
+  .btn-close:hover{filter:brightness(1.08)}
+
+  .team-suggestion{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--lime-line);border-radius:4px;padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:200;animation:slideIn .3s ease;backdrop-filter:blur(8px)}
+  @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .team-suggestion.fade-out{animation:slideOut .3s ease}
+  @keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(400px);opacity:0}}
+  .suggestion-icon{font-size:18px}
+  .suggestion-text{font-size:12px;color:var(--ink);font-weight:500}
+
+  /* Scrollbar styling for team list */
+  .team-selection-list::-webkit-scrollbar{width:6px}
+  .team-selection-list::-webkit-scrollbar-track{background:var(--void-2)}
+  .team-selection-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .team-selection-list::-webkit-scrollbar-thumb:hover{background:var(--line-2)}
+
+  @media(max-width:600px){
+    .team-selection-content{width:95%;max-height:90vh;border-radius:4px}
+    .team-selection-header{padding:20px}
+    .team-selection-list{padding:12px 20px}
+    .team-list{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+    .team-item{padding:10px;font-size:10px}
+    .team-flag{font-size:24px}
+    .team-selection-footer{padding:16px 20px;gap:8px}
+    .btn-team-selector{font-size:10px;padding:7px 12px}
+  }
 </style>
 </head>
 <body>
@@ -217,6 +288,7 @@
     <div class="brand"><b>GAMA</b> · Copa Center · <span id="liveClockDisplay" style="font-family:var(--mono);color:var(--lime);font-weight:700">--:--:--</span></div>
     <div class="syncbox">
       <span class="synced"><span class="dot" id="statusdot"></span><span id="synctxt">iniciando…</span></span>
+      <button class="btn-team-selector" id="btnTeamSelector" onclick="if(typeof openTeamSelectionModal==='function') openTeamSelectionModal(); else alert('Carregando...')">🏆 Escolha seu time</button>
       <button class="btn-sync" id="btnSync" onclick="refreshScoreboard(false)"><span class="spin"></span><span id="btnLabel">Atualizar</span></button>
     </div>
   </div>
@@ -289,6 +361,7 @@
 <script src="js/live-clock.js"></script>
 <script src="js/instagram-modal.js"></script>
 <script src="js/scoreboard-sync.js"></script>
+<script src="js/team-selection.js"></script>
 
 <script>
   // ============================================================================
@@ -670,6 +743,9 @@
 
 <!-- Circular Interactive Bracket — Beautiful SVG visualization with live data sync -->
 <script src="js/bracket-circular-interactive.js"></script>
+
+<!-- Brazil Path Visualization & Interactivity -->
+<script src="js/bracket-brazil-path.js"></script>
 
 </body>
 </html>
