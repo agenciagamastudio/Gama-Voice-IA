@@ -112,16 +112,34 @@ class TeamFocusState {
       return;
     }
 
-    // Reutilizar a função renderHero mas com o match deste time
-    const originalFeat = MATCHES.find(m => m.feat);
-    MATCHES.forEach(m => m.feat = false);
-    match.feat = true;
-
-    renderHero();
-
-    // Restaurar estado original
-    MATCHES.forEach(m => m.feat = false);
-    if (originalFeat) originalFeat.feat = true;
+    // Renderizar diretamente (não usar renderHero() global pra evitar side effects)
+    const st = statusOf(match);
+    const html = `
+      <div class="hero"><div class="hpad">
+        <div class="htop">
+          <span class="htag">Oitavas de final · vaga nas quartas</span>
+          <span class="statuspill ${st}"><span class="dot"></span>${stLabel(st)}</span>
+        </div>
+        <div class="matchrow">
+          <div class="team ${match.home === this.selectedTeam ? 'br' : ''}">
+            <div class="badge">${match.home}</div>
+            <div class="tn">${NAMES[match.home]}</div>
+          </div>
+          <div class="score">
+            ${match.hs !== null ? `${match.hs} <span class="x">×</span> ${match.as}` : 'vs'}
+          </div>
+          <div class="team ${match.away === this.selectedTeam ? 'br' : ''}">
+            <div class="badge">${match.away}</div>
+            <div class="tn">${NAMES[match.away]}</div>
+          </div>
+        </div>
+        <div class="hmeta">
+          <span><b>Hoje</b> ${new Date(match.ko).toLocaleTimeString('pt-BR')}</span>
+          <span>${match.venue || 'Local TBD'}</span>
+        </div>
+      </div></div>
+    `;
+    document.getElementById('heroSlot').innerHTML = html;
   }
 
   /**
@@ -181,6 +199,23 @@ class TeamFocusState {
     if (bracketLabel) {
       const teamName = NAMES[this.selectedTeam] || this.selectedTeam;
       bracketLabel.innerHTML = `<b>${teamName}</b> · visualização circular interativa`;
+    }
+
+    // Atualizar label "Destaque" na path card
+    const destaqueLabel = document.querySelectorAll('.slabel')[0];
+    if (destaqueLabel) {
+      const teamName = NAMES[this.selectedTeam] || this.selectedTeam;
+      destaqueLabel.innerHTML = `<b>${teamName}</b> · o jogo de ${teamName}`;
+    }
+
+    // Atualizar bracket legend
+    const bracketLegend = document.querySelector('.blegend');
+    if (bracketLegend) {
+      const teamName = NAMES[this.selectedTeam] || this.selectedTeam;
+      const firstSpan = bracketLegend.querySelector('span');
+      if (firstSpan) {
+        firstSpan.innerHTML = `<i class="br"></i> Caminho de ${teamName}`;
+      }
     }
   }
 

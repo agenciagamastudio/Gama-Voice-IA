@@ -146,11 +146,13 @@ class BrazilPathVisualizer {
       font-family: 'Archivo', sans-serif;
     `;
 
+    const selectedTeamCode = this.selectedTeam;
+    const selectedTeamName = NAMES[selectedTeamCode] || selectedTeamCode;
     let html = `
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px">
         <span style="font-size: 24px">🇧🇷</span>
         <div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #f2f2f2">O caminho do Brasil até o Hexa</h3>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #f2f2f2">O caminho de ${selectedTeamName} até o Hexa</h3>
           <p style="margin: 4px 0 0 0; font-size: 13px; color: #a0a0a0">Status da jornada na Copa 2026</p>
         </div>
       </div>
