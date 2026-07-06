@@ -13,25 +13,27 @@ class BrazilPathVisualizer {
   }
 
   /**
-   * Extrair o caminho do Brasil através do torneio
+   * Extrair o caminho do time selecionado através do torneio
    */
   extractBrazilPath(bracketData) {
     const path = [];
 
     if (!bracketData) return path;
 
+    const selectedTeam = this.selectedTeam;
+
     // Fase 1: Grupos (Anel 0)
     if (bracketData.groups) {
-      const groupWithBra = bracketData.groups.find(g =>
-        g.teams && g.teams.includes('BRA')
+      const groupWithTeam = bracketData.groups.find(g =>
+        g.teams && g.teams.includes(selectedTeam)
       );
-      if (groupWithBra) {
+      if (groupWithTeam) {
         path.push({
           stage: 'Grupos',
-          team: 'BRA',
+          team: selectedTeam,
           opponent: null,
           match: null,
-          description: `Grupo ${groupWithBra.id}`
+          description: `Grupo ${groupWithTeam.id}`
         });
       }
     }
@@ -40,14 +42,14 @@ class BrazilPathVisualizer {
     if (bracketData.knockout?.round16) {
       for (let i = 0; i < bracketData.knockout.round16.length; i++) {
         const m = bracketData.knockout.round16[i];
-        if (m && (m.home === 'BRA' || m.away === 'BRA')) {
-          const opponent = m.home === 'BRA' ? m.away : m.home;
+        if (m && (m.home === selectedTeam || m.away === selectedTeam)) {
+          const opponent = m.home === selectedTeam ? m.away : m.home;
           const won = m.hs !== null && m.as !== null &&
-            ((m.home === 'BRA' && m.hs > m.as) || (m.away === 'BRA' && m.as > m.hs));
+            ((m.home === selectedTeam && m.hs > m.as) || (m.away === selectedTeam && m.as > m.hs));
 
           path.push({
             stage: 'Oitavas',
-            team: 'BRA',
+            team: selectedTeam,
             opponent: opponent,
             match: m,
             score: m.hs !== null ? `${m.hs}–${m.as}` : 'vs',
@@ -63,14 +65,14 @@ class BrazilPathVisualizer {
     if (bracketData.knockout?.quarterfinals) {
       for (let i = 0; i < bracketData.knockout.quarterfinals.length; i++) {
         const m = bracketData.knockout.quarterfinals[i];
-        if (m && (m.home === 'BRA' || m.away === 'BRA')) {
-          const opponent = m.home === 'BRA' ? m.away : m.home;
+        if (m && (m.home === selectedTeam || m.away === selectedTeam)) {
+          const opponent = m.home === selectedTeam ? m.away : m.home;
           const won = m.hs !== null && m.as !== null &&
-            ((m.home === 'BRA' && m.hs > m.as) || (m.away === 'BRA' && m.as > m.hs));
+            ((m.home === selectedTeam && m.hs > m.as) || (m.away === selectedTeam && m.as > m.hs));
 
           path.push({
             stage: 'Quartas',
-            team: 'BRA',
+            team: selectedTeam,
             opponent: opponent,
             match: m,
             score: m.hs !== null ? `${m.hs}–${m.as}` : 'vs',
@@ -86,14 +88,14 @@ class BrazilPathVisualizer {
     if (bracketData.knockout?.semifinals) {
       for (let i = 0; i < bracketData.knockout.semifinals.length; i++) {
         const m = bracketData.knockout.semifinals[i];
-        if (m && (m.home === 'BRA' || m.away === 'BRA')) {
-          const opponent = m.home === 'BRA' ? m.away : m.home;
+        if (m && (m.home === selectedTeam || m.away === selectedTeam)) {
+          const opponent = m.home === selectedTeam ? m.away : m.home;
           const won = m.hs !== null && m.as !== null &&
-            ((m.home === 'BRA' && m.hs > m.as) || (m.away === 'BRA' && m.as > m.hs));
+            ((m.home === selectedTeam && m.hs > m.as) || (m.away === selectedTeam && m.as > m.hs));
 
           path.push({
             stage: 'Semifinal',
-            team: 'BRA',
+            team: selectedTeam,
             opponent: opponent,
             match: m,
             score: m.hs !== null ? `${m.hs}–${m.as}` : 'vs',
@@ -108,14 +110,14 @@ class BrazilPathVisualizer {
     // Fase 5: Final (Centro)
     if (bracketData.knockout?.final && bracketData.knockout.final.length > 0) {
       const m = bracketData.knockout.final[0];
-      if (m && (m.home === 'BRA' || m.away === 'BRA')) {
-        const opponent = m.home === 'BRA' ? m.away : m.home;
+      if (m && (m.home === selectedTeam || m.away === selectedTeam)) {
+        const opponent = m.home === selectedTeam ? m.away : m.home;
         const won = m.hs !== null && m.as !== null &&
-          ((m.home === 'BRA' && m.hs > m.as) || (m.away === 'BRA' && m.as > m.hs));
+          ((m.home === selectedTeam && m.hs > m.as) || (m.away === selectedTeam && m.as > m.hs));
 
         path.push({
           stage: 'Final',
-          team: 'BRA',
+          team: selectedTeam,
           opponent: opponent,
           match: m,
           score: m.hs !== null ? `${m.hs}–${m.as}` : 'vs',
