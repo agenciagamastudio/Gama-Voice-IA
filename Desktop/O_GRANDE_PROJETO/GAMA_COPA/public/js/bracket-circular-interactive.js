@@ -24,10 +24,10 @@ class CircularBracket {
    * Renderizar usando o visual ANTIGO BONITO (RINGS + SVG ternário)
    * com dados NOVOS (grupos + knockouts da API)
    */
-  async render(bracketData) {
+  async render(bracketData, selectedTeam = 'BRA') {
     if (!bracketData) return;
 
-    const svg = this.renderBracketSVG(bracketData);
+    const svg = this.renderBracketSVG(bracketData, selectedTeam);
     this.container.innerHTML = '';
     this.container.appendChild(svg);
   }
@@ -35,7 +35,7 @@ class CircularBracket {
   /**
    * Renderizar SVG no estilo antigo (visual BONITO ternário em RINGS)
    */
-  renderBracketSVG(bracketData) {
+  renderBracketSVG(bracketData, selectedTeam = 'BRA') {
     const svg = document.createElementNS(this.svgNS, 'svg');
     svg.setAttribute('viewBox', '0 0 720 720');
     svg.setAttribute('xmlns', this.svgNS);
@@ -103,7 +103,7 @@ class CircularBracket {
 
     // Nós (times)
     const nodeGroup = document.createElementNS(this.svgNS, 'g');
-    this.drawNodes(nodeGroup, ringLabels);
+    this.drawNodes(nodeGroup, ringLabels, selectedTeam);
     svg.appendChild(nodeGroup);
 
     // Taça no centro
@@ -260,7 +260,7 @@ class CircularBracket {
   /**
    * Desenhar nós (círculos com times)
    */
-  drawNodes(nodeGroup, labels) {
+  drawNodes(nodeGroup, labels, selectedTeam = 'BRA') {
     for (let k = 0; k < this.RINGS.length; k++) {
       for (let i = 0; i < this.RINGS[k].n; i++) {
         const pos = this.pt(this.RINGS[k].r, this.ang(k, i));
@@ -269,7 +269,7 @@ class CircularBracket {
 
         let cls, label, title;
         if (code) {
-          cls = (code === 'BRA') ? 'nd br' : (onBr ? 'nd br' : 'nd');
+          cls = (code === selectedTeam) ? 'nd br' : (onBr ? 'nd br' : 'nd');
           label = code;
           title = NAMES[code] || code;
         } else {

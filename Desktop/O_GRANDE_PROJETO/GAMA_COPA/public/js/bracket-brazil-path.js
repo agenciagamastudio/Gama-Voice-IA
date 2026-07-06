@@ -384,6 +384,11 @@ class BrazilPathVisualizer {
       }
     }
 
+    // Re-renderizar bracket circular com o time selecionado
+    if (window.circularBracket) {
+      window.circularBracket.render(bracketData, this.selectedTeam);
+    }
+
     // Re-attach interactivity
     this.attachNodeInteractivity();
   }
