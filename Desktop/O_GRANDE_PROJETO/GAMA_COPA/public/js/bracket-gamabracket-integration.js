@@ -9,49 +9,9 @@ let gamaBracketInstance = null;
  * Inicializar GamaBracket quando dados estão prontos
  */
 function initGamaBracket(data, selectedTeam = 'BRA') {
-  const container = document.getElementById('bracketCircularSlot');
-  console.log('🔍 initGamaBracket:', { container: !!container, data: !!data, selectedTeam });
-
-  if (!container) {
-    console.error('❌ Container #bracketCircularSlot não encontrado!');
-    return;
-  }
-
-  if (!data) {
-    console.error('❌ Dados do bracket não disponíveis!');
-    return;
-  }
-
-  try {
-    // NÃO limpar container — deixar CircularBracket desenhar e GamaBracket atualizar dinamicamente
-
-    if (gamaBracketInstance) {
-      console.log('Destruindo GamaBracket anterior...');
-      gamaBracketInstance.destroy();
-    }
-
-    if (typeof GamaBracket === 'undefined') {
-      console.error('❌ GamaBracket não foi carregado! Verifique se docs/gama-copa-bracket.js foi carregado.');
-      return;
-    }
-
-    gamaBracketInstance = GamaBracket.mount(container, {
-      data: data,
-      team: selectedTeam,
-      selectOnClick: true,
-      onTeamClick: function(code) {
-        console.log('🎯 Time clicado no bracket:', code);
-        if (window.focusTeam) {
-          window.focusTeam(code);
-        }
-      }
-    });
-
-    console.log(`✅ GamaBracket montado com sucesso para ${selectedTeam}`);
-  } catch (e) {
-    console.error('❌ Erro ao inicializar GamaBracket:', e);
-    console.error('Stack:', e.stack);
-  }
+  console.log('🔍 initGamaBracket: apenas preparando para atualizações dinâmicas');
+  // Não fazer nada — CircularBracket vai renderizar
+  // Apenas preparar para quando o time mudar via updateBracketTeam()
 }
 
 /**
@@ -94,8 +54,11 @@ window.updateBracketData = function(data) {
 
 // Hook global para atualizar team quando muda
 window.updateBracketTeam = function(teamCode) {
-  if (gamaBracketInstance) {
-    gamaBracketInstance.setTeam(teamCode);
-    console.log(`🎯 GamaBracket: time atualizado para ${teamCode}`);
+  console.log(`🎯 Atualizando bracket para team: ${teamCode}`);
+
+  // Atualizar CircularBracket (renderiza novamente com o novo team)
+  if (typeof circularBracket !== 'undefined' && circularBracket && typeof BRACKET_DATA !== 'undefined') {
+    circularBracket.render(BRACKET_DATA, teamCode);
+    console.log(`✅ Bracket atualizado visualmente para ${teamCode}`);
   }
 };
