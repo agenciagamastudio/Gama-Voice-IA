@@ -633,6 +633,14 @@ async function initCircularBracket(selectedTeam = 'BRA') {
   circularBracket = new CircularBracket('bracketCircularSlot');
   circularBracket.render(BRACKET_DATA, selectedTeam);
   console.log('✅ Circular bracket renderizado com dados de ' + (BRACKET_DATA.groups?.length || 0) + ' grupos');
+
+  // Inicializar GamaBracket (nova implementação dinâmica)
+  if (typeof initGamaBracket === 'function') {
+    const teamSelection = document.querySelector('[data-selected-team]');
+    const selectedTeamCode = teamSelection ? teamSelection.getAttribute('data-selected-team') : 'BRA';
+    initGamaBracket(BRACKET_DATA, selectedTeamCode);
+    console.log('✅ GamaBracket inicializado com dados');
+  }
 }
 
 // Hook para atualizar bracket quando dados ao vivo chegam
