@@ -200,6 +200,7 @@ class CircularBracket {
   drawConnections(connGroup, connBrGroup, labels, selectedTeam = 'BRA') {
     // Encontrar posição do time selecionado
     const selectedPos = labels[0].indexOf(selectedTeam);
+    console.log(`🔍 drawConnections: selectedTeam=${selectedTeam}, selectedPos=${selectedPos}, labels[0]=${labels[0]?.join(',')}`);
 
     // Conexões entre anéis k-1 e k (DINÂMICO)
     for (let k = 1; k < this.RINGS.length; k++) {
