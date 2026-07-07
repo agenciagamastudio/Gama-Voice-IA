@@ -23,8 +23,7 @@ function initGamaBracket(data, selectedTeam = 'BRA') {
   }
 
   try {
-    // Limpar container antes de renderizar
-    container.innerHTML = '';
+    // NÃO limpar container — deixar CircularBracket desenhar e GamaBracket atualizar dinamicamente
 
     if (gamaBracketInstance) {
       console.log('Destruindo GamaBracket anterior...');
