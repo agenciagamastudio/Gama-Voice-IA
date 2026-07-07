@@ -288,7 +288,7 @@
     <div class="brand"><b>GAMA</b> · Copa Center · <span id="liveClockDisplay" style="font-family:var(--mono);color:var(--lime);font-weight:700">--:--:--</span></div>
     <div class="syncbox">
       <span class="synced"><span class="dot" id="statusdot"></span><span id="synctxt">iniciando…</span></span>
-      <button class="btn-team-selector" id="btnTeamSelector" onclick="if(typeof openTeamSelectionModal==='function') openTeamSelectionModal(); else alert('Carregando...')">🏆 Escolha seu time</button>
+      <button class="btn-team-selector" id="btnTeamSelector" onclick="if(typeof openTeamSelector==='function') openTeamSelector(); else alert('Carregando...')">🏆 Escolha seu time</button>
       <button class="btn-sync" id="btnSync" onclick="refreshScoreboard(false)"><span class="spin"></span><span id="btnLabel">Atualizar</span></button>
     </div>
   </div>
