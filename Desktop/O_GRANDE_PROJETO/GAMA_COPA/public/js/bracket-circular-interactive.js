@@ -97,7 +97,7 @@ class CircularBracket {
     // Conexões de Brasil
     const connBrGroup = document.createElementNS(this.svgNS, 'g');
 
-    this.drawConnections(connGroup, connBrGroup, ringLabels);
+    this.drawConnections(connGroup, connBrGroup, ringLabels, selectedTeam);
     svg.appendChild(connGroup);
     svg.appendChild(connBrGroup);
 
@@ -197,8 +197,11 @@ class CircularBracket {
   /**
    * Desenhar conexões em arco entre anéis
    */
-  drawConnections(connGroup, connBrGroup, labels) {
-    // Conexões entre anéis k-1 e k
+  drawConnections(connGroup, connBrGroup, labels, selectedTeam = 'BRA') {
+    // Encontrar posição do time selecionado
+    const selectedPos = labels[0].indexOf(selectedTeam);
+
+    // Conexões entre anéis k-1 e k (DINÂMICO)
     for (let k = 1; k < this.RINGS.length; k++) {
       for (let p = 0; p < this.RINGS[k].n; p++) {
         const ang0 = this.ang(k - 1, 2 * p);
@@ -213,8 +216,9 @@ class CircularBracket {
         const line = document.createElementNS(this.svgNS, 'path');
         line.setAttribute('d', path);
 
-        // Item 0 é sempre Brasil
-        if (p === 0) {
+        // Desenhar trilha do time selecionado (não apenas Brasil)
+        const isSelectedPath = (selectedPos >= 0 && p === Math.floor(selectedPos / 2));
+        if (isSelectedPath) {
           line.setAttribute('class', 'conn br');
           connBrGroup.appendChild(line);
         } else {
@@ -224,9 +228,10 @@ class CircularBracket {
       }
     }
 
-    // Conexão final para a taça
-    const f0 = this.pt(this.RINGS[3].r, this.ang(3, 0));
-    const f1 = this.pt(this.RINGS[3].r, this.ang(3, 1));
+    // Conexão final para a taça (DINÂMICA)
+    const finalPos = selectedPos >= 0 ? 0 : 1; // Time selecionado sempre vai ao slot 0 final
+    const f0 = this.pt(this.RINGS[3].r, this.ang(3, finalPos));
+    const f1 = this.pt(this.RINGS[3].r, this.ang(3, finalPos === 0 ? 1 : 0));
 
     const lineFinal1 = document.createElementNS(this.svgNS, 'path');
     lineFinal1.setAttribute('class', 'conn br');
