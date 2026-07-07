@@ -10,14 +10,30 @@ let gamaBracketInstance = null;
  */
 function initGamaBracket(data, selectedTeam = 'BRA') {
   const container = document.getElementById('bracketCircularSlot');
-  if (!container || !data) {
-    console.warn('⚠️ GamaBracket: container ou data não disponível');
+  console.log('🔍 initGamaBracket:', { container: !!container, data: !!data, selectedTeam });
+
+  if (!container) {
+    console.error('❌ Container #bracketCircularSlot não encontrado!');
+    return;
+  }
+
+  if (!data) {
+    console.error('❌ Dados do bracket não disponíveis!');
     return;
   }
 
   try {
+    // Limpar container antes de renderizar
+    container.innerHTML = '';
+
     if (gamaBracketInstance) {
+      console.log('Destruindo GamaBracket anterior...');
       gamaBracketInstance.destroy();
+    }
+
+    if (typeof GamaBracket === 'undefined') {
+      console.error('❌ GamaBracket não foi carregado! Verifique se docs/gama-copa-bracket.js foi carregado.');
+      return;
     }
 
     gamaBracketInstance = GamaBracket.mount(container, {
@@ -25,16 +41,17 @@ function initGamaBracket(data, selectedTeam = 'BRA') {
       team: selectedTeam,
       selectOnClick: true,
       onTeamClick: function(code) {
-        // Quando clica em um time no bracket, atualiza a seleção global
+        console.log('🎯 Time clicado no bracket:', code);
         if (window.focusTeam) {
           window.focusTeam(code);
         }
       }
     });
 
-    console.log(`✅ GamaBracket inicializado com ${selectedTeam}`);
+    console.log(`✅ GamaBracket montado com sucesso para ${selectedTeam}`);
   } catch (e) {
     console.error('❌ Erro ao inicializar GamaBracket:', e);
+    console.error('Stack:', e.stack);
   }
 }
 
