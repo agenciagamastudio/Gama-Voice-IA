@@ -179,12 +179,15 @@ class TeamFocusState {
    * Update Bracket (mostrar caminho do time selecionado)
    */
   updateBracket() {
+    // Atualizar GamaBracket
+    if (typeof updateBracketTeam === 'function') {
+      updateBracketTeam(this.selectedTeam);
+    }
+
+    // Atualizar brazilPathVisualizer (legacy)
     if (brazilPathVisualizer) {
       brazilPathVisualizer.selectedTeam = this.selectedTeam;
-      console.log(`🔄 Updating bracket for: ${NAMES[this.selectedTeam] || this.selectedTeam} (${this.selectedTeam})`);
       brazilPathVisualizer.updateWithNewData(BRACKET_DATA);
-    } else {
-      console.warn('⚠️ brazilPathVisualizer not initialized yet');
     }
   }
 
