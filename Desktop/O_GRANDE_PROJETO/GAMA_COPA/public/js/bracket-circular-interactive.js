@@ -627,12 +627,18 @@ async function initCircularBracket(selectedTeam = 'BRA') {
     await loadBracketData();
   }
 
-  // Inicializar APENAS GamaBracket (nova implementação dinâmica — remove CircularBracket antigo)
-  if (typeof initGamaBracket === 'function') {
-    const teamSelection = document.querySelector('[data-selected-team]');
-    const selectedTeamCode = teamSelection ? teamSelection.getAttribute('data-selected-team') : 'BRA';
-    initGamaBracket(BRACKET_DATA, selectedTeamCode);
-    console.log('✅ GamaBracket inicializado com dados');
+  // Renderizar SVG padrão (Brasil) com CircularBracket
+  circularBracket = new CircularBracket('bracketCircularSlot');
+  circularBracket.render(BRACKET_DATA, selectedTeam);
+  console.log('✅ Bracket padrão renderizado');
+
+  // Também inicializar GamaBracket para atualizações dinâmicas
+  setTimeout(() => {
+    if (typeof initGamaBracket === 'function') {
+      const teamSelection = document.querySelector('[data-selected-team]');
+      const selectedTeamCode = teamSelection ? teamSelection.getAttribute('data-selected-team') : 'BRA';
+      initGamaBracket(BRACKET_DATA, selectedTeamCode);
+      console.log('✅ GamaBracket sobreposto para atualizações dinâmicas');
   }
 }
 
