@@ -639,7 +639,8 @@ async function initCircularBracket(selectedTeam = 'BRA') {
       const selectedTeamCode = teamSelection ? teamSelection.getAttribute('data-selected-team') : 'BRA';
       initGamaBracket(BRACKET_DATA, selectedTeamCode);
       console.log('✅ GamaBracket sobreposto para atualizações dinâmicas');
-  }
+    }
+  }, 100);
 }
 
 // Hook para atualizar bracket quando dados ao vivo chegam
