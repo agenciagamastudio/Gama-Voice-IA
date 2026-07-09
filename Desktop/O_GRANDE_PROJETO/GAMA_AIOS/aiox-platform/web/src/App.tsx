@@ -40,8 +40,33 @@ const TABS = [
   ['system', '08', 'Sistema'],
 ] as const;
 
+/* ── URL ↔ view (History API, sem router lib) ─────────── */
+const VIEW_SLUG: Record<string, string> = {
+  overview: 'briefing', router: 'roteador', workflows: 'workflows', crew: 'tripulacao',
+  squads: 'squads', ade: 'motor-ade', cycle: 'ciclo', commands: 'comandos', system: 'sistema',
+};
+const SLUG_VIEW: Record<string, string> = Object.fromEntries(
+  Object.entries(VIEW_SLUG).map(([v, s]) => [s, v]),
+);
+
+function normalizeSlug(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos (/Tripulação → tripulacao)
+    .replace(/[\s_-]+/g, '');                         // ignora hífen/espaço (/Motor-ADE → motorade)
+}
+
+const NORM_VIEW: Record<string, string> = Object.fromEntries(
+  Object.entries(VIEW_SLUG).map(([v, s]) => [normalizeSlug(s), v]),
+);
+
+function viewFromPath(): string {
+  const raw = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
+  return NORM_VIEW[normalizeSlug(raw)] || 'overview';
+}
+
 export default function App() {
-  const [view, setView] = useState('overview');
+  const [view, setView] = useState(viewFromPath);
   const [content, setContent] = useState<Content>(seedData as unknown as Content);
   const [ai, setAi] = useState<AiStatus>({ ai: false, provider: null, model: null });
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -56,6 +81,13 @@ export default function App() {
 
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
 
+  // voltar/avançar do navegador sincroniza a view
+  useEffect(() => {
+    const onPop = () => { setView(viewFromPath()); window.scrollTo({ top: 0 }); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const totalCmds = useMemo(
     () => content.agents.reduce((n, a) => n + a.cmds.length, 0) + 5,
     [content],
@@ -63,7 +95,14 @@ export default function App() {
 
   const ctx: Ctx = {
     content, ai,
-    goto: (v, opts) => { if (opts?.mission) setRouterMission(opts.mission); setView(v); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+    goto: (v, opts) => {
+      if (opts?.mission) setRouterMission(opts.mission);
+      const slug = VIEW_SLUG[v] || '';
+      const path = slug === 'briefing' ? '/' : `/${slug}`;
+      if (window.location.pathname !== path) window.history.pushState(null, '', path);
+      setView(v);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
     routerMission,
     toast: () => { setShowToast(true); setTimeout(() => setShowToast(false), 1600); },
     openChat: () => setChatOpen(true),
