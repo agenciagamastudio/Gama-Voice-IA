@@ -254,3 +254,13 @@ class RoutedProvider implements AIProvider {
 export function getRoutedProvider(): AIProvider | null {
   return buildCandidates().length ? new RoutedProvider() : null;
 }
+
+/** Estado da cadeia de modelos (pra telemetria/health). */
+export function modelStatus(): { key: string; label: string; cooldownSecs: number }[] {
+  const now = Date.now();
+  return buildCandidates().map(c => ({
+    key: c.key,
+    label: c.label,
+    cooldownSecs: Math.max(0, Math.ceil(((cooldown.get(c.key) || 0) - now) / 1000)),
+  }));
+}

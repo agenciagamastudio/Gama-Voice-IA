@@ -1,4 +1,63 @@
+import { useEffect, useState } from 'react';
 import { useApp } from '../App';
+
+type Health = {
+  ok: boolean;
+  uptimeSecs: number;
+  index: { ok: boolean; docs: number };
+  models: { key: string; label: string; cooldownSecs: number }[];
+};
+
+function LiveHealth() {
+  const [health, setHealth] = useState<Health | null>(null);
+  const [ingest, setIngest] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [ingestMsg, setIngestMsg] = useState('');
+
+  async function load() {
+    try { setHealth(await (await fetch('/api/health')).json()); } catch { setHealth(null); }
+  }
+  useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, []);
+
+  async function reingest() {
+    setIngest('running'); setIngestMsg('');
+    try {
+      const res = await fetch('/api/reingest', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setIngest('done');
+      setIngestMsg(`reindexado em ${data.secs}s · ${data.docs} chunks`);
+      load();
+    } catch (e: any) {
+      setIngest('error');
+      setIngestMsg(String(e?.message || e));
+    }
+  }
+
+  const up = health ? `${Math.floor(health.uptimeSecs / 3600)}h${String(Math.floor((health.uptimeSecs % 3600) / 60)).padStart(2, '0')}` : '—';
+  return (
+    <>
+      <p className="section-h" style={{ marginTop: 'var(--sp-6)' }}>Telemetria ao vivo <span className="ln" /></p>
+      <div className="kv">
+        <div className="kvrow"><span className="k">servidor</span><span className={`v${health ? ' ok' : ' warn'}`}>{health ? `online · up ${up}` : 'sem resposta'}</span></div>
+        <div className="kvrow"><span className="k">índice RAG</span><span className={`v${health?.index.ok ? ' ok' : ' warn'}`}>{health ? `${health.index.docs} chunks` : '—'}</span></div>
+        {health?.models.map(m => (
+          <div className="kvrow" key={m.key}>
+            <span className="k">{m.label}</span>
+            <span className={`v${m.cooldownSecs > 0 ? ' warn' : ' ok'}`}>
+              {m.cooldownSecs > 0 ? `cooldown ${m.cooldownSecs}s` : 'disponível'}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+        <button className="fixlink" onClick={reingest} disabled={ingest === 'running'}>
+          {ingest === 'running' ? '⟳ reindexando…' : '⟳ reindexar documentação (RAG)'}
+        </button>
+        {ingestMsg && <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: ingest === 'error' ? 'var(--warning, #d6a545)' : 'var(--text-3)' }}>{ingestMsg}</span>}
+      </div>
+    </>
+  );
+}
 
 export default function SystemView() {
   const { goto } = useApp();
@@ -7,6 +66,8 @@ export default function SystemView() {
       <p className="eyebrow">Raio-x da instalação</p>
       <h1 className="lead" style={{ fontSize: 'clamp(26px,4vw,38px)' }}>O <em>território</em> onde tudo vive</h1>
       <p className="sub">Onde o framework mora, onde os agentes escrevem, o que a tua config diz e como anda a saúde da engine — o retrato real da v5.2.9, direto do recon de 30/06.</p>
+
+      <LiveHealth />
 
       <div className="sys-grid">
         <div>
