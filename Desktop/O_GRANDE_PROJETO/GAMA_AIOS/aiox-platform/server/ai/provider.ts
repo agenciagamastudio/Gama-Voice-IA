@@ -159,13 +159,13 @@ type Candidate = { key: string; label: string; make: () => AIProvider };
 
 const cooldown = new Map<string, number>(); // key → timestamp de quando pode tentar de novo
 
-function parseRetrySeconds(msg: string): number | null {
+export function parseRetrySeconds(msg: string): number | null {
   const m = msg.match(/try again in (?:(\d+)m)?([\d.]+)s/i);
   if (!m) return null;
   return (m[1] ? parseInt(m[1]) * 60 : 0) + Math.ceil(parseFloat(m[2] || '0'));
 }
 
-function isQuotaError(msg: string): boolean {
+export function isQuotaError(msg: string): boolean {
   return /429|413|rate_limit|credit balance is too low|tokens per (day|minute)/i.test(msg);
 }
 

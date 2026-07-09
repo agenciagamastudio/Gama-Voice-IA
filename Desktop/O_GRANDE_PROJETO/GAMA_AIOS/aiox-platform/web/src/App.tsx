@@ -14,6 +14,7 @@ import Landing from './views/Landing';
 import NotFound from './views/NotFound';
 import ChatWidget from './components/ChatWidget';
 import ErrorBoundary from './components/ErrorBoundary';
+import { normalizeSlug } from './lib/slug';
 
 /* ── contexto global de dados ─────────────────────────── */
 type Ctx = {
@@ -51,13 +52,6 @@ const VIEW_SLUG: Record<string, string> = {
 const SLUG_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(VIEW_SLUG).map(([v, s]) => [s, v]),
 );
-
-function normalizeSlug(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos (/Tripulação → tripulacao)
-    .replace(/[\s_-]+/g, '');                         // ignora hífen/espaço (/Motor-ADE → motorade)
-}
 
 const NORM_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(VIEW_SLUG).map(([v, s]) => [normalizeSlug(s), v]),

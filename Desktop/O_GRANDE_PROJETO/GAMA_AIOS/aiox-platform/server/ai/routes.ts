@@ -20,7 +20,7 @@ const TEXT_EXTS = new Set([
   'css', 'scss', 'html', 'htm', 'xml', 'svg', 'csv', 'log', 'cfg', 'conf', 'lua', 'r', 'swift', 'kt', 'vue',
 ]);
 
-function attachmentsBlock(attachments: ChatAttachment[]): string {
+export function attachmentsBlock(attachments: ChatAttachment[]): string {
   let budget = ATTACH_TOTAL_CAP;
   const parts: string[] = [];
   for (const a of attachments) {

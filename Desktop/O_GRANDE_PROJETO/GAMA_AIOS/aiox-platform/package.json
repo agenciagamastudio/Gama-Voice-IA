@@ -12,7 +12,8 @@
     "ingest:remote": "tsx server/content/ingest.ts --remote",
     "build": "vite build",
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -36,6 +37,7 @@
     "cross-env": "^7.0.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^4.1.10"
   }
 }
