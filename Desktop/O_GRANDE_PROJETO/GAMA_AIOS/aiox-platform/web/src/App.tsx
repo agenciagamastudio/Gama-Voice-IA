@@ -10,6 +10,7 @@ import Ade from './views/Ade';
 import Cycle from './views/Cycle';
 import Commands from './views/Commands';
 import SystemView from './views/SystemView';
+import Landing from './views/Landing';
 import ChatWidget from './components/ChatWidget';
 
 /* ── contexto global de dados ─────────────────────────── */
@@ -62,7 +63,8 @@ const NORM_VIEW: Record<string, string> = Object.fromEntries(
 
 function viewFromPath(): string {
   const raw = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
-  return NORM_VIEW[normalizeSlug(raw)] || 'overview';
+  if (!raw) return 'landing'; // raiz = landing page de apresentação
+  return NORM_VIEW[normalizeSlug(raw)] || 'landing';
 }
 
 export default function App() {
@@ -97,8 +99,7 @@ export default function App() {
     content, ai,
     goto: (v, opts) => {
       if (opts?.mission) setRouterMission(opts.mission);
-      const slug = VIEW_SLUG[v] || '';
-      const path = slug === 'briefing' ? '/' : `/${slug}`;
+      const path = v === 'landing' ? '/' : `/${VIEW_SLUG[v] || 'briefing'}`;
       if (window.location.pathname !== path) window.history.pushState(null, '', path);
       setView(v);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -107,6 +108,14 @@ export default function App() {
     toast: () => { setShowToast(true); setTimeout(() => setShowToast(false), 1600); },
     openChat: () => setChatOpen(true),
   };
+
+  if (view === 'landing') {
+    return (
+      <AppCtx.Provider value={ctx}>
+        <Landing />
+      </AppCtx.Provider>
+    );
+  }
 
   return (
     <AppCtx.Provider value={ctx}>
