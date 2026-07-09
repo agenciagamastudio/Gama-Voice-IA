@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProvider, type ChatMessage } from './provider.js';
+import { getRoutedProvider as getProvider, type ChatMessage } from './provider.js';
 import { search, systemCatalog, loadIndex } from '../content/search.js';
 
 export const aiRouter = Router();
@@ -49,6 +49,7 @@ aiRouter.post('/chat', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.write(`data: ${JSON.stringify({ meta: { provider: provider.name, model: provider.model } })}\n\n`);
   try {
     await provider.stream(system, messages, delta => {
       res.write(`data: ${JSON.stringify({ delta })}\n\n`);
