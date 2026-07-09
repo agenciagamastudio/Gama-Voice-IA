@@ -11,6 +11,7 @@ import Cycle from './views/Cycle';
 import Commands from './views/Commands';
 import SystemView from './views/SystemView';
 import Landing from './views/Landing';
+import NotFound from './views/NotFound';
 import ChatWidget from './components/ChatWidget';
 
 /* ── contexto global de dados ─────────────────────────── */
@@ -64,7 +65,7 @@ const NORM_VIEW: Record<string, string> = Object.fromEntries(
 function viewFromPath(): string {
   const raw = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
   if (!raw) return 'landing'; // raiz = landing page de apresentação
-  return NORM_VIEW[normalizeSlug(raw)] || 'landing';
+  return NORM_VIEW[normalizeSlug(raw)] || 'notfound';
 }
 
 export default function App() {
@@ -109,10 +110,10 @@ export default function App() {
     openChat: () => setChatOpen(true),
   };
 
-  if (view === 'landing') {
+  if (view === 'landing' || view === 'notfound') {
     return (
       <AppCtx.Provider value={ctx}>
-        <Landing />
+        {view === 'landing' ? <Landing /> : <NotFound />}
       </AppCtx.Provider>
     );
   }
