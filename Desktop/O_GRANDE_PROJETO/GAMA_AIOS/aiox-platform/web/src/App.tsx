@@ -91,6 +91,14 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  // título da aba acompanha a view
+  useEffect(() => {
+    const label = view === 'landing' ? null
+      : view === 'notfound' ? '404'
+      : TABS.find(([id]) => id === view)?.[2] ?? null;
+    document.title = label ? `${label} · AIOX Mission Control` : 'AIOX · Mission Control — GAMA';
+  }, [view]);
+
   const totalCmds = useMemo(
     () => content.agents.reduce((n, a) => n + a.cmds.length, 0) + 5,
     [content],
