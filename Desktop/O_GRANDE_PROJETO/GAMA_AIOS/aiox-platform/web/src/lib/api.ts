@@ -49,6 +49,18 @@ export async function generateCommand(goal: string, workflow?: string | null, ag
   return (await res.json()).prompt;
 }
 
+export type Attachment = { name: string; size: number; text: string };
+
+/** Extrai texto de um arquivo no servidor (txt/md/código/PDF). */
+export async function extractFile(file: File): Promise<Attachment> {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/extract', { method: 'POST', body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data;
+}
+
 export type ChatEvents = {
   onDelta: (t: string) => void;
   onThinking?: (t: string) => void;
@@ -59,10 +71,11 @@ export type ChatEvents = {
 export async function streamChat(
   messages: { role: 'user' | 'assistant'; content: string }[],
   events: ChatEvents,
+  attachments?: Attachment[],
 ): Promise<void> {
   const res = await fetch('/api/chat', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, attachments: attachments?.length ? attachments : undefined }),
   });
   if (res.status === 503) throw new Error('no_api_key');
   if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);

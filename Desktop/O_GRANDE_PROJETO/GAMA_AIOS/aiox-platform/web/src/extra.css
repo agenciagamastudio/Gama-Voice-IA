@@ -235,3 +235,18 @@
 .thinking-head .chev.down{transform:rotate(90deg)}
 .thinking-head .typing{margin-left:2px}
 .thinking-body{padding:2px 12px 10px;font-size:11.5px;line-height:1.5;color:var(--text-2);white-space:pre-wrap;max-height:220px;overflow-y:auto}
+
+/* ═══ Anexos do chat (Fase 5) ═══ */
+.chat-wrap:has(.attach-chips){grid-template-rows:1fr auto auto}
+.attach-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:5px 9px;max-width:260px}
+.chip.loading{opacity:.65}
+.chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.chip-size{color:var(--text-faint);font-size:9.5px}
+.chip-x{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:10px;padding:0 2px}
+.chip-x:hover{color:var(--text)}
+.chip--sent{background:transparent;border-color:var(--border-green);margin:0 4px 6px 0}
+.msg-attach{display:flex;flex-wrap:wrap;margin-bottom:4px}
+.attach-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-2);font-size:15px;padding:0 13px;cursor:pointer;transition:var(--dur-fast) var(--ease)}
+.attach-btn:hover:not(:disabled){border-color:var(--border-green);color:var(--text)}
+.attach-btn:disabled{opacity:.5;cursor:default}

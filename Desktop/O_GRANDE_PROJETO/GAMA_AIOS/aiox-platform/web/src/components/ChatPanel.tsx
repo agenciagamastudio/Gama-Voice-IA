@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../App';
-import { streamChat } from '../lib/api';
+import { streamChat, extractFile, type Attachment } from '../lib/api';
 import MarkdownMessage from './MarkdownMessage';
 import CopyButton from './CopyButton';
 import ThinkingBlock from './ThinkingBlock';
+import AttachmentChips, { type PendingAttachment } from './AttachmentChips';
 
-type Msg = { role: 'user' | 'assistant'; content: string; thinking?: string };
+type Msg = { role: 'user' | 'assistant'; content: string; thinking?: string; attachNames?: string[] };
 
 const SUGGESTIONS = [
   'Qual agente pode fazer git push?',
@@ -35,9 +36,27 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
   const [messages, setMessages] = useState<Msg[]>(loadStored);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const logRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function addFiles(files: FileList | null) {
+    if (!files?.length) return;
+    for (const file of Array.from(files)) {
+      if (attachments.some(a => a.name === file.name)) continue;
+      setAttachments(prev => [...prev, { name: file.name, size: file.size, text: '', loading: true }]);
+      try {
+        const att = await extractFile(file);
+        setAttachments(prev => prev.map(a => (a.name === file.name ? { ...att, loading: false } : a)));
+      } catch (e: any) {
+        setAttachments(prev => prev.filter(a => a.name !== file.name));
+        alert(`Anexo "${file.name}": ${e?.message || e}`);
+      }
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  }
 
   useEffect(() => {
     if (stickRef.current) logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
@@ -58,17 +77,19 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
 
   async function send(text?: string) {
     const q = (text ?? input).trim();
-    if (!q || busy) return;
+    if (!q || busy || attachments.some(a => a.loading)) return;
     setInput('');
     if (taRef.current) taRef.current.style.height = 'auto';
     stickRef.current = true;
-    const next: Msg[] = [...messages, { role: 'user', content: q }];
+    const atts: Attachment[] = attachments.map(({ name, size, text: t }) => ({ name, size, text: t }));
+    setAttachments([]);
+    const next: Msg[] = [...messages, { role: 'user', content: q, attachNames: atts.length ? atts.map(a => a.name) : undefined }];
     setMessages([...next, { role: 'assistant', content: '' }]);
     setBusy(true);
     try {
       let acc = '';
       let think = '';
-      await streamChat(next, {
+      await streamChat(next.map(({ role, content }) => ({ role, content })), {
         onDelta: delta => {
           acc += delta;
           setMessages([...next, { role: 'assistant', content: acc, thinking: think || undefined }]);
@@ -77,7 +98,7 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
           think += t;
           setMessages([...next, { role: 'assistant', content: acc, thinking: think }]);
         },
-      });
+      }, atts);
     } catch (e: any) {
       const msg = e?.message === 'no_api_key'
         ? 'IA não configurada. Preencha ANTHROPIC_API_KEY ou GROQ_API_KEY no arquivo .env e reinicie o servidor.'
@@ -123,6 +144,9 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
             </div>
           ) : messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
+              {m.role === 'user' && m.attachNames && (
+                <div className="msg-attach">{m.attachNames.map(n => <span key={n} className="chip chip--sent">📄 {n}</span>)}</div>
+              )}
               {m.role === 'assistant' && (m.content || m.thinking)
                 ? <>
                     {m.thinking && (
@@ -137,7 +161,22 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
             </div>
           ))}
         </div>
+        <AttachmentChips items={attachments} onRemove={name => setAttachments(prev => prev.filter(a => a.name !== name))} />
         <div className="chat-input">
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept=".pdf,.txt,.md,.markdown,.ts,.tsx,.js,.jsx,.py,.json,.yaml,.yml,.css,.html,.sql,.sh,.csv,.log,.xml,.toml"
+            style={{ display: 'none' }}
+            onChange={e => addFiles(e.target.files)}
+          />
+          <button
+            className="attach-btn"
+            title="anexar documento (texto, código ou PDF)"
+            disabled={!ai.ai || busy}
+            onClick={() => fileRef.current?.click()}
+          >📎</button>
           <textarea
             ref={taRef}
             value={input}

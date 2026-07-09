@@ -8,7 +8,7 @@ import { loadIndex, search } from './content/search.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/content', (_req, res) => {
   const idx = loadIndex();

@@ -1,8 +1,36 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { getRoutedProvider as getProvider, type ChatMessage } from './provider.js';
 import { search, systemCatalog, loadIndex } from '../content/search.js';
 
 export const aiRouter = Router();
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+/* ═══ Anexos ═══ */
+
+export type ChatAttachment = { name: string; size: number; text: string };
+
+const ATTACH_TEXT_CAP = 50_000;      // chars por arquivo (texto extraído)
+const ATTACH_TOTAL_CAP = 50_000;     // teto total injetado no contexto
+
+const TEXT_EXTS = new Set([
+  'txt', 'md', 'markdown', 'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'py', 'rb', 'go', 'rs', 'java', 'c', 'h',
+  'cpp', 'hpp', 'cs', 'php', 'sh', 'bash', 'ps1', 'sql', 'json', 'yaml', 'yml', 'toml', 'ini', 'env',
+  'css', 'scss', 'html', 'htm', 'xml', 'svg', 'csv', 'log', 'cfg', 'conf', 'lua', 'r', 'swift', 'kt', 'vue',
+]);
+
+function attachmentsBlock(attachments: ChatAttachment[]): string {
+  let budget = ATTACH_TOTAL_CAP;
+  const parts: string[] = [];
+  for (const a of attachments) {
+    if (budget <= 0) break;
+    const text = String(a.text || '').slice(0, Math.min(ATTACH_TEXT_CAP, budget));
+    budget -= text.length;
+    parts.push(`[ANEXO: ${a.name}]\n${text}`);
+  }
+  return parts.length ? '\n\n' + parts.join('\n\n') : '';
+}
 
 const CLAUDE_CODE_CAPS = `
 CAPACIDADES MODERNAS DO CLAUDE CODE (mencione quando relevante):
@@ -43,6 +71,17 @@ aiRouter.post('/chat', async (req, res) => {
   const messages: ChatMessage[] = (req.body?.messages || []).slice(-12);
   if (!messages.length) { res.status(400).json({ error: 'empty' }); return; }
 
+  // anexos da conversa: entram só no contexto enviado ao provider (não persistem no índice)
+  const attachments: ChatAttachment[] = Array.isArray(req.body?.attachments) ? req.body.attachments : [];
+  if (attachments.length) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        messages[i] = { ...messages[i], content: messages[i].content + attachmentsBlock(attachments) };
+        break;
+      }
+    }
+  }
+
   const lastUser = [...messages].reverse().find(m => m.role === 'user')?.content || '';
   const system = `${CHAT_SYSTEM}\n\n${systemCatalog()}\n\n${ragContext(lastUser)}`;
 
@@ -60,6 +99,36 @@ aiRouter.post('/chat', async (req, res) => {
     res.write(`data: ${JSON.stringify({ error: String(e?.message || e) })}\n\n`);
   }
   res.end();
+});
+
+/** Extrai texto de um arquivo (txt/md/código/PDF) pra virar anexo do chat. Multipart: campo "file". */
+aiRouter.post('/extract', upload.single('file'), async (req, res) => {
+  const f = req.file;
+  if (!f) { res.status(400).json({ error: 'no_file' }); return; }
+  const ext = (f.originalname.split('.').pop() || '').toLowerCase();
+  try {
+    let text = '';
+    if (ext === 'pdf') {
+      const { PDFParse } = await import('pdf-parse');
+      const parser = new PDFParse({ data: new Uint8Array(f.buffer) });
+      try {
+        const parsed = await parser.getText();
+        text = String(parsed.text || '');
+      } finally {
+        await parser.destroy();
+      }
+    } else if (TEXT_EXTS.has(ext)) {
+      text = f.buffer.toString('utf8');
+    } else {
+      res.status(415).json({ error: `formato .${ext} não suportado (use texto, código ou PDF)` });
+      return;
+    }
+    text = text.trim();
+    if (!text) { res.status(422).json({ error: 'não consegui extrair texto desse arquivo' }); return; }
+    res.json({ name: f.originalname, size: f.size, text: text.slice(0, ATTACH_TEXT_CAP) });
+  } catch (e: any) {
+    res.status(500).json({ error: String(e?.message || e) });
+  }
 });
 
 /** Roteador inteligente. Body: { mission: string } → JSON estruturado validado contra o índice. */
