@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../App';
 import { streamChat } from '../lib/api';
+import MarkdownMessage from './MarkdownMessage';
+import CopyButton from './CopyButton';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -22,13 +24,31 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const stickRef = useRef(true);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { logRef.current?.scrollTo({ top: logRef.current.scrollHeight }); }, [messages]);
+  useEffect(() => {
+    if (stickRef.current) logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
+  }, [messages]);
+
+  function onLogScroll() {
+    const el = logRef.current;
+    if (el) stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  }
+
+  function autoResize() {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
 
   async function send(text?: string) {
     const q = (text ?? input).trim();
     if (!q || busy) return;
     setInput('');
+    if (taRef.current) taRef.current.style.height = 'auto';
+    stickRef.current = true;
     const next: Msg[] = [...messages, { role: 'user', content: q }];
     setMessages([...next, { role: 'assistant', content: '' }]);
     setBusy(true);
@@ -65,7 +85,7 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
       )}
 
       <div className={compact ? 'chat-wrap chat-wrap--compact' : 'chat-wrap'}>
-        <div className="chat-log" ref={logRef}>
+        <div className="chat-log" ref={logRef} onScroll={onLogScroll}>
           {messages.length === 0 ? (
             <div className="chat-empty">
               <h3>Central de dúvidas do AIOX</h3>
@@ -76,16 +96,25 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
             </div>
           ) : messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
-              {m.content || (busy && i === messages.length - 1 ? <span className="typing"><i /><i /><i /></span> : '')}
+              {m.role === 'assistant' && m.content
+                ? <>
+                    <MarkdownMessage content={m.content} />
+                    {!(busy && i === messages.length - 1) && (
+                      <div className="msg-actions"><CopyButton text={m.content} /></div>
+                    )}
+                  </>
+                : m.content || (busy && i === messages.length - 1 ? <span className="typing"><i /><i /><i /></span> : '')}
             </div>
           ))}
         </div>
         <div className="chat-input">
           <textarea
+            ref={taRef}
             value={input}
+            rows={1}
             placeholder={ai.ai ? 'ex.: qual workflow uso pra evoluir uma API existente?' : 'configure a chave de API no .env pra ativar o assistente'}
             disabled={!ai.ai || busy}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => { setInput(e.target.value); autoResize(); }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
           />
           <button onClick={() => send()} disabled={!ai.ai || busy || !input.trim()}>{busy ? '…' : 'enviar'}</button>
