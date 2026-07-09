@@ -131,6 +131,30 @@ aiRouter.post('/extract', upload.single('file'), async (req, res) => {
   }
 });
 
+/** Ditado por voz — transcreve áudio via Groq Whisper. Multipart: campo "audio". */
+aiRouter.post('/transcribe', upload.single('audio'), async (req, res) => {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) { res.status(503).json({ error: 'no_api_key' }); return; }
+  const f = req.file;
+  if (!f) { res.status(400).json({ error: 'no_audio' }); return; }
+  try {
+    const fd = new FormData();
+    const ext = (f.mimetype.split('/')[1] || 'webm').split(';')[0];
+    fd.append('file', new Blob([new Uint8Array(f.buffer)], { type: f.mimetype }), `dictation.${ext}`);
+    fd.append('model', process.env.GROQ_WHISPER_MODEL || 'whisper-large-v3-turbo');
+    fd.append('language', 'pt');
+    fd.append('response_format', 'json');
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST', headers: { authorization: `Bearer ${key}` }, body: fd,
+    });
+    if (!r.ok) throw new Error(`Groq ${r.status}: ${await r.text()}`);
+    const data: any = await r.json();
+    res.json({ text: String(data.text || '').trim() });
+  } catch (e: any) {
+    res.status(500).json({ error: String(e?.message || e) });
+  }
+});
+
 /** Roteador inteligente. Body: { mission: string } → JSON estruturado validado contra o índice. */
 aiRouter.post('/route', async (req, res) => {
   const provider = getProvider();

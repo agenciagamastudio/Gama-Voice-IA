@@ -5,6 +5,7 @@ import MarkdownMessage from './MarkdownMessage';
 import CopyButton from './CopyButton';
 import ThinkingBlock from './ThinkingBlock';
 import AttachmentChips, { type PendingAttachment } from './AttachmentChips';
+import MicButton from './MicButton';
 
 type Msg = { role: 'user' | 'assistant'; content: string; thinking?: string; attachNames?: string[] };
 
@@ -177,6 +178,10 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
             disabled={!ai.ai || busy}
             onClick={() => fileRef.current?.click()}
           >📎</button>
+          <MicButton
+            disabled={!ai.ai || busy}
+            onText={t => { setInput(prev => (prev ? prev + ' ' : '') + t); taRef.current?.focus(); setTimeout(autoResize, 0); }}
+          />
           <textarea
             ref={taRef}
             value={input}

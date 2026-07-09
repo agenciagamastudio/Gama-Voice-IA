@@ -61,6 +61,17 @@ export async function extractFile(file: File): Promise<Attachment> {
   return data;
 }
 
+/** Transcreve áudio gravado (ditado) via Whisper no servidor. */
+export async function transcribeAudio(blob: Blob): Promise<string> {
+  const fd = new FormData();
+  const ext = (blob.type.split('/')[1] || 'webm').split(';')[0];
+  fd.append('audio', blob, `dictation.${ext}`);
+  const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data.text || '';
+}
+
 export type ChatEvents = {
   onDelta: (t: string) => void;
   onThinking?: (t: string) => void;

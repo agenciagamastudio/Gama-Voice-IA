@@ -250,3 +250,10 @@
 .attach-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-2);font-size:15px;padding:0 13px;cursor:pointer;transition:var(--dur-fast) var(--ease)}
 .attach-btn:hover:not(:disabled){border-color:var(--border-green);color:var(--text)}
 .attach-btn:disabled{opacity:.5;cursor:default}
+
+/* ═══ Ditado por voz (Fase 6) ═══ */
+.mic-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-2);font-size:14px;padding:0 13px;cursor:pointer;transition:var(--dur-fast) var(--ease);font-family:var(--mono);white-space:nowrap}
+.mic-btn:hover:not(:disabled){border-color:var(--border-green);color:var(--text)}
+.mic-btn:disabled{opacity:.5;cursor:default}
+.mic-btn.recording{color:#fff;background:#D64545;border-color:#D64545;animation:mic-pulse 1.2s ease-in-out infinite}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,69,69,.45)}50%{box-shadow:0 0 0 6px rgba(214,69,69,0)}}
