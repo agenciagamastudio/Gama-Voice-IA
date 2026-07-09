@@ -96,17 +96,23 @@ class GroqProvider implements AIProvider {
   }
 
   async stream(system: string, messages: ChatMessage[], handlers: StreamHandlers, maxTokens = 2048): Promise<void> {
-    // Groq: sem extended thinking — handlers.onThinking nunca é chamado (fallback gracioso)
+    const payload: any = JSON.parse(this.body(system, messages, maxTokens, true));
+    // modelos de raciocínio da Groq: qwen3/deepseek-r1 precisam de reasoning_format;
+    // gpt-oss já streama o raciocínio em delta.reasoning por padrão
+    if (handlers.onThinking && /qwen3|deepseek-r1/i.test(this.model)) {
+      payload.reasoning_format = 'parsed';
+    }
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST', headers: this.headers(), body: this.body(system, messages, maxTokens, true),
+      method: 'POST', headers: this.headers(), body: JSON.stringify(payload),
     });
     if (!res.ok || !res.body) throw new Error(`Groq ${res.status}: ${await res.text()}`);
     for await (const event of sseEvents(res.body)) {
       if (event === '[DONE]') break;
       try {
         const data = JSON.parse(event);
-        const delta = data.choices?.[0]?.delta?.content;
-        if (delta) handlers.onDelta(delta);
+        const d = data.choices?.[0]?.delta;
+        if (d?.reasoning && handlers.onThinking) handlers.onThinking(d.reasoning);
+        if (d?.content) handlers.onDelta(d.content);
       } catch { /* ignore */ }
     }
   }
@@ -172,7 +178,8 @@ function markCooldown(key: string, msg: string) {
 function buildCandidates(): Candidate[] {
   const out: Candidate[] = [];
   const groqModels = (process.env.GROQ_MODELS ||
-    'llama-3.3-70b-versatile,openai/gpt-oss-120b,openai/gpt-oss-20b,llama-3.1-8b-instant')
+    // gpt-oss primeiro: expõe raciocínio (delta.reasoning) → habilita o bloco "Pensando" no chat
+    'openai/gpt-oss-120b,llama-3.3-70b-versatile,openai/gpt-oss-20b,llama-3.1-8b-instant')
     .split(',').map(s => s.trim()).filter(Boolean);
 
   const groq: Candidate[] = process.env.GROQ_API_KEY
