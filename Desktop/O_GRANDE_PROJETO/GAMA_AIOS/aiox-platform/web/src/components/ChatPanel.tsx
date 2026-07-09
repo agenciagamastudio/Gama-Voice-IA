@@ -18,9 +18,20 @@ interface ChatPanelProps {
   compact?: boolean;
 }
 
+const STORE_KEY = 'aiox-chat';
+const STORE_CAP = 50;
+
+function loadStored(): Msg[] {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(m => m && m.role && typeof m.content === 'string') : [];
+  } catch { return []; }
+}
+
 export default function ChatPanel({ compact }: ChatPanelProps) {
   const { ai } = useApp();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(loadStored);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
@@ -29,6 +40,7 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
 
   useEffect(() => {
     if (stickRef.current) logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(messages.slice(-STORE_CAP))); } catch { /* quota */ }
   }, [messages]);
 
   function onLogScroll() {
@@ -85,6 +97,13 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
       )}
 
       <div className={compact ? 'chat-wrap chat-wrap--compact' : 'chat-wrap'}>
+        {messages.length > 0 && !busy && (
+          <button
+            className="chat-clear"
+            title="apagar histórico da conversa"
+            onClick={() => { setMessages([]); try { localStorage.removeItem(STORE_KEY); } catch { /* noop */ } }}
+          >✕ limpar conversa</button>
+        )}
         <div className="chat-log" ref={logRef} onScroll={onLogScroll}>
           {messages.length === 0 ? (
             <div className="chat-empty">
