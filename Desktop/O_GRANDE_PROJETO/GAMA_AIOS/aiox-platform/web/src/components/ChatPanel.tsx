@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { useApp } from '../App';
-import { streamChat, extractFile, type Attachment } from '../lib/api';
+import { useApp, useCopy } from '../App';
+import { streamChat, extractFile, generateCommand, type Attachment } from '../lib/api';
+import { loadConvs, saveConvs, newId, titleFrom, type Conv, type StoredMsg } from '../lib/chatStore';
 import MarkdownMessage from './MarkdownMessage';
 import CopyButton from './CopyButton';
 import ThinkingBlock from './ThinkingBlock';
 import AttachmentChips, { type PendingAttachment } from './AttachmentChips';
 import MicButton from './MicButton';
 
-type Msg = { role: 'user' | 'assistant'; content: string; thinking?: string; attachNames?: string[] };
+type Msg = StoredMsg;
 
 const SUGGESTIONS = [
   'Qual agente pode fazer git push?',
@@ -21,21 +22,56 @@ interface ChatPanelProps {
   compact?: boolean;
 }
 
-const STORE_KEY = 'aiox-chat';
-const STORE_CAP = 50;
-
-function loadStored(): Msg[] {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter(m => m && m.role && typeof m.content === 'string') : [];
-  } catch { return []; }
-}
-
 export default function ChatPanel({ compact }: ChatPanelProps) {
   const { ai } = useApp();
-  const [messages, setMessages] = useState<Msg[]>(loadStored);
+  const copyText = useCopy();
+  const [store, setStore] = useState(loadConvs);
+  const active = store.convs.find(c => c.id === store.activeId) || store.convs[0];
+  const messages = active?.messages ?? [];
   const [input, setInput] = useState('');
+  const [genBusy, setGenBusy] = useState(false);
+
+  function setMessages(msgs: Msg[]) {
+    setStore(prev => {
+      const convs = prev.convs.map(c =>
+        c.id === prev.activeId
+          ? { ...c, messages: msgs, title: titleFrom(msgs), updatedAt: Date.now() }
+          : c,
+      );
+      return { ...prev, convs };
+    });
+  }
+
+  function newConv() {
+    const conv: Conv = { id: newId(), title: 'nova conversa', messages: [], updatedAt: Date.now() };
+    setStore(prev => ({ convs: [conv, ...prev.convs], activeId: conv.id }));
+  }
+
+  function deleteConv(id: string) {
+    setStore(prev => {
+      const convs = prev.convs.filter(c => c.id !== id);
+      if (!convs.length) {
+        const conv: Conv = { id: newId(), title: 'nova conversa', messages: [], updatedAt: Date.now() };
+        return { convs: [conv], activeId: conv.id };
+      }
+      return { convs, activeId: prev.activeId === id ? convs[0].id : prev.activeId };
+    });
+  }
+
+  /** gera um prompt pronto pro Claude Code a partir da conversa e copia */
+  async function promptForClaudeCode() {
+    const lastUser = [...messages].reverse().find(m => m.role === 'user')?.content;
+    if (!lastUser || genBusy) return;
+    setGenBusy(true);
+    try {
+      const prompt = await generateCommand(lastUser);
+      copyText(prompt);
+    } catch (e: any) {
+      alert(`Não consegui gerar o prompt: ${e?.message || e}`);
+    } finally {
+      setGenBusy(false);
+    }
+  }
   const [busy, setBusy] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const logRef = useRef<HTMLDivElement>(null);
@@ -61,8 +97,8 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
 
   useEffect(() => {
     if (stickRef.current) logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(messages.slice(-STORE_CAP))); } catch { /* quota */ }
-  }, [messages]);
+    saveConvs(store.convs, store.activeId);
+  }, [store]);
 
   function onLogScroll() {
     const el = logRef.current;
@@ -127,13 +163,19 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
       )}
 
       <div className={compact ? 'chat-wrap chat-wrap--compact' : 'chat-wrap'}>
-        {messages.length > 0 && !busy && (
-          <button
-            className="chat-clear"
-            title="apagar histórico da conversa"
-            onClick={() => { setMessages([]); try { localStorage.removeItem(STORE_KEY); } catch { /* noop */ } }}
-          >✕ limpar conversa</button>
-        )}
+        <div className="conv-bar">
+          <select
+            className="conv-select"
+            value={store.activeId}
+            disabled={busy}
+            onChange={e => setStore(prev => ({ ...prev, activeId: e.target.value }))}
+            title="trocar de conversa"
+          >
+            {store.convs.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+          </select>
+          <button className="conv-btn" title="nova conversa" disabled={busy} onClick={newConv}>+ nova</button>
+          <button className="conv-btn" title="apagar esta conversa" disabled={busy} onClick={() => deleteConv(store.activeId)}>🗑</button>
+        </div>
         <div className="chat-log" ref={logRef} onScroll={onLogScroll}>
           {messages.length === 0 ? (
             <div className="chat-empty">
@@ -155,7 +197,14 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
                     )}
                     {m.content && <MarkdownMessage content={m.content} />}
                     {m.content && !(busy && i === messages.length - 1) && (
-                      <div className="msg-actions"><CopyButton text={m.content} /></div>
+                      <div className="msg-actions">
+                        {i === messages.length - 1 && (
+                          <button className="msg-copy" title="gera um prompt pronto pro Claude Code a partir da conversa e copia" disabled={genBusy} onClick={promptForClaudeCode}>
+                            {genBusy ? '…' : 'Λ prompt pro Claude Code'}
+                          </button>
+                        )}
+                        <CopyButton text={m.content} />
+                      </div>
                     )}
                   </>
                 : m.content || (busy && i === messages.length - 1 ? <span className="typing"><i /><i /><i /></span> : '')}
