@@ -13,6 +13,7 @@ import SystemView from './views/SystemView';
 import Landing from './views/Landing';
 import NotFound from './views/NotFound';
 import ChatWidget from './components/ChatWidget';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /* ── contexto global de dados ─────────────────────────── */
 type Ctx = {
@@ -121,7 +122,7 @@ export default function App() {
   if (view === 'landing' || view === 'notfound') {
     return (
       <AppCtx.Provider value={ctx}>
-        {view === 'landing' ? <Landing /> : <NotFound />}
+        <ErrorBoundary label={view}>{view === 'landing' ? <Landing /> : <NotFound />}</ErrorBoundary>
       </AppCtx.Provider>
     );
   }
@@ -167,15 +168,15 @@ export default function App() {
         <div className="tabline" />
 
         <main>
-          <section className={`view${view === 'overview' ? ' active' : ''}`} id="overview">{view === 'overview' && <Overview />}</section>
-          <section className={`view${view === 'router' ? ' active' : ''}`} id="router">{view === 'router' && <RouterView />}</section>
-          <section className={`view${view === 'workflows' ? ' active' : ''}`} id="workflows">{view === 'workflows' && <Workflows />}</section>
-          <section className={`view${view === 'crew' ? ' active' : ''}`} id="crew">{view === 'crew' && <Crew />}</section>
-          <section className={`view${view === 'squads' ? ' active' : ''}`} id="squads">{view === 'squads' && <Squads />}</section>
-          <section className={`view${view === 'ade' ? ' active' : ''}`} id="ade">{view === 'ade' && <Ade />}</section>
-          <section className={`view${view === 'cycle' ? ' active' : ''}`} id="cycle">{view === 'cycle' && <Cycle />}</section>
-          <section className={`view${view === 'commands' ? ' active' : ''}`} id="commands">{view === 'commands' && <Commands />}</section>
-          <section className={`view${view === 'system' ? ' active' : ''}`} id="system">{view === 'system' && <SystemView />}</section>
+          <section className={`view${view === 'overview' ? ' active' : ''}`} id="overview">{view === 'overview' && <ErrorBoundary label="overview"><Overview /></ErrorBoundary>}</section>
+          <section className={`view${view === 'router' ? ' active' : ''}`} id="router">{view === 'router' && <ErrorBoundary label="router"><RouterView /></ErrorBoundary>}</section>
+          <section className={`view${view === 'workflows' ? ' active' : ''}`} id="workflows">{view === 'workflows' && <ErrorBoundary label="workflows"><Workflows /></ErrorBoundary>}</section>
+          <section className={`view${view === 'crew' ? ' active' : ''}`} id="crew">{view === 'crew' && <ErrorBoundary label="crew"><Crew /></ErrorBoundary>}</section>
+          <section className={`view${view === 'squads' ? ' active' : ''}`} id="squads">{view === 'squads' && <ErrorBoundary label="squads"><Squads /></ErrorBoundary>}</section>
+          <section className={`view${view === 'ade' ? ' active' : ''}`} id="ade">{view === 'ade' && <ErrorBoundary label="ade"><Ade /></ErrorBoundary>}</section>
+          <section className={`view${view === 'cycle' ? ' active' : ''}`} id="cycle">{view === 'cycle' && <ErrorBoundary label="cycle"><Cycle /></ErrorBoundary>}</section>
+          <section className={`view${view === 'commands' ? ' active' : ''}`} id="commands">{view === 'commands' && <ErrorBoundary label="commands"><Commands /></ErrorBoundary>}</section>
+          <section className={`view${view === 'system' ? ' active' : ''}`} id="system">{view === 'system' && <ErrorBoundary label="system"><SystemView /></ErrorBoundary>}</section>
         </main>
 
         <footer>
