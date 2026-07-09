@@ -3,8 +3,9 @@ import { useApp } from '../App';
 import { streamChat } from '../lib/api';
 import MarkdownMessage from './MarkdownMessage';
 import CopyButton from './CopyButton';
+import ThinkingBlock from './ThinkingBlock';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+type Msg = { role: 'user' | 'assistant'; content: string; thinking?: string };
 
 const SUGGESTIONS = [
   'Qual agente pode fazer git push?',
@@ -66,9 +67,16 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
     setBusy(true);
     try {
       let acc = '';
-      await streamChat(next, delta => {
-        acc += delta;
-        setMessages([...next, { role: 'assistant', content: acc }]);
+      let think = '';
+      await streamChat(next, {
+        onDelta: delta => {
+          acc += delta;
+          setMessages([...next, { role: 'assistant', content: acc, thinking: think || undefined }]);
+        },
+        onThinking: t => {
+          think += t;
+          setMessages([...next, { role: 'assistant', content: acc, thinking: think }]);
+        },
       });
     } catch (e: any) {
       const msg = e?.message === 'no_api_key'
@@ -115,10 +123,13 @@ export default function ChatPanel({ compact }: ChatPanelProps) {
             </div>
           ) : messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
-              {m.role === 'assistant' && m.content
+              {m.role === 'assistant' && (m.content || m.thinking)
                 ? <>
-                    <MarkdownMessage content={m.content} />
-                    {!(busy && i === messages.length - 1) && (
+                    {m.thinking && (
+                      <ThinkingBlock text={m.thinking} streaming={busy && i === messages.length - 1 && !m.content} />
+                    )}
+                    {m.content && <MarkdownMessage content={m.content} />}
+                    {m.content && !(busy && i === messages.length - 1) && (
                       <div className="msg-actions"><CopyButton text={m.content} /></div>
                     )}
                   </>

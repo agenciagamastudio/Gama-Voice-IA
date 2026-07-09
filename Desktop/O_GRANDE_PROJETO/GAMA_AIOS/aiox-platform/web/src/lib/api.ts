@@ -49,10 +49,16 @@ export async function generateCommand(goal: string, workflow?: string | null, ag
   return (await res.json()).prompt;
 }
 
-/** Chat streaming — chama onDelta a cada pedaço, resolve ao fim. */
+export type ChatEvents = {
+  onDelta: (t: string) => void;
+  onThinking?: (t: string) => void;
+  onMeta?: (m: { provider: string; model: string }) => void;
+};
+
+/** Chat streaming — despacha delta/thinking/meta, resolve ao fim. */
 export async function streamChat(
   messages: { role: 'user' | 'assistant'; content: string }[],
-  onDelta: (t: string) => void,
+  events: ChatEvents,
 ): Promise<void> {
   const res = await fetch('/api/chat', {
     method: 'POST', headers: { 'content-type': 'application/json' },
@@ -76,7 +82,9 @@ export async function streamChat(
       if (payload === '[DONE]') return;
       let data: any = null;
       try { data = JSON.parse(payload); } catch { continue; }
-      if (data.delta) onDelta(data.delta);
+      if (data.delta) events.onDelta(data.delta);
+      if (data.thinking) events.onThinking?.(data.thinking);
+      if (data.meta) events.onMeta?.(data.meta);
       if (data.error) throw new Error(data.error);
     }
   }

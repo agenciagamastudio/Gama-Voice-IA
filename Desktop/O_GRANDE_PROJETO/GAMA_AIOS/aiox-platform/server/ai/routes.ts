@@ -51,8 +51,9 @@ aiRouter.post('/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.write(`data: ${JSON.stringify({ meta: { provider: provider.name, model: provider.model } })}\n\n`);
   try {
-    await provider.stream(system, messages, delta => {
-      res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+    await provider.stream(system, messages, {
+      onDelta: delta => res.write(`data: ${JSON.stringify({ delta })}\n\n`),
+      onThinking: thinking => res.write(`data: ${JSON.stringify({ thinking })}\n\n`),
     });
     res.write('data: [DONE]\n\n');
   } catch (e: any) {

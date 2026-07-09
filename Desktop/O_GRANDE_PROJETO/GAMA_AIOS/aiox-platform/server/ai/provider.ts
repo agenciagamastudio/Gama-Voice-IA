@@ -2,13 +2,19 @@ import 'dotenv/config';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
+export type StreamHandlers = {
+  onDelta: (t: string) => void;
+  /** Se presente, habilita extended thinking (quando o provedor suportar). */
+  onThinking?: (t: string) => void;
+};
+
 export interface AIProvider {
   name: string;
   model: string;
   /** Resposta completa (não-streaming). */
   complete(system: string, messages: ChatMessage[], maxTokens?: number): Promise<string>;
-  /** Streaming de texto — chama onDelta a cada pedaço. */
-  stream(system: string, messages: ChatMessage[], onDelta: (t: string) => void, maxTokens?: number): Promise<void>;
+  /** Streaming — onDelta a cada pedaço de texto; onThinking (opcional) para raciocínio. */
+  stream(system: string, messages: ChatMessage[], handlers: StreamHandlers, maxTokens?: number): Promise<void>;
 }
 
 class AnthropicProvider implements AIProvider {
@@ -35,17 +41,28 @@ class AnthropicProvider implements AIProvider {
     return (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
   }
 
-  async stream(system: string, messages: ChatMessage[], onDelta: (t: string) => void, maxTokens = 2048): Promise<void> {
+  async stream(system: string, messages: ChatMessage[], handlers: StreamHandlers, maxTokens = 2048): Promise<void> {
+    const THINKING_BUDGET = 4096;
+    const body: any = { model: this.model, max_tokens: maxTokens, system, messages, stream: true };
+    if (handlers.onThinking) {
+      // API exige max_tokens > budget_tokens
+      body.thinking = { type: 'enabled', budget_tokens: THINKING_BUDGET };
+      body.max_tokens = Math.max(maxTokens, THINKING_BUDGET + 2048);
+    }
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify({ model: this.model, max_tokens: maxTokens, system, messages, stream: true }),
+      body: JSON.stringify(body),
     });
     if (!res.ok || !res.body) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
     for await (const event of sseEvents(res.body)) {
       try {
         const data = JSON.parse(event);
-        if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') onDelta(data.delta.text);
+        if (data.type === 'content_block_delta') {
+          if (data.delta?.type === 'text_delta') handlers.onDelta(data.delta.text);
+          else if (data.delta?.type === 'thinking_delta' && handlers.onThinking) handlers.onThinking(data.delta.thinking);
+          // signature_delta: ignorado
+        }
       } catch { /* keep-alive / eventos não-JSON */ }
     }
   }
@@ -78,7 +95,8 @@ class GroqProvider implements AIProvider {
     return data.choices?.[0]?.message?.content || '';
   }
 
-  async stream(system: string, messages: ChatMessage[], onDelta: (t: string) => void, maxTokens = 2048): Promise<void> {
+  async stream(system: string, messages: ChatMessage[], handlers: StreamHandlers, maxTokens = 2048): Promise<void> {
+    // Groq: sem extended thinking — handlers.onThinking nunca é chamado (fallback gracioso)
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', headers: this.headers(), body: this.body(system, messages, maxTokens, true),
     });
@@ -88,7 +106,7 @@ class GroqProvider implements AIProvider {
       try {
         const data = JSON.parse(event);
         const delta = data.choices?.[0]?.delta?.content;
-        if (delta) onDelta(delta);
+        if (delta) handlers.onDelta(delta);
       } catch { /* ignore */ }
     }
   }
@@ -201,17 +219,23 @@ class RoutedProvider implements AIProvider {
     throw lastErr || new Error('nenhum modelo disponível');
   }
 
-  async stream(system: string, messages: ChatMessage[], onDelta: (t: string) => void, maxTokens = 2048): Promise<void> {
+  async stream(system: string, messages: ChatMessage[], handlers: StreamHandlers, maxTokens = 2048): Promise<void> {
     let lastErr: any = null;
     for (const cand of availableCandidates()) {
       let emitted = false;
+      const wrapped: StreamHandlers = {
+        onDelta: t => { emitted = true; handlers.onDelta(t); },
+        onThinking: handlers.onThinking
+          ? t => { emitted = true; handlers.onThinking!(t); }
+          : undefined,
+      };
       try {
-        await cand.make().stream(system, messages, t => { emitted = true; onDelta(t); }, maxTokens);
+        await cand.make().stream(system, messages, wrapped, maxTokens);
         return;
       } catch (e: any) {
         const msg = String(e?.message || e);
         lastErr = e;
-        // só faz fallback se ainda não emitiu nada (senão duplicaria a resposta)
+        // só faz fallback se ainda não emitiu nada (delta OU thinking — senão duplicaria a resposta)
         if (!emitted && isQuotaError(msg)) { markCooldown(cand.key, msg); continue; }
         throw e;
       }
