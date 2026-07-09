@@ -1,0 +1,92 @@
+{
+  "version": "5.2.9",
+  "source": "seed (recon 30-jun-2026, aiox-guia-interativo.html)",
+  "agents": [
+    {"p":"Orion","id":"aiox-master","role":"Master Orchestrator & Framework Dev","g":"ops","auth":"Único que dispara workflows inteiros. Fala como Orion.","when":"Rodar um fluxo de ponta a ponta, orquestrar a tripulação, operar o próprio framework.","cmds":["*run-workflow","*workflow","*plan","*task","*execute-checklist","*create-doc","*doc-out","*shard-doc","*document-project","*add-tech-doc","*create-next-story","*advanced-elicitation","*chat-mode","*agent","*validate-agents","*correct-course","*index-docs","*update-source-tree","*status","*kb","*create","*modify","*update-manifest","*validate-component","*deprecate-component","*propose-modification","*undo-last","*validate-workflow","*analyze-framework","*list-components","*test-memory","*ids check","*ids impact","*ids register","*ids health","*ids stats","*sync-registry-intel"]},
+    {"p":"Atlas","id":"analyst","role":"Business Analyst","g":"plan","when":"Abrir um projeto: brief, pesquisa de mercado, brainstorm, extrair padrões do que já existe.","cmds":["*create-project-brief","*brainstorm","*perform-market-research","*create-competitor-analysis","*research-prompt","*research-deps","*extract-patterns","*elicit","*doc-out"]},
+    {"p":"Morgan","id":"pm","role":"Product Manager","g":"plan","when":"Transformar a ideia em PRD, épicos e requisitos. Coordena o \"o quê\" e o \"porquê\".","cmds":["*create-prd","*create-brownfield-prd","*create-epic","*create-story","*execute-epic","*gather-requirements","*write-spec","*toggle-profile","*shard-prd","*research","*doc-out"]},
+    {"p":"Aria","id":"architect","role":"Architect","g":"plan","when":"Desenhar a arquitetura (nova ou de projeto existente), mapear codebase, medir complexidade.","cmds":["*create-full-stack-architecture","*create-backend-architecture","*create-front-end-architecture","*create-brownfield-architecture","*document-project","*map-codebase","*assess-complexity","*analyze-project-structure","*validate-tech-preset","*create-plan","*create-context","*execute-checklist","*research","*doc-out","*shard-prd"]},
+    {"p":"Uma","id":"ux-design-expert","role":"UX/UI & Design System Architect","g":"plan","est":true,"when":"Definir experiência, wireframes, design tokens e componentes antes do código de tela.","cmds":["*create-ux-spec","*wireframe","*design-tokens","*component-spec","*a11y-review","*design-system"]},
+    {"p":"River","id":"sm","role":"Scrum Master","g":"build","when":"Fatiar o plano em histórias prontas pra dev — o elo entre planejar e construir.","cmds":["*draft","*story-checklist"]},
+    {"p":"Pax","id":"po","role":"Product Owner","g":"build","when":"Validar histórias, cuidar do backlog, dar o aceite antes e depois do dev.","cmds":["*validate-story-draft","*backlog-add","*backlog-review","*backlog-summary","*backlog-prioritize","*backlog-schedule","*stories-index","*close-story","*sync-story","*pull-story","*execute-checklist-po","*shard-doc","*doc-out"]},
+    {"p":"Dex","id":"dev","role":"Full Stack Developer","g":"build","when":"Executar as histórias: escrever o código, criar serviços, rodar testes, aplicar correções do QA.","cmds":["*develop","*develop-interactive","*develop-yolo","*develop-preflight","*build-autonomous","*build","*build-resume","*build-status","*build-log","*execute-subtask","*verify-subtask","*track-attempt","*rollback","*waves","*gotcha","*gotchas","*worktree-create","*worktree-list","*worktree-cleanup","*worktree-merge","*create-service","*apply-qa-fixes","*run-tests","*backlog-debt"]},
+    {"p":"Dara","id":"data-engineer","role":"Database Architect & Ops","g":"build","est":true,"when":"Banco de dados: schema, migrations, RLS, políticas e queries. O braço de dados do Dex.","cmds":["*design-schema","*create-migration","*validate-migration","*setup-rls","*optimize-query","*seed-data"]},
+    {"p":"Quinn","id":"qa","role":"Test Architect & Quality Advisor","g":"guard","auth":"Dono dos quality gates. Pode barrar uma entrega.","when":"Revisar código, rodar gates, avaliar risco/NFR, checar segurança e migrations, desenhar testes.","cmds":["*review","*code-review","*review-build","*gate","*risk-profile","*nfr-assess","*security-check","*validate-migrations","*validate-libraries","*evidence-check","*false-positive-check","*console-check","*test-design","*trace","*create-suite","*critique-spec","*create-fix-request","*backlog-add","*backlog-update"]},
+    {"p":"Gage","id":"devops","role":"GitHub & DevOps Specialist","g":"ops","auth":"ÚNICO com autoridade de *push. Porta de saída do código.","when":"Git, push, PRs, CI, releases, gestão de MCPs e worktrees, triagem de issues.","cmds":["*push","*pre-push","*create-pr","*configure-ci","*release","*detect-repo","*version-check","*cleanup","*triage-issues","*resolve-issue","*environment-bootstrap","*setup-github","*search-mcp","*add-mcp","*list-mcps","*remove-mcp","*setup-mcp-docker","*health-check","*sync-registry","*check-docs","*create-worktree","*list-worktrees","*inventory-assets","*analyze-paths","*migrate-agent","*migrate-batch","*init-project-status"]},
+    {"p":"Craft","id":"squad-creator","role":"Squad Creator","g":"ops","when":"Criar, validar e publicar squads customizados — equipes de agentes pra domínios específicos.","cmds":["*design-squad","*create-squad","*validate-squad","*list-squads","*analyze-squad","*extend-squad","*migrate-squad","*download-squad","*publish-squad","*sync-squad-synkra"]}
+  ],
+  "workflows": [
+    {"name":"greenfield-fullstack","file":"greenfield-fullstack.yaml","cat":"greenfield","desc":"App completo do zero — do brief à entrega, front e back.","when":"Produto novo, sem código, com interface e servidor.","track":[["Atlas","brief","plan"],["Morgan","PRD","plan"],["Uma","UX","plan"],["Aria","arquitetura","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"],["Gage","entrega","ops"]]},
+    {"name":"greenfield-service","file":"greenfield-service.yaml","cat":"greenfield","desc":"Backend, API ou serviço novo, sem camada visual.","when":"Microserviço, API ou worker do zero.","track":[["Atlas","brief","plan"],["Morgan","PRD","plan"],["Aria","arq. back","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"],["Gage","entrega","ops"]]},
+    {"name":"greenfield-ui","file":"greenfield-ui.yaml","cat":"greenfield","desc":"Interface / front-end novo, sobre uma API que já existe.","when":"SPA, painel ou site novo consumindo backend pronto.","track":[["Atlas","brief","plan"],["Morgan","PRD","plan"],["Uma","UX","plan"],["Aria","arq. front","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"]]},
+    {"name":"brownfield-discovery","file":"brownfield-discovery.yaml","cat":"brownfield","desc":"Reconhecimento: mapeia e documenta um projeto que já existe.","when":"PONTO DE PARTIDA quando o código não está documentado.","track":[["Aria","mapear codebase","plan"],["Atlas","extrair padrões","plan"],["Aria","gerar docs","plan"]]},
+    {"name":"brownfield-fullstack","file":"brownfield-fullstack.yaml","cat":"brownfield","desc":"Novas features e mudanças num app completo já existente, sem quebrar o que funciona.","when":"Evoluir um produto vivo com front e back.","track":[["Morgan","classificar","plan"],["Morgan","PRD brownfield","plan"],["Aria","arq. brownfield","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"],["Gage","entrega","ops"]]},
+    {"name":"brownfield-service","file":"brownfield-service.yaml","cat":"brownfield","desc":"Mudanças seguras num backend/serviço existente.","when":"Nova rota, refactor ou integração em API viva.","track":[["Morgan","classificar","plan"],["Aria","arq. brownfield","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"],["Gage","entrega","ops"]]},
+    {"name":"brownfield-ui","file":"brownfield-ui.yaml","cat":"brownfield","desc":"Mudanças numa interface já existente.","when":"Nova tela ou redesign parcial de front vivo.","track":[["Morgan","classificar","plan"],["Uma","UX delta","plan"],["Pax","validação","build"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"]]},
+    {"name":"development-cycle","file":"development-cycle.yaml","cat":"cycle","desc":"Ciclo geral de desenvolvimento contínuo de um projeto ativo.","when":"Tocar o dia a dia de um projeto já em andamento.","track":[["Morgan","planejar","plan"],["River","stories","build"],["Dex","dev","build"],["Quinn","review","guard"]]},
+    {"name":"story-development-cycle","file":"story-development-cycle.yaml","cat":"cycle","desc":"O micro-ciclo de UMA história: rascunho → validação → dev → review.","when":"Rodar uma única story de ponta a ponta.","track":[["River","draft","build"],["Pax","validar","build"],["Dex","develop","build"],["Quinn","review","guard"]]},
+    {"name":"epic-orchestration","file":"epic-orchestration.yaml","cat":"cycle","desc":"Orquestra um épico inteiro, rodando suas histórias em sequência.","when":"Um bloco grande de trabalho com várias stories.","track":[["Morgan","execute-epic","plan"],["River","stories","build"],["Dex","dev","build"],["Quinn","QA","guard"]]},
+    {"name":"qa-loop","file":"qa-loop.yaml","cat":"quality","desc":"Loop de revisão: QA aponta, dev corrige, repete até passar no gate.","when":"Endurecer qualidade antes de liberar.","track":[["Quinn","review","guard"],["Dex","apply-fixes","build"],["Quinn","gate","guard"]]},
+    {"name":"spec-pipeline","file":"spec-pipeline.yaml","cat":"quality","desc":"Transforma um requisito em especificação executável (motor do ADE).","when":"Preparar specs precisas pro dev autônomo.","track":[["Morgan","write-spec","plan"],["Aria","create-context","plan"],["Dex","execute","build"]]},
+    {"name":"design-system-build-quality","file":"design-system-build-quality.yaml","cat":"quality","desc":"Constrói e valida a qualidade de um design system.","when":"Criar/auditar tokens e componentes de design.","track":[["Uma","tokens","plan"],["Dex","build","build"],["Quinn","review","guard"]]},
+    {"name":"auto-worktree","file":"auto-worktree.yaml","cat":"infra","desc":"Cria worktrees git isolados por história — sessões paralelas sem colisão.","when":"Rodar várias stories ao mesmo tempo com segurança.","track":[["Gage","worktree-create","ops"],["Dex","trabalho isolado","build"]]}
+  ],
+  "ade": [
+    {"name":"Memory Layer","desc":"Cada agente carrega uma memória persistente que mantém contexto e aprendizados entre sessões — não recomeça do zero toda vez.","proof":"10/10 MEMORY.md presentes","ok":true},
+    {"name":"Worktree Manager","desc":"Isola cada história num git worktree próprio, deixando várias rodarem em paralelo sem uma pisar na outra.","proof":"config: autoCreate on_story_start · *worktree-create","ok":true},
+    {"name":"Execution Engine","desc":"O coração: executa a spec passo a passo e faz auto-crítica antes de declarar pronto, em vez de largar meio-feito.","proof":"*build-autonomous · *execute-subtask","ok":true,"hl":true},
+    {"name":"Spec Pipeline","desc":"Transforma um requisito bruto numa especificação executável, precisa o bastante pro dev rodar sozinho.","proof":"workflow: spec-pipeline.yaml","ok":true},
+    {"name":"Recovery System","desc":"Detecta falha no build, faz rollback e tenta de novo — o processo se recupera em vez de morrer no meio.","proof":"*rollback · *build-resume · *track-attempt","ok":true},
+    {"name":"QA Evolution","desc":"A revisão roda em loop e endurece os critérios: aponta, o dev corrige, repete até passar no gate.","proof":"workflow: qa-loop.yaml · *gate","ok":true},
+    {"name":"Code Intelligence","desc":"Um registro de entidades do teu código que os agentes consultam pra saber o que já existe antes de criar (IDS).","proof":"entity-registry · 821 entidades ativas","ok":true},
+    {"name":"Migration Engine","desc":"Migra agentes e projetos entre versões do framework sem quebrar customizações.","proof":"documentação AIOX · *migrate-agent","ok":false}
+  ],
+  "squadsGama": [
+    {"name":"dashboard-maestro","desc":"Orquestra a construção de dashboards GAMA de ponta a ponta."},
+    {"name":"gama-studio","desc":"Fluxo criativo e de produção do estúdio GAMA."},
+    {"name":"design-system-audit","desc":"Audita conformidade com o GAMA Design System."},
+    {"name":"gama-quick-apps","desc":"Gera apps e ferramentas rápidas sob demanda."},
+    {"name":"monitor-repair","desc":"Diagnostica e repara o GAMA_MONITOR."},
+    {"name":"sop-factory","desc":"Fabrica SOPs e procedimentos padronizados."},
+    {"name":"squad-creator-pro","desc":"Versão avançada do criador de squads."}
+  ],
+  "squadsBase": [
+    {"name":"deep-research","desc":"Pesquisa profunda multi-fonte com síntese."},
+    {"name":"seo","desc":"Otimização para mecanismos de busca."},
+    {"name":"kaizen","desc":"Melhoria contínua de processos e código."},
+    {"name":"curator","desc":"Curadoria e organização de conhecimento."},
+    {"name":"dispatch","desc":"Roteamento e despacho de tarefas."},
+    {"name":"education","desc":"Conteúdo educacional e explicações."},
+    {"name":"apex","desc":"Squad base do aiox-core."},
+    {"name":"squad-creator","desc":"Cria, valida e publica novos squads."}
+  ],
+  "lifecycle": [
+    {"st":"Draft","ag":"River","id":"sm","cmd":"*draft","g":"build","d":"Rascunho da história a partir do épico."},
+    {"st":"Validated","ag":"Pax","id":"po","cmd":"*validate-story-draft","g":"build","d":"PO confere escopo e critérios de aceite."},
+    {"st":"In Progress","ag":"Dex","id":"dev","cmd":"*develop","g":"build","d":"Dev implementa com contexto completo."},
+    {"st":"Review","ag":"Quinn","id":"qa","cmd":"*review","g":"guard","d":"QA revisa código e evidências."},
+    {"st":"Gate","ag":"Quinn","id":"qa","cmd":"*gate","g":"guard","d":"Passa ou reprova no quality gate."},
+    {"st":"Done","ag":"Gage","id":"devops","cmd":"*push","g":"ops","d":"Aprovado, versionado e entregue."}
+  ],
+  "authority": [
+    {"ag":"Orion","id":"aiox-master","can":"Dispara workflows completos e orquestra a tripulação","excl":"run-workflow"},
+    {"ag":"Gage","id":"devops","can":"Git push, PR, release e CI — a saída do código","excl":"push"},
+    {"ag":"Quinn","id":"qa","can":"Opera os quality gates e pode barrar uma entrega","excl":"gate"},
+    {"ag":"Morgan","id":"pm","can":"Cria PRD, épicos e requisitos","excl":"—"},
+    {"ag":"Aria","id":"architect","can":"Define arquitetura e mapeia codebase","excl":"—"},
+    {"ag":"Dex","id":"dev","can":"Escreve código, cria serviços, roda testes","excl":"—"},
+    {"ag":"River","id":"sm","can":"Rascunha histórias prontas pra dev","excl":"—"},
+    {"ag":"Craft","id":"squad-creator","can":"Cria e publica squads","excl":"publish-squad"}
+  ],
+  "gates": [
+    {"n":"Segurança","c":"*security-check"},
+    {"n":"Requisitos não-funcionais","c":"*nfr-assess"},
+    {"n":"Migrations","c":"*validate-migrations"},
+    {"n":"Bibliotecas","c":"*validate-libraries"},
+    {"n":"Perfil de risco","c":"*risk-profile"},
+    {"n":"Rastreabilidade","c":"*trace"},
+    {"n":"Console limpo","c":"*console-check"},
+    {"n":"Evidências","c":"*evidence-check"}
+  ],
+  "docs": []
+}

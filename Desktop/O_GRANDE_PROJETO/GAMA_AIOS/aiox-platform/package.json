@@ -1,0 +1,36 @@
+{
+  "name": "aiox-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AIOX Mission Control — plataforma interativa do ecossistema SynkraAI/AIOX com IA embutida",
+  "scripts": {
+    "dev": "concurrently -n server,web -c green,blue \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:web": "vite",
+    "ingest": "tsx server/content/ingest.ts",
+    "ingest:remote": "tsx server/content/ingest.ts --remote",
+    "build": "vite build",
+    "start": "cross-env NODE_ENV=production tsx server/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.5"
+  }
+}

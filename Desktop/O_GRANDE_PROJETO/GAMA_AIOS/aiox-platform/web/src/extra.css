@@ -1,0 +1,202 @@
+/* ═══ AIOX Platform — estilos adicionais (chat, roteador IA, badges) ═══ */
+
+/* barra de status da IA */
+.ai-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+  padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--text-3)}
+.ai-badge.on{border-color:var(--border-green);color:var(--primary)}
+.ai-badge .pulse{width:6px;height:6px;border-radius:50%;background:var(--text-3)}
+.ai-badge.on .pulse{background:var(--primary);box-shadow:0 0 8px var(--primary)}
+
+/* ── chat assistente ── */
+.chat-wrap{display:grid;grid-template-rows:1fr auto;gap:var(--sp-4);height:min(68vh,720px);
+  background:var(--glass-bg);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:var(--sp-5);backdrop-filter:blur(14px);box-shadow:var(--sh-2)}
+.chat-log{overflow-y:auto;display:flex;flex-direction:column;gap:var(--sp-4);padding-right:6px}
+.msg{max-width:82%;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg.user{align-self:flex-end;background:var(--primary-dim);border:1px solid var(--border-green);color:var(--text)}
+.msg.assistant{align-self:flex-start;background:var(--surface-2);border:1px solid var(--border)}
+.msg.assistant code{font-family:var(--mono);font-size:12.5px;color:var(--primary)}
+.msg .msg-src{display:block;margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--text-faint)}
+.chat-empty{margin:auto;text-align:center;color:var(--text-3)}
+.chat-empty h3{font-size:17px;color:var(--text-2);margin-bottom:6px}
+.chat-empty .sugg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:var(--sp-5)}
+.chat-empty .sugg button{font-family:var(--mono);font-size:11px;color:var(--text-2);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:999px;padding:7px 14px;cursor:pointer;transition:all var(--dur-fast) var(--ease)}
+.chat-empty .sugg button:hover{border-color:var(--border-green);color:var(--primary)}
+.chat-input{display:flex;gap:var(--sp-3)}
+.chat-input textarea{flex:1;resize:none;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-md);color:var(--text);font-family:var(--body);font-size:14px;padding:var(--sp-3) var(--sp-4);
+  min-height:52px;max-height:140px;transition:border-color var(--dur-fast) var(--ease)}
+.chat-input textarea:focus{outline:none;border-color:var(--border-green)}
+.chat-input button{background:var(--primary);color:var(--logo-ink);border:none;border-radius:var(--r-md);
+  font-family:var(--display);font-weight:700;font-size:13px;padding:0 var(--sp-6);cursor:pointer;
+  box-shadow:var(--glow-sm);transition:all var(--dur-fast) var(--ease)}
+.chat-input button:hover:not(:disabled){box-shadow:var(--glow-md);transform:translateY(-1px)}
+.chat-input button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.typing{display:inline-flex;gap:4px;align-items:center}
+.typing i{width:5px;height:5px;border-radius:50%;background:var(--primary);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* aviso de IA offline */
+.ai-off{background:var(--warning-dim);border:1px solid rgba(245,158,11,.35);border-radius:var(--r-md);
+  padding:var(--sp-4) var(--sp-5);font-size:13px;color:var(--text-2);margin-bottom:var(--sp-5)}
+.ai-off b{color:var(--warning)}
+.ai-off code{font-family:var(--mono);font-size:11.5px;color:var(--text)}
+
+/* ── roteador IA (campo de missão em linguagem natural) ── */
+.ai-route{background:var(--glass-bg);border:1px solid var(--border-green);border-radius:var(--r-lg);
+  padding:var(--sp-5);margin-bottom:var(--sp-6);box-shadow:var(--sh-1)}
+.ai-route .rt-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--primary);margin-bottom:var(--sp-3);display:flex;align-items:center;gap:8px}
+.ai-route .row{display:flex;gap:var(--sp-3)}
+.ai-route input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
+  color:var(--text);font-family:var(--body);font-size:14px;padding:var(--sp-3) var(--sp-4)}
+.ai-route input:focus{outline:none;border-color:var(--border-green)}
+.ai-route button{background:var(--primary);color:var(--logo-ink);border:none;border-radius:var(--r-md);
+  font-family:var(--display);font-weight:700;font-size:13px;padding:0 var(--sp-5);cursor:pointer;
+  box-shadow:var(--glow-sm);transition:all var(--dur-fast) var(--ease)}
+.ai-route button:disabled{opacity:.45;cursor:wait;box-shadow:none}
+.ai-route .hint-txt{font-size:11.5px;color:var(--text-faint);margin-top:var(--sp-2)}
+
+.gen-prompt{margin-top:var(--sp-4)}
+.gen-prompt .cmd{position:relative}
+
+/* detalhe squad expandido */
+.squad .sx{margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--text-3);display:flex;gap:10px;flex-wrap:wrap}
+.squad .sx b{color:var(--primary)}
+
+/* fallback banner */
+.src-note{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);margin-top:var(--sp-2)}
+
+/* ── chat widget compact mode ── */
+.chat-wrap--compact{height:100%;min-height:0;border:none;border-radius:0;box-shadow:none;backdrop-filter:none;background:transparent;padding:0}
+
+/* ── floating action button ── */
+.chat-fab{position:fixed;bottom:24px;right:24px;z-index:1000;width:56px;height:56px;border-radius:50%;
+  background:var(--primary);color:var(--logo-ink);border:none;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;box-shadow:var(--glow-md);
+  transition:transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+.chat-fab:hover{transform:translateY(-2px) scale(1.05);box-shadow:var(--glow-lg,var(--glow-md))}
+.chat-fab svg{width:24px;height:24px;pointer-events:none}
+
+/* ── chat popup panel ── */
+.chat-popup{position:fixed;bottom:92px;right:24px;z-index:999;
+  width:400px;height:min(70vh,640px);
+  background:var(--glass-bg);backdrop-filter:blur(18px);
+  border:1px solid var(--border-green);border-radius:var(--r-lg);
+  box-shadow:var(--sh-3,var(--sh-2));
+  display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);
+  transition:opacity var(--dur-fast) var(--ease),transform var(--dur-fast) var(--ease)}
+.chat-popup--open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+
+.chat-popup-head{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  font-family:var(--display);font-weight:700;font-size:14px;color:var(--text);
+  background:var(--surface-2,var(--glass-bg));flex-shrink:0}
+.chat-popup-head button{background:none;border:none;cursor:pointer;color:var(--text-3);
+  display:flex;align-items:center;padding:4px;border-radius:var(--r-sm,4px);
+  transition:color var(--dur-fast) var(--ease)}
+.chat-popup-head button:hover{color:var(--text)}
+
+.chat-popup-body{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:var(--sp-4);gap:var(--sp-4)}
+.chat-popup-body .chat-wrap--compact{flex:1}
+.chat-popup-body .ai-off{font-size:12px;padding:var(--sp-3) var(--sp-4);margin-bottom:0}
+
+/* ═ MOBILE (<=480px) ═ */
+@media(max-width:480px){
+  .chat-input{flex-direction:column}
+  .chat-input button{min-height:48px;width:100%;padding:12px 0}
+  .ai-route .row{flex-direction:column}
+  .ai-route button{min-height:48px;padding:12px 0}
+  .chat-input textarea,.ai-route input{font-size:16px}
+  .chat-wrap{height:calc(100vh - 240px);height:calc(100dvh - 240px);min-height:380px}
+  .msg{max-width:94%}
+  .chat-empty .sugg button{padding:10px 16px;font-size:12px}
+
+  /* popup fullscreen on mobile */
+  .chat-popup{inset:0;width:100%;height:100%;bottom:0;right:0;border-radius:0;border:none}
+  .chat-fab{bottom:16px;right:16px}
+}
+
+/* ═ tooltip educativo dos comandos (aba Comandos) ═ */
+.cmd-item{position:relative;cursor:pointer}
+.cmd-tip{
+  position:absolute;left:12px;right:12px;bottom:calc(100% + 8px);z-index:30;
+  background:var(--surface-2);border:1px solid var(--border-green);border-radius:var(--r-md);
+  padding:10px 12px;box-shadow:var(--sh-2),var(--glow-sm);
+  font-size:12px;line-height:1.5;color:var(--text-2);
+  opacity:0;transform:translateY(4px);pointer-events:none;
+  transition:opacity var(--dur-fast) var(--ease),transform var(--dur-fast) var(--ease);
+}
+.cmd-tip b{display:block;font-family:var(--mono);font-size:11px;color:var(--primary);margin-bottom:4px}
+.cmd-tip i{display:block;font-style:normal;color:var(--text)}
+.cmd-tip em{display:block;font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--text-faint);margin-top:6px}
+.cmd-tip::after{
+  content:"";position:absolute;top:100%;left:24px;
+  border:6px solid transparent;border-top-color:var(--border-green);
+}
+.cmd-item:hover .cmd-tip,.cmd-item:focus-visible .cmd-tip{opacity:1;transform:translateY(0)}
+@media(hover:none){
+  .cmd-item:active .cmd-tip{opacity:1;transform:translateY(0)}
+}
+
+/* ═ busca de comando com IA ═ */
+.cmd-search-row{display:flex;gap:var(--sp-3);align-items:stretch}
+.cmd-search-row .cmd-search{flex:1;margin-bottom:0}
+.ai-find{
+  background:var(--primary);color:var(--logo-ink);border:none;border-radius:var(--r-md);
+  font-family:var(--display);font-weight:700;font-size:13px;padding:0 var(--sp-5);cursor:pointer;
+  box-shadow:var(--glow-sm);transition:all var(--dur-fast) var(--ease);white-space:nowrap;
+}
+.ai-find:hover:not(:disabled){box-shadow:var(--glow-md);transform:translateY(-1px)}
+.ai-find:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.ai-cmd-results{display:flex;flex-direction:column;gap:var(--sp-3);margin:var(--sp-4) 0}
+.ai-cmd-hit{
+  position:relative;background:var(--glass-bg);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:var(--sp-4) 90px var(--sp-4) var(--sp-4);cursor:pointer;
+  transition:border-color var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease);
+}
+.ai-cmd-hit:hover{border-color:var(--border-green);box-shadow:var(--glow-sm)}
+.ai-cmd-hit.best{border-color:var(--border-green);box-shadow:var(--glow-sm)}
+.ai-cmd-hit .hit-cmd{font-family:var(--mono);font-size:13.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ai-cmd-hit .hit-cmd .ag{color:var(--info)}
+.ai-cmd-hit .hit-cmd .pfx{color:var(--primary)}
+.ai-cmd-hit .best-tag{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);background:var(--primary-dim);border-radius:999px;padding:3px 9px}
+.ai-cmd-hit .hit-why{font-size:12.5px;color:var(--text-2);margin-top:6px;line-height:1.5}
+.ai-cmd-hit .copy{top:12px;bottom:auto}
+@media(max-width:480px){
+  .cmd-search-row{flex-direction:column}
+  .ai-find{min-height:48px}
+  .ai-cmd-hit{padding-right:var(--sp-4)}
+}
+
+/* ═ destaque de card apontado pela IA (workflows/squads) ═ */
+.wf.ai-hit,.squad.ai-hit{
+  border-color:var(--border-green)!important;
+  box-shadow:var(--glow-md),var(--sh-2);
+  animation:ai-hit-pulse 1.6s var(--ease) 2;
+}
+@keyframes ai-hit-pulse{
+  0%,100%{box-shadow:var(--glow-md),var(--sh-2)}
+  50%{box-shadow:var(--glow-lg),var(--sh-2)}
+}
+
+/* ═ workflow card clicável → copia prompt pro Claude Code ═ */
+.wf.clickable{cursor:pointer;position:relative}
+.wf.clickable:hover{border-color:var(--border-green)}
+.wf-copy-hint{
+  position:absolute;top:14px;right:14px;
+  font-family:var(--mono);font-size:10px;color:var(--primary);
+  background:var(--primary-dim);border:1px solid var(--border-green);border-radius:999px;
+  padding:4px 10px;opacity:0;transform:translateY(-3px);pointer-events:none;
+  transition:opacity var(--dur-fast) var(--ease),transform var(--dur-fast) var(--ease);
+}
+.wf.clickable:hover .wf-copy-hint{opacity:1;transform:translateY(0)}
+.wf.clickable:active{transform:scale(.99)}
+@media(hover:none){.wf-copy-hint{opacity:.85;transform:none}}
+
+/* ═ @id do agente na mini-track dos workflows (padrão da Tripulação) ═ */
+.mini-id{font-family:var(--mono);font-size:9.5px;color:var(--text-faint);margin-left:5px}
+.mini:hover .mini-id{color:var(--primary)}
