@@ -533,10 +533,14 @@ def create_audiobook():
         )
         thread.start()
 
+        with AUDIOBOOK_QUEUE_LOCK:
+            _chunks_snapshot = list(AUDIOBOOK_QUEUE[task_id]['chunks'])
+            _estimated_time = AUDIOBOOK_QUEUE[task_id]['estimated_time']
+
         return jsonify({
             'taskId': task_id,
-            'chunks': [chunk.to_dict() for chunk in task['chunks']],
-            'estimatedTime': task['estimated_time']
+            'chunks': [chunk.to_dict() for chunk in _chunks_snapshot],
+            'estimatedTime': _estimated_time
         }), 201
 
     except Exception as e:
