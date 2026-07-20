@@ -20,6 +20,17 @@ export default function STTComponent() {
     setToastVisible(true)
     setTimeout(() => setToastVisible(false), 2200)
   }
+  const transcriptRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // Auto-resize do campo de transcrição conforme o conteúdo
+  useEffect(() => {
+    const el = transcriptRef.current
+    if (el) {
+      el.style.height = 'auto'
+      el.style.height = `${el.scrollHeight}px`
+    }
+  }, [transcript])
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioStreamRef = useRef<MediaStream | null>(null)
@@ -245,9 +256,35 @@ export default function STTComponent() {
               <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-success)', margin: 0 }}>
                 ✅ Transcrição
               </p>
-              <p style={{ fontSize: '14px', color: 'var(--color-text)', lineHeight: 1.6, margin: 0 }}>
-                {transcript}
-              </p>
+              <textarea
+                ref={transcriptRef}
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                spellCheck={false}
+                rows={1}
+                style={{
+                  width: '100%',
+                  fontSize: '14px',
+                  color: 'var(--color-text)',
+                  lineHeight: 1.6,
+                  margin: 0,
+                  padding: 0,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  overflow: 'hidden',
+                  fontFamily: 'var(--font-main)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'box-shadow 200ms',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(136, 206, 17, 0.3)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={handleCopy} style={ghostBtn}>
                   <Copy style={{ width: '12px', height: '12px' }} /> Copiar
