@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Mic, Copy, Download, Trash2, Loader, Clock } from 'lucide-react'
+import { Mic, Copy, Download, Trash2, Loader, Clock, Pause, Play } from 'lucide-react'
 import { API_BASE_URL } from '../utils/config'
 import { HistoryManager } from '../utils/history'
 import HistoryPanel from './HistoryPanel'
 import AudioVisualizer from './AudioVisualizer'
 import Toast from './Toast'
 
+type SessionState = 'idle' | 'recording' | 'paused'
+
 export default function STTComponent() {
-  const [isRecording, setIsRecording] = useState(false)
+  const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [isLoading, setIsLoading] = useState(false)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
   const [transcript, setTranscript] = useState('')
+  const [liveText, setLiveText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -29,10 +32,12 @@ export default function STTComponent() {
       el.style.height = 'auto'
       el.style.height = `${el.scrollHeight}px`
     }
-  }, [transcript])
+  }, [transcript, liveText])
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
+  const segmentChunksRef = useRef<Blob[]>([])
+  const inFlightRef = useRef(false)
+  const segmentEndActionRef = useRef<'pause' | 'stop' | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
   const permissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordingStartTimeRef = useRef<number | null>(null)
@@ -53,7 +58,7 @@ export default function STTComponent() {
 
   // Real-time volume → particles
   useEffect(() => {
-    if (!isRecording || !audioStreamRef.current) {
+    if (sessionState !== 'recording' || !audioStreamRef.current) {
       cancelAnimationFrame(volumeAnimRef.current)
       try { volumeCtxRef.current?.close() } catch {}
       volumeCtxRef.current = null
@@ -89,7 +94,100 @@ export default function STTComponent() {
         window.dispatchEvent(new CustomEvent('gama:volume', { detail: { volume: 0 } }))
       }
     } catch {}
-  }, [isRecording])
+  }, [sessionState])
+
+  // Envia um blob ao endpoint de transcrição e devolve o texto
+  const transcribeBlob = async (blob: Blob): Promise<string> => {
+    const formData = new FormData()
+    formData.append('audio', blob, 'recording.webm')
+    formData.append('language', 'pt')
+    const response = await fetch(`${API_BASE_URL}/api/stt/transcribe`, { method: 'POST', body: formData })
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Falha na transcrição')
+    }
+    const data = await response.json()
+    return data.text as string
+  }
+
+  // Transcrição ao vivo do segmento atual (guarda anti-concorrência; erros silenciosos)
+  const liveTranscribe = async () => {
+    if (inFlightRef.current || segmentChunksRef.current.length === 0) return
+    inFlightRef.current = true
+    try {
+      const blob = new Blob(segmentChunksRef.current, { type: 'audio/webm' })
+      const text = await transcribeBlob(blob)
+      // só atualiza se o segmento ainda está ativo (não foi pausado/parado nesse meio tempo)
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        setLiveText(text)
+      }
+    } catch {
+      // silencioso: próximo ciclo tenta de novo
+    } finally {
+      inFlightRef.current = false
+    }
+  }
+
+  const appendToTranscript = (segText: string) => {
+    if (!segText.trim()) return
+    setTranscript((prev) => (prev.trim() ? `${prev.trimEnd()} ${segText.trim()}` : segText.trim()))
+  }
+
+  // Consolida o segmento encerrado; action decide se pausa ou finaliza a sessão
+  const commitSegment = async (action: 'pause' | 'stop') => {
+    setLiveText('')
+    const chunks = segmentChunksRef.current
+    segmentChunksRef.current = []
+    let finalText = ''
+    if (chunks.length > 0) {
+      setIsLoading(true)
+      try {
+        finalText = await transcribeBlob(new Blob(chunks, { type: 'audio/webm' }))
+        appendToTranscript(finalText)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    if (action === 'stop') {
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop())
+        audioStreamRef.current = null
+      }
+      const duration = recordingStartTimeRef.current ? Date.now() - recordingStartTimeRef.current : 0
+      recordingStartTimeRef.current = null
+      setTranscript((current) => {
+        if (current.trim()) HistoryManager.addTranscription(current, duration, 'pt')
+        return current
+      })
+      setSessionState('idle')
+    } else {
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getAudioTracks().forEach((t) => { t.enabled = false })
+      }
+      setSessionState('paused')
+    }
+  }
+
+  // Inicia um novo segmento de gravação sobre o stream atual
+  const startSegment = (stream: MediaStream) => {
+    const mediaRecorder = new MediaRecorder(stream)
+    mediaRecorderRef.current = mediaRecorder
+    segmentChunksRef.current = []
+    segmentEndActionRef.current = null
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) segmentChunksRef.current.push(event.data)
+      if (mediaRecorder.state === 'recording') liveTranscribe()
+    }
+    mediaRecorder.onstop = () => {
+      const action = segmentEndActionRef.current || 'stop'
+      segmentEndActionRef.current = null
+      commitSegment(action)
+    }
+    mediaRecorder.start(3000) // timeslice: transcrição ao vivo a cada ~3s
+    setSessionState('recording')
+  }
 
   const handleStartRecording = async () => {
     try {
@@ -103,14 +201,8 @@ export default function STTComponent() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       if (permissionTimeoutRef.current) clearTimeout(permissionTimeoutRef.current)
       audioStreamRef.current = stream
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-      mediaRecorder.ondataavailable = (event) => { audioChunksRef.current.push(event.data) }
-      mediaRecorder.onstop = () => { handleTranscribe() }
-      mediaRecorder.start()
       recordingStartTimeRef.current = Date.now()
-      setIsRecording(true)
+      startSegment(stream)
       setIsRequestingPermission(false)
       setError(null)
     } catch (err) {
@@ -128,37 +220,29 @@ export default function STTComponent() {
   }
 
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
+    if (sessionState === 'paused') {
+      // sem recorder ativo: consolida direto
+      commitSegment('stop')
+      return
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      segmentEndActionRef.current = 'stop'
       mediaRecorderRef.current.stop()
-      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop())
-      setIsRecording(false)
     }
   }
 
-  const handleTranscribe = async () => {
-    if (audioChunksRef.current.length === 0) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-      const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.webm')
-      formData.append('language', 'pt')
-      const response = await fetch(`${API_BASE_URL}/api/stt/transcribe`, { method: 'POST', body: formData })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Falha na transcrição')
-      }
-      const data = await response.json()
-      setTranscript(data.text)
-      const duration = recordingStartTimeRef.current ? Date.now() - recordingStartTimeRef.current : 0
-      HistoryManager.addTranscription(data.text, duration, 'pt')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido')
-    } finally {
-      setIsLoading(false)
-      recordingStartTimeRef.current = null
+  const handlePause = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      segmentEndActionRef.current = 'pause'
+      mediaRecorderRef.current.stop()
     }
+  }
+
+  const handleResume = () => {
+    const stream = audioStreamRef.current
+    if (!stream) return
+    stream.getAudioTracks().forEach((t) => { t.enabled = true })
+    startSegment(stream)
   }
 
   const handleCopy = async () => {
@@ -175,10 +259,10 @@ export default function STTComponent() {
     a.click()
   }
 
-  const handleClear = () => { setTranscript(''); audioChunksRef.current = [] }
+  const handleClear = () => { setTranscript(''); setLiveText(''); segmentChunksRef.current = [] }
 
   const handleToggleRecording = () => {
-    if (isRecording) handleStopRecording()
+    if (sessionState !== 'idle') handleStopRecording()
     else handleStartRecording()
   }
 
@@ -224,10 +308,31 @@ export default function STTComponent() {
           )}
 
           <AudioVisualizer
-            isRecording={isRecording}
+            isRecording={sessionState !== 'idle'}
             audioStream={audioStreamRef.current || undefined}
             onToggleRecording={handleToggleRecording}
           />
+
+          {sessionState !== 'idle' && (
+            <button
+              onClick={sessionState === 'recording' ? handlePause : handleResume}
+              style={{
+                ...ghostBtn,
+                flex: 'none',
+                padding: '10px 28px',
+                ...(sessionState === 'paused' && {
+                  borderColor: 'var(--color-primary)',
+                  color: 'var(--color-primary)',
+                }),
+              }}
+            >
+              {sessionState === 'recording' ? (
+                <><Pause style={{ width: '14px', height: '14px' }} /> Pausar</>
+              ) : (
+                <><Play style={{ width: '14px', height: '14px' }} /> Retomar</>
+              )}
+            </button>
+          )}
 
           {error && (
             <div style={{
@@ -247,19 +352,30 @@ export default function STTComponent() {
             </div>
           )}
 
-          {transcript && (
+          {(transcript || liveText || sessionState !== 'idle') && (
             <div style={{
               width: '100%', padding: '16px', borderRadius: 'var(--radius-lg)',
               background: 'var(--glass-bg-2)', border: '1px solid var(--color-border)',
               display: 'flex', flexDirection: 'column', gap: '12px',
             }}>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-success)', margin: 0 }}>
-                ✅ Transcrição
+              <p style={{
+                fontSize: '11px', fontWeight: 600, margin: 0,
+                color: sessionState === 'recording'
+                  ? 'var(--color-info)'
+                  : sessionState === 'paused' ? 'var(--color-warning)' : 'var(--color-success)',
+              }}>
+                {sessionState === 'recording'
+                  ? '🎙 Transcrevendo ao vivo...'
+                  : sessionState === 'paused' ? '⏸ Pausado — pode editar o texto' : '✅ Transcrição'}
               </p>
               <textarea
                 ref={transcriptRef}
-                value={transcript}
+                value={sessionState === 'recording'
+                  ? (transcript.trim() ? `${transcript.trimEnd()} ${liveText}` : liveText)
+                  : transcript}
                 onChange={(e) => setTranscript(e.target.value)}
+                readOnly={sessionState === 'recording'}
+                placeholder={sessionState === 'recording' ? 'Pode falar — o texto aparece aqui...' : undefined}
                 spellCheck={false}
                 rows={1}
                 style={{
