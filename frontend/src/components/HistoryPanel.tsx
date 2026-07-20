@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
   Trash2,
-  Download,
   Copy,
   ChevronDown,
   ChevronUp,
-  Star
+  Star,
+  FolderOpen,
+  Loader
 } from 'lucide-react'
 import type { TranscriptionRecord } from '../utils/history'
 import { HistoryManager } from '../utils/history'
@@ -52,15 +53,17 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
     }
   }
 
-  const handleExport = (format: 'json' | 'csv') => {
-    const content = format === 'json' ? HistoryManager.exportAsJSON() : HistoryManager.exportAsCSV()
-    const type = format === 'json' ? 'application/json' : 'text/csv'
-    const filename = `stt_history_${Date.now()}.${format}`
+  const [openingFolder, setOpeningFolder] = useState(false)
 
-    const element = document.createElement('a')
-    element.href = URL.createObjectURL(new Blob([content], { type }))
-    element.download = filename
-    element.click()
+  const handleOpenFolder = async () => {
+    setOpeningFolder(true)
+    try {
+      await HistoryManager.openFolder()
+    } catch {
+      console.error('Falha ao abrir a pasta de transcrições')
+    } finally {
+      setOpeningFolder(false)
+    }
   }
 
   const handleCopyText = async (text: string) => {
@@ -122,24 +125,18 @@ export default function HistoryPanel({ isOpen, onSelectTranscription }: HistoryP
           </div>
         )}
 
-        {/* Export Buttons */}
+        {/* Abrir pasta de transcrições no Explorer */}
         {history.length > 0 && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleExport('json')}
-              className="flex-1 text-sm bg-white/10 hover:bg-white/20 text-white py-2 rounded transition flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              JSON
-            </button>
-            <button
-              onClick={() => handleExport('csv')}
-              className="flex-1 text-sm bg-white/10 hover:bg-white/20 text-white py-2 rounded transition flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              CSV
-            </button>
-          </div>
+          <button
+            onClick={handleOpenFolder}
+            disabled={openingFolder}
+            className="w-full text-sm bg-white/10 hover:bg-white/20 text-white py-2 rounded transition flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {openingFolder
+              ? <Loader className="w-4 h-4 animate-spin" />
+              : <FolderOpen className="w-4 h-4" />}
+            {openingFolder ? 'Sincronizando...' : 'Abrir pasta no Explorer'}
+          </button>
         )}
       </div>
 

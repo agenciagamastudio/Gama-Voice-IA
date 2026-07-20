@@ -14,12 +14,13 @@ export interface TranscriptionRecord {
   note?: string
 }
 
+import { API_BASE_URL } from './config'
+
 const STORAGE_KEY = 'gama_stt_history'
-const MAX_HISTORY = 50
 
 export const HistoryManager = {
   /**
-   * Adiciona transcrição ao histórico
+   * Adiciona transcrição ao histórico (sem limite) e salva .md no PC via backend
    */
   addTranscription(text: string, durationMs: number, language = 'pt'): TranscriptionRecord {
     const record: TranscriptionRecord = {
@@ -32,14 +33,27 @@ export const HistoryManager = {
 
     const history = this.getHistory()
     history.unshift(record)
-
-    // Manter apenas os últimos MAX_HISTORY
-    if (history.length > MAX_HISTORY) {
-      history.pop()
-    }
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+
+    // Persiste como arquivo .md em Documentos/GAMA_VOZ/Transcricoes (fire-and-forget)
+    fetch(`${API_BASE_URL}/api/stt/history/save-file`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    }).catch(() => {})
+
     return record
+  },
+
+  /**
+   * Sincroniza todo o histórico para a pasta do PC e abre o Explorer nela
+   */
+  async openFolder(): Promise<void> {
+    await fetch(`${API_BASE_URL}/api/stt/history/open-folder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records: this.getHistory() })
+    })
   },
 
   /**

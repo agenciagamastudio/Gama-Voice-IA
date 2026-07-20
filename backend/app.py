@@ -469,6 +469,69 @@ def transcribe():
         print(f"❌ Transcribe error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
+# ============== STT HISTORY FILES ==============
+
+from pathlib import Path
+from datetime import datetime
+
+TRANSCRIPTIONS_DIR = Path.home() / 'Documents' / 'GAMA_VOZ' / 'Transcricoes'
+
+
+def _write_transcription_file(record: dict) -> bool:
+    """Escreve um .md para o registro se ainda não existir. Retorna True se criou."""
+    text = (record.get('text') or '').strip()
+    if not text:
+        return False
+    ts_ms = record.get('timestamp') or 0
+    rec_id = str(record.get('id') or '')
+    # sufixo estável do id para evitar colisão de nomes no mesmo segundo
+    suffix = ''.join(c for c in rec_id if c.isalnum())[-6:] or 'x'
+    dt = datetime.fromtimestamp(ts_ms / 1000) if ts_ms else datetime.now()
+    filename = f"{dt.strftime('%Y-%m-%d_%H-%M-%S')}_{suffix}.md"
+    TRANSCRIPTIONS_DIR.mkdir(parents=True, exist_ok=True)
+    filepath = TRANSCRIPTIONS_DIR / filename
+    if filepath.exists():
+        return False
+    header = f"# Transcrição — {dt.strftime('%d/%m/%Y %H:%M:%S')}\n\n"
+    filepath.write_text(header + text + '\n', encoding='utf-8')
+    return True
+
+
+@app.route('/api/stt/history/save-file', methods=['POST'])
+def save_history_file():
+    """Salva uma transcrição como arquivo .md em Documentos/GAMA_VOZ/Transcricoes"""
+    try:
+        record = request.get_json(silent=True) or {}
+        created = _write_transcription_file(record)
+        return jsonify({'saved': created, 'folder': str(TRANSCRIPTIONS_DIR)}), 200
+    except Exception as e:
+        print(f"❌ Save history file error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/stt/history/open-folder', methods=['POST'])
+def open_history_folder():
+    """Sincroniza os registros recebidos para a pasta e abre o Explorer nela"""
+    try:
+        payload = request.get_json(silent=True) or {}
+        records = payload.get('records') or []
+        created = 0
+        for record in records:
+            if isinstance(record, dict) and _write_transcription_file(record):
+                created += 1
+        TRANSCRIPTIONS_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            os.startfile(str(TRANSCRIPTIONS_DIR))  # Windows Explorer
+        except AttributeError:
+            import subprocess
+            subprocess.Popen(['xdg-open', str(TRANSCRIPTIONS_DIR)])
+        return jsonify({'synced': created, 'folder': str(TRANSCRIPTIONS_DIR)}), 200
+    except Exception as e:
+        print(f"❌ Open history folder error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ============== AUDIOBOOK ENDPOINTS ==============
 
 @app.route('/api/audiobook/create', methods=['POST'])
