@@ -11,10 +11,25 @@ import ParticleBackground from './components/ParticleBackground'
 import { useAPI } from './hooks/useAPI'
 import type { Voice, TTSSettings } from './types'
 
+type TabId = 'tts' | 'stt' | 'audiobook' | 'postprocessing' | 'voiceclone'
+
+const TAB_ROUTES: Record<TabId, string> = {
+  tts: '/texto-para-fala',
+  stt: '/fala-para-texto',
+  audiobook: '/audiobook',
+  postprocessing: '/estudio-fx',
+  voiceclone: '/clone-de-voz',
+}
+
+const pathToTab = (path: string): TabId => {
+  const found = (Object.entries(TAB_ROUTES) as [TabId, string][]).find(([, route]) => route === path)
+  return found ? found[0] : 'tts'
+}
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'tts' | 'stt' | 'audiobook' | 'postprocessing' | 'voiceclone'>('tts')
+  const [activeTab, setActiveTab] = useState<TabId>(() => pathToTab(window.location.pathname))
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState<Voice[]>([])
   const [settings, setSettings] = useState<TTSSettings>({
@@ -32,6 +47,24 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('gama_voz_theme', theme)
   }, [theme])
+
+  // Sincroniza URL ↔ aba ativa (History API)
+  useEffect(() => {
+    if (window.location.pathname !== TAB_ROUTES[activeTab]) {
+      window.history.replaceState(null, '', TAB_ROUTES[activeTab])
+    }
+    const onPopState = () => setActiveTab(pathToTab(window.location.pathname))
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const navigateToTab = (id: TabId) => {
+    if (id !== activeTab) {
+      window.history.pushState(null, '', TAB_ROUTES[id])
+      setActiveTab(id)
+    }
+  }
 
   const { fetchVoices, checkHealth } = useAPI()
 
@@ -212,7 +245,7 @@ export default function App() {
               return (
                 <button
                   key={id}
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => navigateToTab(id)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
