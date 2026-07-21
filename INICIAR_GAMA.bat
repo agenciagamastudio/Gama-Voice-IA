@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title GAMA Voz - Frontend & Backend
+title GAMA Voz - Frontend e Backend
 color 0A
 
 echo.
