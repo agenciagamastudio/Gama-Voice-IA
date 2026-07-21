@@ -32,12 +32,23 @@ export default function STTComponent() {
       el.style.height = 'auto'
       el.style.height = `${el.scrollHeight}px`
     }
-  }, [transcript])
+  }, [transcript, liveText])
+
+  // Live update troca o value do textarea (caret iria pro fim) — restaura a
+  // seleção se o usuário estava editando a parte consolidada (índices não mudam)
+  useEffect(() => {
+    const el = transcriptRef.current
+    const sel = selectionRef.current
+    if (el && sel && document.activeElement === el && sel.start <= transcript.length) {
+      el.setSelectionRange(sel.start, sel.end)
+    }
+  }, [liveText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const segmentChunksRef = useRef<Blob[]>([])
   const inFlightRef = useRef(false)
-  const segmentEndActionRef = useRef<'pause' | 'stop' | null>(null)
+  const segmentEndActionRef = useRef<'pause' | 'stop' | 'rotate' | null>(null)
+  const selectionRef = useRef<{ start: number; end: number } | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
   const permissionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordingStartTimeRef = useRef<number | null>(null)
@@ -133,11 +144,18 @@ export default function STTComponent() {
     setTranscript((prev) => (prev.trim() ? `${prev.trimEnd()} ${segText.trim()}` : segText.trim()))
   }
 
-  // Consolida o segmento encerrado; action decide se pausa ou finaliza a sessão
-  const commitSegment = async (action: 'pause' | 'stop') => {
+  // Consolida o segmento encerrado; action decide o destino da sessão
+  const commitSegment = async (action: 'pause' | 'stop' | 'rotate') => {
     setLiveText('')
     const chunks = segmentChunksRef.current
     segmentChunksRef.current = []
+    if (action === 'rotate') {
+      // usuário editou o trecho ao vivo: o texto do segmento já foi
+      // consolidado pela edição — descarta o áudio e recomeça o segmento
+      const stream = audioStreamRef.current
+      if (stream) startSegment(stream)
+      return
+    }
     let finalText = ''
     if (chunks.length > 0) {
       setIsLoading(true)
@@ -243,6 +261,34 @@ export default function STTComponent() {
     if (!stream) return
     stream.getAudioTracks().forEach((t) => { t.enabled = true })
     startSegment(stream)
+  }
+
+  // valor exibido no textarea durante a gravação: consolidado + ao vivo
+  const composite = transcript.trim()
+    ? (liveText ? `${transcript.trimEnd()} ${liveText}` : transcript)
+    : liveText
+
+  const handleEdit = (newValue: string) => {
+    if (sessionState !== 'recording' || !liveText) {
+      setTranscript(newValue)
+      return
+    }
+    const liveSuffix = ` ${liveText}`
+    if (transcript.trim() && newValue.endsWith(liveSuffix)) {
+      // edição só na parte consolidada: o live segue atualizando normalmente
+      setTranscript(newValue.slice(0, -liveSuffix.length))
+    } else if (!transcript.trim() && newValue.endsWith(liveText)) {
+      setTranscript(newValue.slice(0, -liveText.length))
+    } else {
+      // edição tocou o trecho ao vivo: usuário assume o texto → consolida
+      // tudo e rotaciona o segmento (próxima fala entra depois da edição)
+      setTranscript(newValue)
+      setLiveText('')
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        segmentEndActionRef.current = 'rotate'
+        mediaRecorderRef.current.stop()
+      }
+    }
   }
 
   const handleCopy = async () => {
@@ -370,9 +416,13 @@ export default function STTComponent() {
               </p>
               <textarea
                 ref={transcriptRef}
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                placeholder={sessionState === 'recording' ? 'Pode falar — o texto entra aqui a cada pausa...' : undefined}
+                value={sessionState === 'recording' ? composite : transcript}
+                onChange={(e) => handleEdit(e.target.value)}
+                onSelect={(e) => {
+                  const el = e.currentTarget
+                  selectionRef.current = { start: el.selectionStart, end: el.selectionEnd }
+                }}
+                placeholder={sessionState === 'recording' ? 'Pode falar — o texto aparece aqui...' : undefined}
                 spellCheck={false}
                 rows={1}
                 style={{
@@ -398,15 +448,6 @@ export default function STTComponent() {
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               />
-              {sessionState === 'recording' && liveText && (
-                <p style={{
-                  fontSize: '14px', lineHeight: 1.6, margin: 0,
-                  color: 'var(--color-text-muted)', fontStyle: 'italic',
-                  borderTop: '1px dashed var(--color-border)', paddingTop: '8px',
-                }}>
-                  ▸ ao vivo: {liveText}
-                </p>
-              )}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={handleCopy} style={ghostBtn}>
                   <Copy style={{ width: '12px', height: '12px' }} /> Copiar
