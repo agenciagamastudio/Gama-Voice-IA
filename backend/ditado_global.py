@@ -21,6 +21,7 @@ Limitações conhecidas:
   auto-repeat da tecla durante o hold.
 """
 
+import ctypes
 import io
 import queue
 import re
@@ -48,7 +49,6 @@ REQUIRED_MODS = {'ctrl', 'shift', 'alt'}
 SAMPLE_RATE = 16000
 MIN_DURATION_S = 0.4                          # descarta toques acidentais
 LIVE_INTERVAL_S = 3.0                         # ciclo da transcrição ao vivo
-LIVE_HOLDBACK_WORDS = 2                       # palavras retidas na injeção ao vivo
 BACKSPACE_DELAY_S = 0.03
 PASTE_SETTLE_S = 0.15                         # pausa após cada Ctrl+V
 
@@ -92,8 +92,28 @@ class Overlay:
         self._pulse_on = False
         self._pulse_job = None
         self._hide_job = None
+        self._noactivate_done = False
         self._poll()
         self._pulse()
+
+    def _make_noactivate(self):
+        """WS_EX_NOACTIVATE: overlay NUNCA rouba o foco do app do usuário.
+
+        Sem isso, o Windows pode focar o overlay ao exibi-lo — e os Ctrl+V
+        ao vivo iriam para o overlay em vez do app onde o usuário digita.
+        """
+        if self._noactivate_done:
+            return
+        try:
+            self.win.update_idletasks()
+            hwnd = ctypes.windll.user32.GetParent(self.win.winfo_id())
+            GWL_EXSTYLE = -20
+            WS_EX_NOACTIVATE = 0x08000000
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_NOACTIVATE)
+            self._noactivate_done = True
+        except Exception:
+            pass
 
     # ---------- posicionamento ----------
     def _place(self):
@@ -125,6 +145,7 @@ class Overlay:
         self.live.config(text='')
         self.live.pack_forget()
         self.win.deiconify()
+        self._make_noactivate()
         self._place()
 
     def show_live(self, text: str):
@@ -157,6 +178,7 @@ class Overlay:
         self.live.config(text=msg)
         self.live.pack(anchor='w', pady=(6, 0))
         self.win.deiconify()
+        self._make_noactivate()
         self._place()
         self._cancel_hide()
         self._hide_job = self.root.after(2600, self.hide)
@@ -200,22 +222,48 @@ class Paster:
         self.hold_active = False
         threading.Thread(target=self._run, daemon=True).start()
 
-    def _paste_block(self, text: str):
-        pyperclip.copy(text)
-        time.sleep(0.08)
+    def _clear_mods(self):
+        """Zera o estado dos modificadores físicos segurados (ups sintéticos)."""
         if self.hold_active:
-            # zera o estado dos modificadores físicos segurados (ups sintéticos)
-            # e faz um Ctrl+V totalmente sintético — mesmo mecanismo do paste
-            # final, que é confiável em qualquer app
             KB.release(pk.Key.shift)
             KB.release(pk.Key.alt)
             KB.release(pk.Key.ctrl)
             time.sleep(0.05)
+
+    def _paste_block(self, text: str):
+        pyperclip.copy(text)
+        time.sleep(0.08)
+        self._clear_mods()
         with KB.pressed(pk.Key.ctrl):
             KB.tap('v')
         self.typed += text
         print(f'📋 Paste ({"hold" if self.hold_active else "final"}): {text[:50]!r}')
         time.sleep(PASTE_SETTLE_S)
+
+    def _mirror(self, target: str):
+        """Sincroniza o app com `target` (espelho do overlay): apaga o trecho
+        divergente em bloco e cola só o que mudou/faltou."""
+        typed = self.typed
+        common = 0
+        for a, b in zip(typed, target):
+            if a != b:
+                break
+            common += 1
+        to_delete = len(typed) - common
+        if to_delete > 0:
+            self._clear_mods()
+            with KB.pressed(pk.Key.shift):
+                for _ in range(to_delete):
+                    KB.tap(pk.Key.left)
+            time.sleep(0.05)
+            KB.tap(pk.Key.backspace)
+            self.typed = typed[:common]
+            time.sleep(0.1)
+        delta = target[common:]
+        if delta:
+            self._paste_block(delta)
+        else:
+            self.typed = target
 
     def _run(self):
         while True:
@@ -223,6 +271,8 @@ class Paster:
             try:
                 if kind == 'paste':
                     self._paste_block(val)
+                elif kind == 'mirror':
+                    self._mirror(val)
                 elif kind == 'bs':
                     KB.tap(pk.Key.backspace)
                     self.typed = self.typed[:-1]
@@ -246,6 +296,9 @@ class Paster:
     def type_text(self, text: str):
         if text:
             self.q.put(('paste', text))
+
+    def mirror(self, target: str):
+        self.q.put(('mirror', target))
 
     def backspaces(self, n: int):
         for _ in range(n):
@@ -297,27 +350,15 @@ class Ditado:
         return (resp.json().get('text') or '').strip()
 
     # ---------- transcrição ao vivo ----------
-    @staticmethod
-    def _stable_part(text: str) -> str:
-        """Tudo menos as últimas N palavras (o Whisper revisa mais o final)."""
-        words = text.split(' ')
-        if len(words) <= LIVE_HOLDBACK_WORDS:
-            return ''
-        return ' '.join(words[:-LIVE_HOLDBACK_WORDS]) + ' '
-
     def _inject_live(self, text: str, seq: int):
-        """Digita no app apenas o delta estável (append-only, nunca apaga)."""
-        stable = self._stable_part(text)
+        """Espelha no app EXATAMENTE o texto do overlay (apaga/recola o que mudou)."""
         with self.lock:
             if not self.recording or seq != self.session_seq:
                 return
-            if not stable.startswith(self.injected_text):
-                return  # Whisper revisou texto já digitado — deixa pra fase final
-            delta = stable[len(self.injected_text):]
-            if not delta:
+            if text == self.injected_text:
                 return
-            self.injected_text = stable
-        self.typer.type_text(delta)
+            self.injected_text = text
+        self.typer.mirror(text)
 
     def _live_loop(self, seq: int):
         while True:
@@ -449,25 +490,11 @@ class Ditado:
         Compara o que já foi digitado ao vivo com a transcrição final:
         apaga com backspace só o sufixo divergente e digita o restante.
         """
-        self.typer.flush()  # espera o que ainda está na fila ser injetado
-        injected = self.typer.typed
         with self.lock:
             self.injected_text = ''
-
-        # prefixo comum caractere a caractere (formatação divergente = recola)
-        common = 0
-        for a, b in zip(injected, final_text):
-            if a != b:
-                break
-            common += 1
-
-        to_delete = len(injected) - common
-        if to_delete > 0:
-            time.sleep(0.15)  # garante que os modificadores físicos já subiram
-            self.typer.bulk_delete(to_delete)  # seleção + 1 backspace: instantâneo
-        remainder = final_text[common:]
-        if remainder:
-            self.typer.type_text(remainder)
+        time.sleep(0.15)  # garante que os modificadores físicos já subiram
+        # mesmo espelho do ao vivo: apaga o divergente em bloco e cola o resto
+        self.typer.mirror(final_text)
         self.typer.flush()  # "✓" só depois de terminar de injetar
 
 
