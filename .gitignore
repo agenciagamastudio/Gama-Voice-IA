@@ -79,3 +79,4 @@ temp/
 
 # Voice sample uploads (binary, not versioned)
 backend/uploads/
+backend/ditado_*.log
