@@ -32,7 +32,7 @@ export default function STTComponent() {
       el.style.height = 'auto'
       el.style.height = `${el.scrollHeight}px`
     }
-  }, [transcript, liveText])
+  }, [transcript])
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const segmentChunksRef = useRef<Blob[]>([])
@@ -365,17 +365,14 @@ export default function STTComponent() {
                   : sessionState === 'paused' ? 'var(--color-warning)' : 'var(--color-success)',
               }}>
                 {sessionState === 'recording'
-                  ? '🎙 Transcrevendo ao vivo...'
+                  ? '🎙 Transcrevendo ao vivo — pode editar o texto'
                   : sessionState === 'paused' ? '⏸ Pausado — pode editar o texto' : '✅ Transcrição'}
               </p>
               <textarea
                 ref={transcriptRef}
-                value={sessionState === 'recording'
-                  ? (transcript.trim() ? `${transcript.trimEnd()} ${liveText}` : liveText)
-                  : transcript}
+                value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                readOnly={sessionState === 'recording'}
-                placeholder={sessionState === 'recording' ? 'Pode falar — o texto aparece aqui...' : undefined}
+                placeholder={sessionState === 'recording' ? 'Pode falar — o texto entra aqui a cada pausa...' : undefined}
                 spellCheck={false}
                 rows={1}
                 style={{
@@ -401,6 +398,15 @@ export default function STTComponent() {
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               />
+              {sessionState === 'recording' && liveText && (
+                <p style={{
+                  fontSize: '14px', lineHeight: 1.6, margin: 0,
+                  color: 'var(--color-text-muted)', fontStyle: 'italic',
+                  borderTop: '1px dashed var(--color-border)', paddingTop: '8px',
+                }}>
+                  ▸ ao vivo: {liveText}
+                </p>
+              )}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={handleCopy} style={ghostBtn}>
                   <Copy style={{ width: '12px', height: '12px' }} /> Copiar
